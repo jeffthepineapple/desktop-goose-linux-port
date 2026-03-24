@@ -73,19 +73,6 @@ void Config_InitRegistry() {
     // SECTION: Debug
     g_configRegistry.push_back({"Debug", "Show Overlays", CFG_BOOL, &g_config.debugVisuals, 0, 1, 1, "", OnConfigChange});
     g_configRegistry.push_back({"Debug", "Log to Terminal", CFG_BOOL, &g_config.debugToTerminal, 0, 1, 1, "", OnConfigChange});
-    g_configRegistry.push_back({"Debug", "Gemini Debug", CFG_BOOL, &g_config.geminiDebug, 0, 1, 1, "", OnConfigChange});
-    g_configRegistry.push_back({"Debug", "Gemini Log Raw Responses", CFG_BOOL, &g_config.geminiLogRawResponses, 0, 1, 1, "", OnConfigChange});
-
-    // SECTION: Whisper
-    g_configRegistry.push_back({"Speech", "Enable Whisper", CFG_BOOL, &g_config.whisperEnabled, 0, 1, 1, "", OnConfigChange});
-    g_configRegistry.push_back({"Speech", "Volume Norm", CFG_FLOAT, &g_config.whisperVolumeNormalization, 0.1f, 2.0f, 0.1f, "", OnConfigChange});
-    g_configRegistry.push_back({"Speech", "Gemini API Key", CFG_STRING, &g_config.geminiApiKey, 0, 0, 0, "", OnConfigChange});
-
-    // SECTION: Tools
-    g_configRegistry.push_back({"Tools", "Enable Tool Integrations", CFG_BOOL, &g_config.toolsEnabled, 0, 1, 1, "", OnConfigChange});
-    g_configRegistry.push_back({"Tools", "Preferred Calculator", CFG_STRING, &g_config.preferredCalculator, 0, 0, 0, "", OnConfigChange});
-    g_configRegistry.push_back({"Tools", "Preferred Browser", CFG_STRING, &g_config.preferredBrowser, 0, 0, 0, "", OnConfigChange});
-    g_configRegistry.push_back({"Tools", "Last Assignment Summary", CFG_STRING, &g_config.lastAssignmentSummary, 0, 0, 0, "", OnConfigChange});
 
     Config_Load();
 }

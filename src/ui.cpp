@@ -4,8 +4,6 @@
 #include "config.h"
 #include "assets.h"
 #include "goose.h"
-#include "whisper_manager.h"
-#include "tool_manager.h"
 #include <algorithm>
 #include <iostream>
 #include <vector>
@@ -55,14 +53,6 @@ static void UiLogTrim() {
 
 // UI widget for random-bias toggle
 static GtkWidget* g_chkRandomizeBias = nullptr;
-static GtkWidget* g_chkWhisper = nullptr;
-static GtkWidget* g_btnWhisperReset = nullptr;
-static GtkWidget* g_labelWhisperStatus = nullptr;
-static GtkWidget* g_labelLiveTranscript = nullptr;
-static GtkWidget* g_labelDetectedIntent = nullptr;
-static GtkWidget* g_entryToolSearch = nullptr;
-static GtkWidget* g_btnOpenCalculator = nullptr;
-static GtkWidget* g_btnShowCalendar = nullptr;
 static GtkWidget* g_entryGooseName = nullptr;
 static GtkWidget* g_labelMudChanceVal = nullptr;
 static GtkWidget* g_labelMudLifetimeVal = nullptr;
@@ -129,24 +119,6 @@ static bool g_debugOverlayVerbose = false;
 static bool g_debugOverlaySelectedOnly = false;
 
 static void RefreshSelectedGooseUi();
-static void UpdateWhisperStatusLabel();
-static void draw_whisper_bubble(cairo_t* cr, int width, int height);
-
-// Tool UI callbacks
-static void cb_open_calculator(GtkButton*, gpointer) {
-    ToolManager::Instance().OnOpenCalculatorButton();
-}
-static void cb_show_calendar(GtkButton*, gpointer) {
-    // For now, route to ToolManager via a generic intent
-    SpeechIntent si; si.intent = "show_calendar"; si.transcript = "(button) show calendar"; ToolManager::Instance().HandleIntent(si);
-}
-static void cb_search_web(GtkButton*, gpointer data) {
-    GtkEntry* e = GTK_ENTRY(data);
-    gchar* txt = nullptr;
-    g_object_get(G_OBJECT(e), "text", &txt, NULL);
-    if (txt && *txt) ToolManager::Instance().OnSearchWeb(txt);
-    if (txt) g_free(txt);
-}
 
 // --- Input region ------------------------------------------------------------
 // Make overlay click-through except where geese/items are drawn.
@@ -647,9 +619,7 @@ void draw_overlay(GtkDrawingArea* area, cairo_t* cr, int width, int height, gpoi
         }
     }
 
-    // Whisper visualizer/transcript (Draw on every monitor for now)
     cairo_restore(cr); 
-    draw_whisper_bubble(cr, width, height);
 
     // Debug overlay (only on the primary monitor window)
     if (m->x == 0 && m->y == 0) {
@@ -730,17 +700,14 @@ void cb_clear(GtkButton*, gpointer) { g_geese.clear(); g_droppedItems.clear(); g
 void cb_clear_log(GtkButton*, gpointer) { g_uiLog.clear(); }
 
 void cb_fetch_meme(GtkButton*, gpointer) {
-    if (g_config.whisperEnabled) return;
     Goose* g = GetGooseById(g_selectedGooseId);
     if (g) g->ForceFetch(0, g_screenWidth, g_screenHeight);
 }
 void cb_fetch_text(GtkButton*, gpointer) {
-    if (g_config.whisperEnabled) return;
     Goose* g = GetGooseById(g_selectedGooseId);
     if (g) g->ForceFetch(1, g_screenWidth, g_screenHeight);
 }
 void cb_fetch_text_custom(GtkButton*, gpointer) {
-    if (g_config.whisperEnabled) return;
     Goose* g = GetGooseById(g_selectedGooseId);
     if (!g || !g_entryNote) return;
 
@@ -755,7 +722,6 @@ void cb_select_goose(GtkSpinButton* spin, gpointer) {
 }
 
 static void RefreshSelectedGooseUi() {
-    UpdateWhisperStatusLabel();
     Goose* g = GetGooseById(g_selectedGooseId);
     
     // 1. Update info label
@@ -832,7 +798,6 @@ static void RefreshSelectedGooseUi() {
     }
 }
 void cb_action_apply(GtkButton*, gpointer user_data) {
-    if (g_config.whisperEnabled) return;
     Goose* g = GetGooseById(g_selectedGooseId);
     if (!g) return;
 
@@ -928,17 +893,6 @@ void cb_debug(GtkCheckButton* b, gpointer) {
 }
 void cb_multi_monitor(GtkCheckButton* b, gpointer) { g_config.multiMonitorEnabled = gtk_check_button_get_active(b); }
 void cb_memes(GtkCheckButton* b, gpointer) { g_config.memesEnabled = gtk_check_button_get_active(b); }
-
-static void cb_whisper_toggle(GtkCheckButton* b, gpointer) {
-    bool enabled = gtk_check_button_get_active(b);
-    g_config.whisperEnabled = enabled;
-    WhisperManager_RequestToggle(enabled);
-}
-
-static void cb_whisper_reset(GtkButton*, gpointer) {
-    WhisperManager_RequestToggle(false);
-    gtk_check_button_set_active(GTK_CHECK_BUTTON(g_chkWhisper), false);
-}
 
 void cb_scale(GtkRange* r, gpointer) {
     g_config.globalScale = (float)gtk_range_get_value(r);
@@ -1039,7 +993,6 @@ static void cb_randomize_biases_selected(GtkButton*, gpointer) {
     RefreshSelectedGooseUi();
 }
 void cb_attack_cursor(GtkButton*, gpointer) {
-    if (g_config.whisperEnabled) return;
     Goose* g = GetGooseById(g_selectedGooseId);
     if (!g) {
         if (g_geese.empty()) g_geese.emplace_back(g_nextId++, "", g_screenWidth, g_screenHeight);
@@ -1256,23 +1209,8 @@ static void cb_root_size_allocate(GtkWidget* widget, GtkAllocation* allocation, 
     (void)widget; (void)allocation;
 }
 
-static void on_whisper_changed() {
-    WhisperManager_RequestToggle(g_config.whisperEnabled);
-    if (g_config.whisperEnabled) {
-        for (auto& g : g_geese) {
-            g.ForceWander(g_screenWidth, g_screenHeight);
-        }
-        UiLogPush("Whisper active: all geese restricted to wandering.");
-    }
-}
-
 // --- Control panel -----------------------------------------------------------
 void activate_control_panel(GtkApplication* app) {
-    // Wire up special registry callbacks
-    for (auto& opt : g_configRegistry) {
-        if (std::string(opt.label) == "Enable Whisper") opt.onChange = on_whisper_changed;
-    }
-
     GtkWidget* win = gtk_application_window_new(app);
     gtk_window_set_title(GTK_WINDOW(win), "Goose Control Panel");
     gtk_window_set_default_size(GTK_WINDOW(win), 360, 680);
@@ -1411,42 +1349,12 @@ void activate_control_panel(GtkApplication* app) {
     gtk_box_append(GTK_BOX(globalInner), make_section("Movement & Scale", &movBox));
     PopulateConfigSection(movBox, "Movement");
 
-    // Tools section (live transcript + quick actions)
-    GtkWidget* toolsBox = nullptr;
-    gtk_box_append(GTK_BOX(globalInner), make_section("Tools", &toolsBox));
-    g_labelLiveTranscript = gtk_label_new("Transcript: (idle)");
-    gtk_label_set_wrap(GTK_LABEL(g_labelLiveTranscript), TRUE);
-    gtk_box_append(GTK_BOX(toolsBox), g_labelLiveTranscript);
-
-    g_labelDetectedIntent = gtk_label_new("Intent: (none)");
-    gtk_box_append(GTK_BOX(toolsBox), g_labelDetectedIntent);
-
-    GtkWidget* btnsRowTools = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
-    g_btnOpenCalculator = gtk_button_new_with_label("Open Calculator");
-    g_signal_connect(g_btnOpenCalculator, "clicked", G_CALLBACK(cb_open_calculator), NULL);
-    gtk_box_append(GTK_BOX(btnsRowTools), g_btnOpenCalculator);
-
-    g_btnShowCalendar = gtk_button_new_with_label("Show Calendar");
-    g_signal_connect(g_btnShowCalendar, "clicked", G_CALLBACK(cb_show_calendar), NULL);
-    gtk_box_append(GTK_BOX(btnsRowTools), g_btnShowCalendar);
-
-    gtk_box_append(GTK_BOX(toolsBox), btnsRowTools);
-
-    GtkWidget* searchRow = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
-    g_entryToolSearch = gtk_entry_new();
-    gtk_entry_set_placeholder_text(GTK_ENTRY(g_entryToolSearch), "Search query...");
-    gtk_box_append(GTK_BOX(searchRow), g_entryToolSearch);
-    GtkWidget* btnSearch = gtk_button_new_with_label("Search Web");
-    g_signal_connect(btnSearch, "clicked", G_CALLBACK(cb_search_web), g_entryToolSearch);
-    gtk_box_append(GTK_BOX(searchRow), btnSearch);
-    gtk_box_append(GTK_BOX(toolsBox), searchRow);
-
     // Mud/Cursor are per-goose now; controls live on the Geese tab.
 
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook), scrollGlobal, gtk_label_new("Global"));
 
     // =========================================================
-    // PAGE 3: ENGINE (Speech & Logs)
+    // PAGE 3: ENGINE (Diagnostics & Logs)
     // =========================================================
     GtkWidget* rootWhisp = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     GtkWidget* whInner = gtk_box_new(GTK_ORIENTATION_VERTICAL, 12);
@@ -1456,18 +1364,6 @@ void activate_control_panel(GtkApplication* app) {
     gtk_widget_set_margin_end(whInner, 12);
     gtk_box_append(GTK_BOX(rootWhisp), whInner);
 
-    GtkWidget* wbx = nullptr;
-    gtk_box_append(GTK_BOX(whInner), make_section("Speech Integration", &wbx));
-    PopulateConfigSection(wbx, "Speech");
-
-    g_labelWhisperStatus = gtk_label_new("Status: Standby");
-    gtk_box_append(GTK_BOX(wbx), g_labelWhisperStatus);
-
-    g_btnWhisperReset = gtk_button_new_with_label("Reset Microphone Hook");
-    g_signal_connect(g_btnWhisperReset, "clicked", G_CALLBACK(cb_whisper_reset), NULL);
-    gtk_box_append(GTK_BOX(wbx), g_btnWhisperReset);
-
-    // -- Debug Sub-section
     GtkWidget* dbgBox = nullptr;
     gtk_box_append(GTK_BOX(whInner), make_section("System Diagnostics", &dbgBox));
     PopulateConfigSection(dbgBox, "Debug");
@@ -1553,88 +1449,4 @@ void setup_overlay_window(GtkApplication* app) {
     GtkCssProvider* css = gtk_css_provider_new();
     gtk_css_provider_load_from_string(css, "window { background: transparent; }");
     gtk_style_context_add_provider_for_display(display, GTK_STYLE_PROVIDER(css), 800);
-}
-static void UpdateWhisperStatusLabel() {
-    if (!g_labelWhisperStatus) return;
-    auto snap = WhisperManager_Snapshot();
-    std::string text = snap.status;
-    if (snap.running) {
-        char buf[64];
-        snprintf(buf, sizeof(buf), " (Peak: %.2f)", snap.peakLevel);
-        text += buf;
-    }
-    gtk_label_set_text(GTK_LABEL(g_labelWhisperStatus), text.c_str());
-    if (g_labelLiveTranscript) {
-        std::string t = "Transcript: ";
-        t += snap.transcript.empty() ? "(idle)" : snap.transcript;
-        gtk_label_set_text(GTK_LABEL(g_labelLiveTranscript), t.c_str());
-    }
-    if (g_labelDetectedIntent) {
-        std::string it = "Intent: ";
-        it += snap.status.empty() ? "(none)" : snap.status;
-        gtk_label_set_text(GTK_LABEL(g_labelDetectedIntent), it.c_str());
-    }
-}
-
-static void draw_whisper_bubble(cairo_t* cr, int width, int height) {
-    if (!g_config.whisperEnabled) return;
-    auto snap = WhisperManager_Snapshot();
-    if (!snap.running) return;
-
-    cairo_save(cr);
-
-    // === Glass Audio Visualizer ===
-    int visW = 280;
-    int visH = 35;
-    int visX = (width - visW) / 2;
-    int visY = height - visH - 25;
-    double radius = 12.0;
-
-    // Glass background with frosted effect
-    cairo_new_sub_path(cr);
-    cairo_arc(cr, visX + visW - radius, visY + radius, radius, -G_PI/2, 0);
-    cairo_arc(cr, visX + visW - radius, visY + visH - radius, radius, 0, G_PI/2);
-    cairo_arc(cr, visX + radius, visY + visH - radius, radius, G_PI/2, G_PI);
-    cairo_arc(cr, visX + radius, visY + radius, radius, G_PI, 3*G_PI/2);
-    cairo_close_path(cr);
-
-    // Frosted glass fill
-    cairo_set_source_rgba(cr, 0.1, 0.1, 0.15, 0.7);
-    cairo_fill_preserve(cr);
-
-    // Subtle glass border
-    cairo_set_source_rgba(cr, 0.4, 0.5, 0.6, 0.5);
-    cairo_set_line_width(cr, 1.5);
-    cairo_stroke(cr);
-
-    // Audio bars with cyan/blue gradient
-    // Slightly increase sensitivity so spoken input registers more visibly
-    float sensitivity = 1.25f; // 1.0 = unchanged, >1 amplifies bars
-    float barW = (float)(visW - 20) / snap.bars.size();
-    for (size_t i = 0; i < snap.bars.size(); ++i) {
-        float level = std::min(1.0f, snap.bars[i] * sensitivity);
-        float h = level * (visH - 10);
-        if (h < 3) h = 3; // Minimum bar height (slightly larger)
-
-        // Color shifts from cyan to blue based on level
-        float r = 0.2f + 0.1f * level;
-        float g = 0.6f + 0.3f * level;
-        float b = 0.9f + 0.1f * level;
-
-        cairo_set_source_rgba(cr, r, g, b, 0.85);
-        cairo_rectangle(cr, visX + 10 + i * barW, visY + visH - 5 - h, barW - 2, h);
-        cairo_fill(cr);
-    }
-
-    // Small "listening" indicator dot
-    // Lower the threshold slightly so quiet speech lights the indicator earlier
-    if (snap.peakLevel > 0.008f) {
-        cairo_set_source_rgba(cr, 0.2, 0.9, 0.4, 0.9); // Green when active
-    } else {
-        cairo_set_source_rgba(cr, 0.9, 0.3, 0.2, 0.7); // Red when quiet
-    }
-    cairo_arc(cr, visX + visW - 15, visY + 10, 4, 0, 2 * G_PI);
-    cairo_fill(cr);
-
-    cairo_restore(cr);
 }
