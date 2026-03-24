@@ -271,12 +271,6 @@ void Goose::Update(double dt, double time, int w, int h) {
         if (state == WANDER) {
             bool chased = false;
 
-            // Restrict behavior if Whisper is active: only wandering allowed.
-            if (g_config.whisperEnabled) {
-                PickNewTarget(w, h);
-                return;
-            }
-
             // Only allow new cursor chases when nobody is currently snatching.
             if (g_cursorGrabberId == -1 && cursorChaseEnabled && (g_backendManager.GetActiveBackend()->Caps() & CAP_GET_POS)) {
                 int totalChance = cursorChaseChance + attackMouseBias;
@@ -1055,13 +1049,11 @@ Vector2 Goose::GetBeakTipWorld() {
 // =========================================================
 
 void Goose::ForceFetch(int type, int w, int h) {
-    if (g_config.whisperEnabled) return;
     forceItemFetch = type;
     StartFetch(w, h);
 }
 
 void Goose::ForceFetchText(const std::string& text, int w, int h) {
-    // Note: We ALLOW fetches here even if whisper is enabled, so the AI can trigger it.
     forceItemFetch = 1;
     forcedText = text;
     StartFetch(w, h);

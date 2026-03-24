@@ -21,13 +21,9 @@ struct ConfigOption {
 struct Config {
     bool debugToTerminal = false;
     bool debugVisuals = false;
-    bool geminiDebug = false;
-    bool geminiLogRawResponses = false;
     float globalScale = 1.0f;
     bool audioEnabled = true;
     bool memesEnabled = true;
-    bool whisperEnabled = false;
-    float whisperVolumeNormalization = 0.8f;
     float baseWalkSpeed = 180.0f;
     float baseRunSpeed = 480.0f;
 
@@ -41,14 +37,6 @@ struct Config {
     bool mudEnabled = true;
     int mudChance = 15;        // 0..100
     float mudLifetime = 15.0f; // seconds
-
-    // AI
-    std::string geminiApiKey = "";
-    // Tool preferences
-    std::string preferredCalculator = ""; // program name or full command
-    std::string preferredBrowser = "";    // program name or full command
-    bool toolsEnabled = true;
-    std::string lastAssignmentSummary = "";
 };
 
 extern Config g_config;

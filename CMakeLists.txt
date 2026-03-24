@@ -10,14 +10,8 @@ pkg_check_modules(SDL2 REQUIRED sdl2)
 pkg_check_modules(SDL2MIXER REQUIRED SDL2_mixer)
 pkg_check_modules(GDKPIXBUF REQUIRED gdk-pixbuf-2.0)
 pkg_check_modules(WAYLAND_CLIENT REQUIRED wayland-client)
-pkg_check_modules(CURL REQUIRED libcurl)
 
 find_program(WAYLAND_SCANNER NAMES wayland-scanner)
-
-add_subdirectory(third_party/whisper.cpp)
-
-set(WHISPER_LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/whisper.cpp")
-set(WHISPER_INCLUDE_DIR "${WHISPER_LIB_DIR}/include")
 
 # Wayland code generation
 function(wayland_generate protocol_file out_header out_code)
@@ -69,7 +63,6 @@ endif()
 add_executable(CppGoose ${SOURCES})
 
 target_link_libraries(CppGoose
-     whisper
     ${GTK4_LIBRARIES}
     ${LS_LIBRARIES}
     ${SDL2_LIBRARIES}
@@ -78,7 +71,6 @@ target_link_libraries(CppGoose
     ${X11_LIBRARIES}
     ${X11_XTest_LIB}
     ${WAYLAND_CLIENT_LIBRARIES}
-    ${CURL_LIBRARIES}
     m
     stdc++fs
 )
@@ -90,8 +82,6 @@ target_include_directories(CppGoose PUBLIC
     ${SDL2MIXER_INCLUDE_DIRS}
     ${GDKPIXBUF_INCLUDE_DIRS}
     ${WAYLAND_CLIENT_INCLUDE_DIRS}
-    ${CURL_INCLUDE_DIRS}
-    ${WHISPER_INCLUDE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_BINARY_DIR}
 )
@@ -104,18 +94,3 @@ target_compile_options(CppGoose PUBLIC
     ${GDKPIXBUF_CFLAGS_OTHER}
     ${WAYLAND_CLIENT_CFLAGS_OTHER}
 )
-
-enable_testing()
-add_executable(gemini_client_test
-    tests/gemini_client_test.cpp
-    src/gemini_client.cpp
-)
-target_compile_definitions(gemini_client_test PRIVATE GEMINI_CLIENT_NO_GLOBAL_CONFIG)
-target_link_libraries(gemini_client_test
-    ${CURL_LIBRARIES}
-)
-target_include_directories(gemini_client_test PUBLIC
-    ${CURL_INCLUDE_DIRS}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
-add_test(NAME gemini_client_test COMMAND gemini_client_test)
