@@ -2,7 +2,9 @@
 
 Version: 0.31
 
-A cross-compositor Linux desktop pet application that renders animated geese roaming freely across your screen in a click-through overlay. This repository builds and runs as a standalone C++17 app using GTK4, with cursor control backends for Hyprland, wlroots-based compositors, and X11/XWayland.
+Just a Linux port of Desktop Goose — same chaotic goose, now on Linux.
+
+This repository builds and runs as a standalone C++17 app using GTK4, with cursor control backends for Hyprland, wlroots-based compositors, and X11/XWayland.
 
 This codebase is the maintained Linux/Wayland/X11 port of the classic desktop goose behavior, including collectible meme items, note messages, footprints, and cursor chase/snatch mechanics.
 
