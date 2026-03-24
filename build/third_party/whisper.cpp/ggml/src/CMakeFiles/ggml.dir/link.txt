@@ -1,0 +1,1 @@
+/usr/bin/c++ -fPIC -O3 -DNDEBUG -shared -Wl,--dependency-file=CMakeFiles/ggml.dir/link.d -Wl,-soname,libggml.so.0 -o libggml.so.0.9.5 "CMakeFiles/ggml.dir/ggml-backend-reg.cpp.o"  -Wl,-rpath,"/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/build/third_party/whisper.cpp/ggml/src:" -ldl libggml-cpu.so.0.9.5 libggml-base.so.0.9.5

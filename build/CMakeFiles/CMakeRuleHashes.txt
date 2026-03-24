@@ -1,0 +1,3 @@
+# Hashes of file build rules.
+e3278c1abed99083ad614914c43eceed wlr-virtual-pointer-unstable-v1-client-protocol.h
+9508c001f2ee888d2eaf1fe596da41df wlr-virtual-pointer-unstable-v1-protocol.c
