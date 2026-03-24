@@ -1,0 +1,12 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/cmake_install.cmake",
+		"/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/third_party/whisper.cpp/cmake_install.cmake",
+		"/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/third_party/whisper.cpp/ggml/cmake_install.cmake",
+		"/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/third_party/whisper.cpp/ggml/src/cmake_install.cmake",
+		"/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/third_party/whisper.cpp/ggml/src/ggml-cpu/cmake_install.cmake",
+		"/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/third_party/whisper.cpp/src/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

@@ -1,0 +1,1 @@
+/usr/bin/c++ -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/gemini_client_test.dir/link.d CMakeFiles/gemini_client_test.dir/tests/gemini_client_test.cpp.o CMakeFiles/gemini_client_test.dir/src/gemini_client.cpp.o -o gemini_client_test  -lcurl
