@@ -1,5 +1,6 @@
 .vscode/
 *.md
+!README.md
 
 build/
 CMakeFiles/
