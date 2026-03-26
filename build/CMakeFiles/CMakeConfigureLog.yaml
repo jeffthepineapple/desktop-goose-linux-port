@@ -16928,3 +16928,2431 @@ events:
         
       exitCode: 0
 ...
+
+---
+events:
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:102 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_GTK3_gtk-3"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "gtk-3"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libgtk-3.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:102 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_GTK3_gdk-3"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "gdk-3"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libgdk-3.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:102 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_GTK3_z"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "z"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libz.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:102 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_GTK3_pangocairo-1.0"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "pangocairo-1.0"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libpangocairo-1.0.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:102 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_GTK3_cairo-gobject"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "cairo-gobject"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libcairo-gobject.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:102 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_GTK3_gdk_pixbuf-2.0"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "gdk_pixbuf-2.0"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libgdk_pixbuf-2.0.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:102 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_GTK3_atk-1.0"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "atk-1.0"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libatk-1.0.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:102 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_GTK3_pango-1.0"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "pango-1.0"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libpango-1.0.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:102 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_GTK3_cairo"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "cairo"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libcairo.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:102 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_GTK3_harfbuzz"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "harfbuzz"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libharfbuzz.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:102 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_GTK3_gio-2.0"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "gio-2.0"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libgio-2.0.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:102 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_GTK3_gobject-2.0"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "gobject-2.0"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libgobject-2.0.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:102 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_GTK3_glib-2.0"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "glib-2.0"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libglib-2.0.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:103 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_APPINDICATOR_ayatana-appindicator3"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "ayatana-appindicator3"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libayatana-appindicator3.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:103 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_APPINDICATOR_ayatana-indicator3"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "ayatana-indicator3"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libayatana-indicator3.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:103 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_APPINDICATOR_ayatana-ido3-0.4"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "ayatana-ido3-0.4"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libayatana-ido3-0.4.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:103 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_APPINDICATOR_dbusmenu-glib"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "dbusmenu-glib"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libdbusmenu-glib.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:103 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_APPINDICATOR_gtk-3"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "gtk-3"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libgtk-3.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:103 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_APPINDICATOR_gdk-3"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "gdk-3"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libgdk-3.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:103 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_APPINDICATOR_z"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "z"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libz.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:103 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_APPINDICATOR_pangocairo-1.0"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "pangocairo-1.0"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libpangocairo-1.0.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:103 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_APPINDICATOR_cairo-gobject"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "cairo-gobject"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libcairo-gobject.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:103 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_APPINDICATOR_gdk_pixbuf-2.0"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "gdk_pixbuf-2.0"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libgdk_pixbuf-2.0.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:103 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_APPINDICATOR_atk-1.0"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "atk-1.0"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libatk-1.0.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:103 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_APPINDICATOR_pango-1.0"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "pango-1.0"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libpango-1.0.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:103 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_APPINDICATOR_cairo"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "cairo"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libcairo.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:103 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_APPINDICATOR_harfbuzz"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "harfbuzz"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libharfbuzz.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:103 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_APPINDICATOR_gio-2.0"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "gio-2.0"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libgio-2.0.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:103 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_APPINDICATOR_gobject-2.0"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "gobject-2.0"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libgobject-2.0.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:103 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_APPINDICATOR_glib-2.0"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "glib-2.0"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libglib-2.0.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+...
+
+---
+events:
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:103 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_XAPP_xapp"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "xapp"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libxapp.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:103 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_XAPP_gtk-3"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "gtk-3"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libgtk-3.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:103 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_XAPP_gdk-3"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "gdk-3"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libgdk-3.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:103 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_XAPP_z"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "z"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libz.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:103 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_XAPP_pangocairo-1.0"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "pangocairo-1.0"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libpangocairo-1.0.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:103 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_XAPP_cairo-gobject"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "cairo-gobject"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libcairo-gobject.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:103 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_XAPP_gdk_pixbuf-2.0"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "gdk_pixbuf-2.0"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libgdk_pixbuf-2.0.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:103 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_XAPP_atk-1.0"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "atk-1.0"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libatk-1.0.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:103 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_XAPP_pango-1.0"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "pango-1.0"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libpango-1.0.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:103 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_XAPP_cairo"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "cairo"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libcairo.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:103 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_XAPP_harfbuzz"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "harfbuzz"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libharfbuzz.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:103 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_XAPP_gio-2.0"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "gio-2.0"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libgio-2.0.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:103 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_XAPP_gobject-2.0"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "gobject-2.0"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libgobject-2.0.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:761 (find_library)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:811 (_pkg_find_libs)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1149 (_pkg_recalculate)"
+      - "/usr/share/cmake/Modules/FindPkgConfig.cmake:1166 (_pkg_check_modules_internal)"
+      - "CMakeLists.txt:103 (pkg_check_modules)"
+    mode: "library"
+    variable: "pkgcfg_lib_XAPP_glib-2.0"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "glib-2.0"
+    candidate_directories:
+      - "/usr/lib/"
+    found: "/usr/lib/libglib-2.0.so"
+    search_context:
+      ENV{PATH}:
+        - "/home/dill/.codex/tmp/arg0/codex-arg0wnq3w2"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/home/dill/.vscode/extensions/openai.chatgpt-26.5318.11754-linux-x64/bin/linux-x86_64"
+        - "/usr/local/sbin"
+        - "/opt/android-sdk/platform-tools"
+        - "/opt/android-sdk/tools"
+        - "/opt/android-sdk/tools/bin"
+        - "/var/lib/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/usr/lib/rustup/bin"
+        - "/home/dill/.spicetify"
+        - "/home/dill/.local/share/JetBrains/Toolbox/scripts"
+        - "/home/dill/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/usr"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+...

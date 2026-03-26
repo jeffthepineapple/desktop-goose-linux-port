@@ -20,6 +20,7 @@ int g_screenWidth = 1920;
 int g_screenHeight = 1080;
 int g_selectedGooseId = 0;
 GtkWidget* g_entryNote = nullptr;
+std::vector<GtkWidget*> g_overlayCanvases;
 int g_cursorGrabberId = -1;
 
 Goose* GetGooseById(int id) {

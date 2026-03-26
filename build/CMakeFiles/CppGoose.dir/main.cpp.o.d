@@ -805,55 +805,102 @@ CMakeFiles/CppGoose.dir/main.cpp.o: \
  /usr/include/gtk-4.0/gtk/gtkwidgetpaintable.h \
  /usr/include/gtk-4.0/gtk/gtkwindowcontrols.h \
  /usr/include/gtk-4.0/gtk/gtkwindowgroup.h \
- /usr/include/gtk-4.0/gtk/gtkwindowhandle.h \
- /home/dill/Downloads/desktop-goose/Desktop\ Goose\ v0.31/DesktopGoosev0.31/include/ui.h \
- /usr/include/gtk4-layer-shell/gtk4-layer-shell.h \
- /home/dill/Downloads/desktop-goose/Desktop\ Goose\ v0.31/DesktopGoosev0.31/include/world.h \
- /usr/include/c++/15.2.1/list /usr/include/c++/15.2.1/bits/allocator.h \
- /usr/include/c++/15.2.1/x86_64-pc-linux-gnu/bits/c++allocator.h \
- /usr/include/c++/15.2.1/bits/new_allocator.h /usr/include/c++/15.2.1/new \
- /usr/include/c++/15.2.1/bits/exception.h \
+ /usr/include/gtk-4.0/gtk/gtkwindowhandle.h /usr/include/fcntl.h \
+ /usr/include/bits/fcntl.h /usr/include/bits/fcntl-linux.h \
+ /usr/include/bits/types/struct_iovec.h /usr/include/linux/falloc.h \
+ /usr/include/linux/openat2.h /usr/include/bits/openat2.h \
+ /usr/include/bits/stat.h /usr/include/bits/struct_stat.h \
+ /usr/include/c++/15.2.1/iostream /usr/include/c++/15.2.1/ostream \
+ /usr/include/c++/15.2.1/bits/ostream.h /usr/include/c++/15.2.1/ios \
+ /usr/include/c++/15.2.1/iosfwd /usr/include/c++/15.2.1/bits/stringfwd.h \
  /usr/include/c++/15.2.1/bits/memoryfwd.h \
- /usr/include/c++/15.2.1/bits/range_access.h \
- /usr/include/c++/15.2.1/initializer_list \
- /usr/include/c++/15.2.1/bits/stl_list.h \
- /usr/include/c++/15.2.1/ext/alloc_traits.h \
- /usr/include/c++/15.2.1/bits/alloc_traits.h \
- /usr/include/c++/15.2.1/bits/stl_construct.h \
- /usr/include/c++/15.2.1/bits/allocated_ptr.h \
- /usr/include/c++/15.2.1/ext/aligned_buffer.h \
- /usr/include/c++/15.2.1/bits/list.tcc \
- /usr/include/c++/15.2.1/bits/memory_resource.h \
- /usr/include/c++/15.2.1/cstddef \
- /usr/include/c++/15.2.1/bits/uses_allocator.h \
- /usr/include/c++/15.2.1/bits/uses_allocator_args.h \
- /usr/include/c++/15.2.1/tuple /usr/include/c++/15.2.1/bits/invoke.h \
- /usr/include/c++/15.2.1/string /usr/include/c++/15.2.1/bits/stringfwd.h \
- /usr/include/c++/15.2.1/bits/char_traits.h \
  /usr/include/c++/15.2.1/bits/postypes.h /usr/include/c++/15.2.1/cwchar \
  /usr/include/wchar.h /usr/include/bits/types/wint_t.h \
- /usr/include/bits/types/mbstate_t.h \
+ /usr/include/bits/types/mbstate_t.h /usr/include/c++/15.2.1/exception \
+ /usr/include/c++/15.2.1/bits/exception.h \
+ /usr/include/c++/15.2.1/bits/exception_ptr.h \
+ /usr/include/c++/15.2.1/bits/cxxabi_init_exception.h \
+ /usr/include/c++/15.2.1/typeinfo \
+ /usr/include/c++/15.2.1/bits/hash_bytes.h /usr/include/c++/15.2.1/new \
+ /usr/include/c++/15.2.1/bits/nested_exception.h \
+ /usr/include/c++/15.2.1/bits/char_traits.h \
  /usr/include/c++/15.2.1/bits/localefwd.h \
  /usr/include/c++/15.2.1/x86_64-pc-linux-gnu/bits/c++locale.h \
  /usr/include/c++/15.2.1/clocale /usr/include/locale.h \
- /usr/include/bits/locale.h /usr/include/c++/15.2.1/iosfwd \
- /usr/include/c++/15.2.1/cctype /usr/include/ctype.h \
+ /usr/include/bits/locale.h /usr/include/c++/15.2.1/cctype \
+ /usr/include/ctype.h /usr/include/c++/15.2.1/bits/ios_base.h \
+ /usr/include/c++/15.2.1/ext/atomicity.h \
+ /usr/include/c++/15.2.1/x86_64-pc-linux-gnu/bits/gthr.h \
+ /usr/include/c++/15.2.1/x86_64-pc-linux-gnu/bits/gthr-default.h \
+ /usr/include/c++/15.2.1/x86_64-pc-linux-gnu/bits/atomic_word.h \
+ /usr/include/sys/single_threaded.h \
+ /usr/include/c++/15.2.1/bits/locale_classes.h \
+ /usr/include/c++/15.2.1/string /usr/include/c++/15.2.1/bits/allocator.h \
+ /usr/include/c++/15.2.1/x86_64-pc-linux-gnu/bits/c++allocator.h \
+ /usr/include/c++/15.2.1/bits/new_allocator.h \
  /usr/include/c++/15.2.1/bits/ostream_insert.h \
  /usr/include/c++/15.2.1/bits/cxxabi_forced.h \
  /usr/include/c++/15.2.1/bits/stl_function.h \
  /usr/include/c++/15.2.1/backward/binders.h \
  /usr/include/c++/15.2.1/bits/refwrap.h \
+ /usr/include/c++/15.2.1/bits/invoke.h \
+ /usr/include/c++/15.2.1/bits/range_access.h \
+ /usr/include/c++/15.2.1/initializer_list \
  /usr/include/c++/15.2.1/bits/basic_string.h \
+ /usr/include/c++/15.2.1/ext/alloc_traits.h \
+ /usr/include/c++/15.2.1/bits/alloc_traits.h \
+ /usr/include/c++/15.2.1/bits/stl_construct.h \
  /usr/include/c++/15.2.1/string_view \
  /usr/include/c++/15.2.1/bits/functional_hash.h \
- /usr/include/c++/15.2.1/bits/hash_bytes.h \
  /usr/include/c++/15.2.1/bits/string_view.tcc \
  /usr/include/c++/15.2.1/ext/string_conversions.h \
  /usr/include/c++/15.2.1/cstdio /usr/include/c++/15.2.1/cerrno \
  /usr/include/c++/15.2.1/bits/charconv.h \
  /usr/include/c++/15.2.1/bits/basic_string.tcc \
- /usr/include/c++/15.2.1/deque \
+ /usr/include/c++/15.2.1/bits/memory_resource.h \
+ /usr/include/c++/15.2.1/cstddef \
+ /usr/include/c++/15.2.1/bits/uses_allocator.h \
+ /usr/include/c++/15.2.1/bits/uses_allocator_args.h \
+ /usr/include/c++/15.2.1/tuple \
+ /usr/include/c++/15.2.1/bits/locale_classes.tcc \
+ /usr/include/c++/15.2.1/system_error \
+ /usr/include/c++/15.2.1/x86_64-pc-linux-gnu/bits/error_constants.h \
+ /usr/include/c++/15.2.1/stdexcept /usr/include/c++/15.2.1/streambuf \
+ /usr/include/c++/15.2.1/bits/streambuf.tcc \
+ /usr/include/c++/15.2.1/bits/basic_ios.h \
+ /usr/include/c++/15.2.1/bits/locale_facets.h \
+ /usr/include/c++/15.2.1/cwctype /usr/include/wctype.h \
+ /usr/include/bits/wctype-wchar.h \
+ /usr/include/c++/15.2.1/x86_64-pc-linux-gnu/bits/ctype_base.h \
+ /usr/include/c++/15.2.1/bits/streambuf_iterator.h \
+ /usr/include/c++/15.2.1/x86_64-pc-linux-gnu/bits/ctype_inline.h \
+ /usr/include/c++/15.2.1/bits/locale_facets.tcc \
+ /usr/include/c++/15.2.1/bits/basic_ios.tcc \
+ /usr/include/c++/15.2.1/bits/ostream.tcc /usr/include/c++/15.2.1/istream \
+ /usr/include/c++/15.2.1/bits/istream.tcc /usr/include/c++/15.2.1/vector \
  /usr/include/c++/15.2.1/bits/stl_uninitialized.h \
+ /usr/include/c++/15.2.1/bits/stl_vector.h \
+ /usr/include/c++/15.2.1/bits/stl_bvector.h \
+ /usr/include/c++/15.2.1/bits/vector.tcc \
+ /home/dill/Downloads/desktop-goose/Desktop\ Goose\ v0.31/DesktopGoosev0.31/include/app_actions.h \
+ /home/dill/Downloads/desktop-goose/Desktop\ Goose\ v0.31/DesktopGoosev0.31/include/command_socket.h \
+ /usr/include/c++/15.2.1/functional \
+ /usr/include/c++/15.2.1/bits/std_function.h \
+ /usr/include/c++/15.2.1/unordered_map \
+ /usr/include/c++/15.2.1/bits/unordered_map.h \
+ /usr/include/c++/15.2.1/bits/hashtable.h \
+ /usr/include/c++/15.2.1/bits/hashtable_policy.h \
+ /usr/include/c++/15.2.1/ext/aligned_buffer.h \
+ /usr/include/c++/15.2.1/bits/enable_special_members.h \
+ /usr/include/c++/15.2.1/bits/node_handle.h \
+ /usr/include/c++/15.2.1/bits/erase_if.h /usr/include/c++/15.2.1/array \
+ /usr/include/c++/15.2.1/compare \
+ /home/dill/Downloads/desktop-goose/Desktop\ Goose\ v0.31/DesktopGoosev0.31/include/ui.h \
+ /usr/include/gtk4-layer-shell/gtk4-layer-shell.h \
+ /home/dill/Downloads/desktop-goose/Desktop\ Goose\ v0.31/DesktopGoosev0.31/include/world.h \
+ /usr/include/c++/15.2.1/list /usr/include/c++/15.2.1/bits/stl_list.h \
+ /usr/include/c++/15.2.1/bits/allocated_ptr.h \
+ /usr/include/c++/15.2.1/bits/list.tcc /usr/include/c++/15.2.1/deque \
  /usr/include/c++/15.2.1/bits/stl_deque.h \
  /usr/include/c++/15.2.1/bits/deque.tcc \
  /home/dill/Downloads/desktop-goose/Desktop\ Goose\ v0.31/DesktopGoosev0.31/include/goose.h \
@@ -874,39 +921,12 @@ CMakeFiles/CppGoose.dir/main.cpp.o: \
  /usr/include/SDL2/SDL_error.h /usr/include/SDL2/SDL_audio.h \
  /usr/include/SDL2/SDL_endian.h /usr/include/SDL2/SDL_mutex.h \
  /usr/include/SDL2/SDL_thread.h /usr/include/SDL2/SDL_atomic.h \
- /usr/include/SDL2/SDL_version.h /usr/include/c++/15.2.1/vector \
- /usr/include/c++/15.2.1/bits/stl_vector.h \
- /usr/include/c++/15.2.1/bits/stl_bvector.h \
- /usr/include/c++/15.2.1/bits/vector.tcc \
- /usr/include/c++/15.2.1/filesystem /usr/include/c++/15.2.1/bits/fs_fwd.h \
- /usr/include/c++/15.2.1/system_error \
- /usr/include/c++/15.2.1/x86_64-pc-linux-gnu/bits/error_constants.h \
- /usr/include/c++/15.2.1/stdexcept /usr/include/c++/15.2.1/exception \
- /usr/include/c++/15.2.1/bits/exception_ptr.h \
- /usr/include/c++/15.2.1/bits/cxxabi_init_exception.h \
- /usr/include/c++/15.2.1/typeinfo \
- /usr/include/c++/15.2.1/bits/nested_exception.h \
- /usr/include/c++/15.2.1/cstdint /usr/include/c++/15.2.1/bits/chrono.h \
- /usr/include/c++/15.2.1/ratio /usr/include/c++/15.2.1/ctime \
+ /usr/include/SDL2/SDL_version.h /usr/include/c++/15.2.1/filesystem \
+ /usr/include/c++/15.2.1/bits/fs_fwd.h /usr/include/c++/15.2.1/cstdint \
+ /usr/include/c++/15.2.1/bits/chrono.h /usr/include/c++/15.2.1/ratio \
+ /usr/include/c++/15.2.1/ctime \
  /usr/include/c++/15.2.1/bits/parse_numbers.h \
  /usr/include/c++/15.2.1/bits/fs_path.h /usr/include/c++/15.2.1/locale \
- /usr/include/c++/15.2.1/bits/locale_classes.h \
- /usr/include/c++/15.2.1/ext/atomicity.h \
- /usr/include/c++/15.2.1/x86_64-pc-linux-gnu/bits/gthr.h \
- /usr/include/c++/15.2.1/x86_64-pc-linux-gnu/bits/gthr-default.h \
- /usr/include/c++/15.2.1/x86_64-pc-linux-gnu/bits/atomic_word.h \
- /usr/include/sys/single_threaded.h \
- /usr/include/c++/15.2.1/bits/locale_classes.tcc \
- /usr/include/c++/15.2.1/bits/locale_facets.h \
- /usr/include/c++/15.2.1/cwctype /usr/include/wctype.h \
- /usr/include/bits/wctype-wchar.h \
- /usr/include/c++/15.2.1/x86_64-pc-linux-gnu/bits/ctype_base.h \
- /usr/include/c++/15.2.1/bits/ios_base.h \
- /usr/include/c++/15.2.1/streambuf \
- /usr/include/c++/15.2.1/bits/streambuf.tcc \
- /usr/include/c++/15.2.1/bits/streambuf_iterator.h \
- /usr/include/c++/15.2.1/x86_64-pc-linux-gnu/bits/ctype_inline.h \
- /usr/include/c++/15.2.1/bits/locale_facets.tcc \
  /usr/include/c++/15.2.1/bits/locale_facets_nonio.h \
  /usr/include/c++/15.2.1/x86_64-pc-linux-gnu/bits/time_members.h \
  /usr/include/c++/15.2.1/x86_64-pc-linux-gnu/bits/messages_members.h \
@@ -915,13 +935,8 @@ CMakeFiles/CppGoose.dir/main.cpp.o: \
  /usr/include/c++/15.2.1/bits/locale_conv.h \
  /usr/include/c++/15.2.1/iomanip \
  /usr/include/c++/15.2.1/bits/quoted_string.h \
- /usr/include/c++/15.2.1/sstream /usr/include/c++/15.2.1/istream \
- /usr/include/c++/15.2.1/ios /usr/include/c++/15.2.1/bits/basic_ios.h \
- /usr/include/c++/15.2.1/bits/basic_ios.tcc \
- /usr/include/c++/15.2.1/ostream /usr/include/c++/15.2.1/bits/ostream.h \
- /usr/include/c++/15.2.1/bits/ostream.tcc \
- /usr/include/c++/15.2.1/bits/istream.tcc \
- /usr/include/c++/15.2.1/bits/sstream.tcc /usr/include/c++/15.2.1/codecvt \
+ /usr/include/c++/15.2.1/sstream /usr/include/c++/15.2.1/bits/sstream.tcc \
+ /usr/include/c++/15.2.1/codecvt \
  /usr/include/c++/15.2.1/ext/concurrence.h \
  /usr/include/c++/15.2.1/bits/shared_ptr.h \
  /usr/include/c++/15.2.1/bits/shared_ptr_base.h \
@@ -929,8 +944,6 @@ CMakeFiles/CppGoose.dir/main.cpp.o: \
  /usr/include/c++/15.2.1/bits/fs_dir.h \
  /usr/include/c++/15.2.1/bits/fs_ops.h \
  /home/dill/Downloads/desktop-goose/Desktop\ Goose\ v0.31/DesktopGoosev0.31/include/items.h \
- /home/dill/Downloads/desktop-goose/Desktop\ Goose\ v0.31/DesktopGoosev0.31/include/config.h \
- /home/dill/Downloads/desktop-goose/Desktop\ Goose\ v0.31/DesktopGoosev0.31/include/cursor_backend.h \
  /usr/include/c++/15.2.1/memory \
  /usr/include/c++/15.2.1/bits/stl_raw_storage_iter.h \
  /usr/include/c++/15.2.1/bits/align.h \
@@ -938,4 +951,6 @@ CMakeFiles/CppGoose.dir/main.cpp.o: \
  /usr/include/c++/15.2.1/bits/atomic_base.h \
  /usr/include/c++/15.2.1/bits/atomic_lockfree_defines.h \
  /usr/include/c++/15.2.1/backward/auto_ptr.h \
- /usr/include/c++/15.2.1/pstl/glue_memory_defs.h
+ /usr/include/c++/15.2.1/pstl/glue_memory_defs.h \
+ /home/dill/Downloads/desktop-goose/Desktop\ Goose\ v0.31/DesktopGoosev0.31/include/config.h \
+ /home/dill/Downloads/desktop-goose/Desktop\ Goose\ v0.31/DesktopGoosev0.31/include/cursor_backend.h

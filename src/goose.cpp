@@ -881,7 +881,7 @@ void Goose::DrawHeldItem(cairo_t* cr) {
         cairo_stroke(cr);
 
         PangoLayout* layout = pango_cairo_create_layout(cr);
-        pango_layout_set_text(layout, heldItem->textContent.c_str(), -1);
+        pango_layout_set_text(layout, heldItem->Text().c_str(), -1);
         pango_layout_set_width(layout, (heldItem->w - 10) * PANGO_SCALE);
         cairo_move_to(cr, 5, 5);
         pango_cairo_show_layout(cr, layout);

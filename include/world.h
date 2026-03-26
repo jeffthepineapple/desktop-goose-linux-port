@@ -7,6 +7,7 @@
 #include <list>
 #include <string>
 #include <deque>
+#include <vector>
 #include <gtk/gtk.h>
 #include "goose.h"
 #include "items.h"
@@ -33,6 +34,7 @@ extern int g_screenHeight;
 extern int g_selectedGooseId;
 extern GtkWidget* g_entryNote;
 extern std::deque<std::string> g_uiLog;
+extern std::vector<GtkWidget*> g_overlayCanvases;
 extern int g_cursorGrabberId; // id of goose currently dragging the cursor, -1 = none
 
 void UiLogPush(const std::string& s);
