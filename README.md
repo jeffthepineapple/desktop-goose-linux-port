@@ -32,7 +32,7 @@ This codebase is the maintained Linux/Wayland/X11 port of the classic desktop go
 
 CppGoose is a Linux port of the classic desktop goose concept. Each goose lives in a transparent, click-through overlay window that sits above your normal desktop content. The geese roam between monitors, pick up and drop meme images and notepad-style messages, leave footprints that fade over time, and can chase or snatch your cursor when the mood strikes.
 
-The application supports multiple simultaneous geese, each with its own name and independently running behavior state machine. A control panel provides per-goose tuning and global settings at runtime.
+The application supports multiple simultaneous geese, each with its own name and independently running behavior state machine. Runtime control is CLI-only: start the daemon, inspect status, change config, spawn geese, clear them, or quit entirely from the command line.
 
 ---
 
@@ -55,13 +55,13 @@ The application supports multiple simultaneous geese, each with its own name and
 - Overlay windows are created per monitor
 - Geese can roam across monitor boundaries
 
-**Control panel**
-- GTK4 settings window for live configuration
-- Per-goose controls: name, speed, behavior toggles
-- Debug overlay toggle for visualizing state, hitboxes, and item zones
+**CLI control**
+- Start the goose daemon in the background
+- Spawn geese and clear them from the terminal
+- Quit, inspect status, or check RAM usage from the terminal
 
 **Configuration persistence**
-- Settings are read from and written to `config.ini` in the working directory
+- Settings are read from and written to `~/.config/desktop-goose/config.ini`
 - All tunable values survive restarts
 
 ---
@@ -141,13 +141,36 @@ The repository ships with some pre-generated Wayland protocol binding files. CMa
 
 ## Running
 
-Run the binary from the repository root so that the `Assets/` directory is resolved correctly:
+Run the binary from the repository root so that the `Assets/` directory is resolved correctly.
+
+The default command starts Desktop Goose in the background so you can close your terminal afterward:
 
 ```bash
 ./build/CppGoose
 ```
 
-On first launch a name prompt will appear for the initial goose. Additional geese can be added from the control panel at any time.
+You can also start it explicitly:
+
+```bash
+./build/CppGoose start
+```
+
+Or keep it attached to the current terminal for debugging:
+
+```bash
+./build/CppGoose start --foreground
+```
+
+Common CLI commands:
+
+```bash
+./build/CppGoose start
+./build/CppGoose spawn Pip
+./build/CppGoose clear
+./build/CppGoose ram
+./build/CppGoose status
+./build/CppGoose quit
+```
 
 ### Wayland notes
 
@@ -161,21 +184,20 @@ The application can run under X11 via XWayland or a native X11 session. Overlay 
 
 ## Configuration
 
-Settings are persisted to `config.ini` in the working directory. The file is created automatically on first run. You can edit it by hand or use the control panel.
+Settings are persisted to `~/.config/desktop-goose/config.ini` by default. If an older working-directory `config.ini` exists, it is still read as a fallback for migration.
 
 Selected keys:
 
 | Key | Default | Description |
 |---|---|---|
-| `goose_speed` | `2.0` | Base movement speed in pixels per tick |
-| `enable_cursor_chase` | `true` | Allow geese to chase the cursor |
-| `enable_cursor_snatch` | `true` | Allow geese to briefly grab the cursor |
-| `honk_interval_ms` | `8000` | Milliseconds between honks |
-| `footprint_lifetime_ms` | `4000` | How long footprints remain visible |
-| `item_lifetime_ms` | `15000` | How long dropped items remain on screen |
-| `debug_overlay` | `false` | Draw debug hitboxes and state labels |
+| `global_scale` | `1.0` | Base render scale for geese and dropped items |
+| `audio_enabled` | `1` | Enable or disable honks |
+| `cursor_chase_enabled` | `1` | Allow new geese to chase the cursor |
+| `cursor_chase_chance` | `3` | Default chance for cursor chase behavior |
+| `mud_lifetime` | `15` | Default footprint lifetime in seconds |
+| `debug_visuals` | `0` | Draw debug hitboxes and state labels |
 
-All values can also be changed live from the control panel without restarting.
+Settings are edited through `~/.config/desktop-goose/config.ini`. There is no settings UI and no CLI settings editor.
 
 ---
 
@@ -184,10 +206,10 @@ All values can also be changed live from the control panel without restarting.
 ```
 CppGoose/
   src/
-    main.cpp                 GTK application entry point
+    main.cpp                 GTK application entry point and daemon launch logic
     goose.cpp                Goose class: movement, animation, drawing, behavior
     world.cpp                Global state containers (geese, monitors, items, footprints)
-    ui.cpp                   Control panel, overlay drawing, tick loop
+    ui.cpp                   Overlay drawing and tick loop
     assets.cpp               Asset resolution, image/sound loading, item data construction
     config.cpp               INI-based config registry
     cursor_backend.cpp       Backend manager and selection logic

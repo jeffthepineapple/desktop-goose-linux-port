@@ -2,21 +2,20 @@ CppGoose: \
   /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/Scrt1.o \
   /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/crti.o \
   /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/crtbeginS.o \
+  CMakeFiles/CppGoose.dir/src/app_actions.cpp.o \
   CMakeFiles/CppGoose.dir/src/assets.cpp.o \
+  CMakeFiles/CppGoose.dir/src/command_socket.cpp.o \
   CMakeFiles/CppGoose.dir/src/config.cpp.o \
   CMakeFiles/CppGoose.dir/src/cursor_backend.cpp.o \
-  CMakeFiles/CppGoose.dir/src/gemini_client.cpp.o \
   CMakeFiles/CppGoose.dir/src/goose.cpp.o \
   CMakeFiles/CppGoose.dir/src/hyprland.cpp.o \
-  CMakeFiles/CppGoose.dir/src/tool_manager.cpp.o \
+  CMakeFiles/CppGoose.dir/src/ram_tracker.cpp.o \
   CMakeFiles/CppGoose.dir/src/ui.cpp.o \
-  CMakeFiles/CppGoose.dir/src/whisper_manager.cpp.o \
   CMakeFiles/CppGoose.dir/src/wlroots_backend.cpp.o \
   CMakeFiles/CppGoose.dir/src/world.cpp.o \
   CMakeFiles/CppGoose.dir/src/x11_backend.cpp.o \
   CMakeFiles/CppGoose.dir/main.cpp.o \
   CMakeFiles/CppGoose.dir/wlr-virtual-pointer-unstable-v1-protocol.c.o \
-  third_party/whisper.cpp/src/libwhisper.so.1.8.3 \
   /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/libgtk-4.so \
   /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/libpangocairo-1.0.so \
   /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/libpango-1.0.so \
@@ -42,16 +41,12 @@ CppGoose: \
   /usr/lib/libXext.so \
   /usr/lib/libXtst.so \
   /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/libwayland-client.so \
-  /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/libcurl.so \
   /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/libm.so \
   /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/libm.so \
   /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/libm.so \
   /usr/lib/libm.so.6 \
   /usr/lib/libmvec.so.1 \
   /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/libstdc++fs.a \
-  third_party/whisper.cpp/ggml/src/libggml.so.0.9.5 \
-  third_party/whisper.cpp/ggml/src/libggml-cpu.so.0.9.5 \
-  third_party/whisper.cpp/ggml/src/libggml-base.so.0.9.5 \
   /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/libcairo-gobject.so \
   /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/libcairo.so \
   /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/libvulkan.so \
@@ -70,13 +65,6 @@ CppGoose: \
   /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/libm.so \
   /usr/lib/libm.so.6 \
   /usr/lib/libmvec.so.1 \
-  /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/libcurl.so \
-  /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/libm.so \
-  /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/libm.so \
-  /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/libm.so \
-  /usr/lib/libm.so.6 \
-  /usr/lib/libmvec.so.1 \
-  /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/libcurl.so \
   /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/libstdc++fs.a \
   /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/libstdc++.so \
   /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/libm.so \
@@ -167,33 +155,7 @@ CppGoose: \
   /usr/lib/libpcre2-8.so.0 \
   /usr/lib32/libuuid.so.1 \
   /usr/lib/libuuid.so.1 \
-  /usr/lib32/libnghttp3.so.9 \
-  /usr/lib/libnghttp3.so.9 \
-  /usr/lib32/libngtcp2_crypto_ossl.so.0 \
-  /usr/lib/libngtcp2_crypto_ossl.so.0 \
-  /usr/lib32/libngtcp2.so.16 \
-  /usr/lib/libngtcp2.so.16 \
-  /usr/lib32/libnghttp2.so.14 \
-  /usr/lib/libnghttp2.so.14 \
-  /usr/lib32/libidn2.so.0 \
-  /usr/lib/libidn2.so.0 \
-  /usr/lib32/libssh2.so.1 \
-  /usr/lib/libssh2.so.1 \
-  /usr/lib32/libpsl.so.5 \
-  /usr/lib/libpsl.so.5 \
-  /usr/lib32/libssl.so.3 \
-  /usr/lib/libssl.so.3 \
-  /usr/lib32/libcrypto.so.3 \
-  /usr/lib/libcrypto.so.3 \
-  /usr/lib32/libgssapi_krb5.so.2 \
-  /usr/lib/libgssapi_krb5.so.2 \
-  /usr/lib32/libzstd.so.1 \
-  /usr/lib/libzstd.so.1 \
-  /usr/lib32/libbrotlidec.so.1 \
-  /usr/lib/libbrotlidec.so.1 \
   /usr/lib/ld-linux-x86-64.so.2 \
-  /usr/lib32/libgomp.so.1 \
-  /usr/lib/libgomp.so.1 \
   /usr/lib32/libexpat.so.1 \
   /usr/lib/libexpat.so.1 \
   /usr/lib32/libgsttag-1.0.so.0 \
@@ -232,6 +194,8 @@ CppGoose: \
   /usr/lib/libjbig.so.2.1 \
   /usr/lib32/liblzma.so.5 \
   /usr/lib/liblzma.so.5 \
+  /usr/lib32/libzstd.so.1 \
+  /usr/lib/libzstd.so.1 \
   /usr/lib/libwebp.so.7 \
   /usr/lib/liblzo2.so.2 \
   /usr/lib/libavahi-common.so.3 \
@@ -244,6 +208,8 @@ CppGoose: \
   /usr/lib/libdatrie.so.1 \
   /usr/lib32/libbz2.so.1.0 \
   /usr/lib/libbz2.so.1.0 \
+  /usr/lib32/libbrotlidec.so.1 \
+  /usr/lib/libbrotlidec.so.1 \
   /usr/lib/libseccomp.so.2 \
   /usr/lib32/libXau.so.6 \
   /usr/lib/libXau.so.6 \
@@ -251,22 +217,6 @@ CppGoose: \
   /usr/lib/libXdmcp.so.6 \
   /usr/lib32/libblkid.so.1 \
   /usr/lib/libblkid.so.1 \
-  /usr/lib32/libunistring.so.5 \
-  /usr/lib/libunistring.so.5 \
-  /usr/lib32/libkrb5.so.3 \
-  /usr/lib/libkrb5.so.3 \
-  /usr/lib32/libk5crypto.so.3 \
-  /usr/lib/libk5crypto.so.3 \
-  /usr/lib32/libcom_err.so.2 \
-  /usr/lib/libcom_err.so.2 \
-  /usr/lib32/libkrb5support.so.0 \
-  /usr/lib/libkrb5support.so.0 \
-  /usr/lib32/libkeyutils.so.1 \
-  /usr/lib/libkeyutils.so.1 \
-  /usr/lib32/libresolv.so.2 \
-  /usr/lib/libresolv.so.2 \
-  /usr/lib32/libbrotlicommon.so.1 \
-  /usr/lib/libbrotlicommon.so.1 \
   /usr/lib32/libgstaudio-1.0.so.0 \
   /usr/lib/libgstaudio-1.0.so.0 \
   /usr/lib32/libelf.so.1 \
@@ -281,6 +231,10 @@ CppGoose: \
   /usr/lib/libleancrypto.so.1 \
   /usr/lib32/libp11-kit.so.0 \
   /usr/lib/libp11-kit.so.0 \
+  /usr/lib32/libidn2.so.0 \
+  /usr/lib/libidn2.so.0 \
+  /usr/lib32/libunistring.so.5 \
+  /usr/lib/libunistring.so.5 \
   /usr/lib32/libtasn1.so.6 \
   /usr/lib/libtasn1.so.6 \
   /usr/lib32/libhogweed.so.6 \
@@ -289,6 +243,8 @@ CppGoose: \
   /usr/lib/libnettle.so.8 \
   /usr/lib32/libgmp.so.10 \
   /usr/lib/libgmp.so.10 \
+  /usr/lib32/libbrotlicommon.so.1 \
+  /usr/lib/libbrotlicommon.so.1 \
   /usr/lib32/libicudata.so.78 \
   /usr/lib/libicudata.so.78 \
   /usr/lib32/libsystemd.so.0 \
@@ -300,23 +256,23 @@ CppGoose: \
 
 /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/crtbeginS.o:
 
+CMakeFiles/CppGoose.dir/src/app_actions.cpp.o:
+
 CMakeFiles/CppGoose.dir/src/assets.cpp.o:
+
+CMakeFiles/CppGoose.dir/src/command_socket.cpp.o:
 
 CMakeFiles/CppGoose.dir/src/config.cpp.o:
 
 CMakeFiles/CppGoose.dir/src/cursor_backend.cpp.o:
 
-CMakeFiles/CppGoose.dir/src/gemini_client.cpp.o:
-
 CMakeFiles/CppGoose.dir/src/goose.cpp.o:
 
 CMakeFiles/CppGoose.dir/src/hyprland.cpp.o:
 
-CMakeFiles/CppGoose.dir/src/tool_manager.cpp.o:
+CMakeFiles/CppGoose.dir/src/ram_tracker.cpp.o:
 
 CMakeFiles/CppGoose.dir/src/ui.cpp.o:
-
-CMakeFiles/CppGoose.dir/src/whisper_manager.cpp.o:
 
 CMakeFiles/CppGoose.dir/src/wlroots_backend.cpp.o:
 
@@ -327,8 +283,6 @@ CMakeFiles/CppGoose.dir/src/x11_backend.cpp.o:
 CMakeFiles/CppGoose.dir/main.cpp.o:
 
 CMakeFiles/CppGoose.dir/wlr-virtual-pointer-unstable-v1-protocol.c.o:
-
-third_party/whisper.cpp/src/libwhisper.so.1.8.3:
 
 /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/libgtk-4.so:
 
@@ -380,8 +334,6 @@ third_party/whisper.cpp/src/libwhisper.so.1.8.3:
 
 /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/libwayland-client.so:
 
-/usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/libcurl.so:
-
 /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/libm.so:
 
 /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/libm.so:
@@ -393,12 +345,6 @@ third_party/whisper.cpp/src/libwhisper.so.1.8.3:
 /usr/lib/libmvec.so.1:
 
 /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/libstdc++fs.a:
-
-third_party/whisper.cpp/ggml/src/libggml.so.0.9.5:
-
-third_party/whisper.cpp/ggml/src/libggml-cpu.so.0.9.5:
-
-third_party/whisper.cpp/ggml/src/libggml-base.so.0.9.5:
 
 /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/libcairo-gobject.so:
 
@@ -435,20 +381,6 @@ third_party/whisper.cpp/ggml/src/libggml-base.so.0.9.5:
 /usr/lib/libm.so.6:
 
 /usr/lib/libmvec.so.1:
-
-/usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/libcurl.so:
-
-/usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/libm.so:
-
-/usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/libm.so:
-
-/usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/libm.so:
-
-/usr/lib/libm.so.6:
-
-/usr/lib/libmvec.so.1:
-
-/usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/libcurl.so:
 
 /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/libstdc++fs.a:
 
@@ -630,59 +562,7 @@ third_party/whisper.cpp/ggml/src/libggml-base.so.0.9.5:
 
 /usr/lib/libuuid.so.1:
 
-/usr/lib32/libnghttp3.so.9:
-
-/usr/lib/libnghttp3.so.9:
-
-/usr/lib32/libngtcp2_crypto_ossl.so.0:
-
-/usr/lib/libngtcp2_crypto_ossl.so.0:
-
-/usr/lib32/libngtcp2.so.16:
-
-/usr/lib/libngtcp2.so.16:
-
-/usr/lib32/libnghttp2.so.14:
-
-/usr/lib/libnghttp2.so.14:
-
-/usr/lib32/libidn2.so.0:
-
-/usr/lib/libidn2.so.0:
-
-/usr/lib32/libssh2.so.1:
-
-/usr/lib/libssh2.so.1:
-
-/usr/lib32/libpsl.so.5:
-
-/usr/lib/libpsl.so.5:
-
-/usr/lib32/libssl.so.3:
-
-/usr/lib/libssl.so.3:
-
-/usr/lib32/libcrypto.so.3:
-
-/usr/lib/libcrypto.so.3:
-
-/usr/lib32/libgssapi_krb5.so.2:
-
-/usr/lib/libgssapi_krb5.so.2:
-
-/usr/lib32/libzstd.so.1:
-
-/usr/lib/libzstd.so.1:
-
-/usr/lib32/libbrotlidec.so.1:
-
-/usr/lib/libbrotlidec.so.1:
-
 /usr/lib/ld-linux-x86-64.so.2:
-
-/usr/lib32/libgomp.so.1:
-
-/usr/lib/libgomp.so.1:
 
 /usr/lib32/libexpat.so.1:
 
@@ -760,6 +640,10 @@ third_party/whisper.cpp/ggml/src/libggml-base.so.0.9.5:
 
 /usr/lib/liblzma.so.5:
 
+/usr/lib32/libzstd.so.1:
+
+/usr/lib/libzstd.so.1:
+
 /usr/lib/libwebp.so.7:
 
 /usr/lib/liblzo2.so.2:
@@ -784,6 +668,10 @@ third_party/whisper.cpp/ggml/src/libggml-base.so.0.9.5:
 
 /usr/lib/libbz2.so.1.0:
 
+/usr/lib32/libbrotlidec.so.1:
+
+/usr/lib/libbrotlidec.so.1:
+
 /usr/lib/libseccomp.so.2:
 
 /usr/lib32/libXau.so.6:
@@ -797,38 +685,6 @@ third_party/whisper.cpp/ggml/src/libggml-base.so.0.9.5:
 /usr/lib32/libblkid.so.1:
 
 /usr/lib/libblkid.so.1:
-
-/usr/lib32/libunistring.so.5:
-
-/usr/lib/libunistring.so.5:
-
-/usr/lib32/libkrb5.so.3:
-
-/usr/lib/libkrb5.so.3:
-
-/usr/lib32/libk5crypto.so.3:
-
-/usr/lib/libk5crypto.so.3:
-
-/usr/lib32/libcom_err.so.2:
-
-/usr/lib/libcom_err.so.2:
-
-/usr/lib32/libkrb5support.so.0:
-
-/usr/lib/libkrb5support.so.0:
-
-/usr/lib32/libkeyutils.so.1:
-
-/usr/lib/libkeyutils.so.1:
-
-/usr/lib32/libresolv.so.2:
-
-/usr/lib/libresolv.so.2:
-
-/usr/lib32/libbrotlicommon.so.1:
-
-/usr/lib/libbrotlicommon.so.1:
 
 /usr/lib32/libgstaudio-1.0.so.0:
 
@@ -858,6 +714,14 @@ third_party/whisper.cpp/ggml/src/libggml-base.so.0.9.5:
 
 /usr/lib/libp11-kit.so.0:
 
+/usr/lib32/libidn2.so.0:
+
+/usr/lib/libidn2.so.0:
+
+/usr/lib32/libunistring.so.5:
+
+/usr/lib/libunistring.so.5:
+
 /usr/lib32/libtasn1.so.6:
 
 /usr/lib/libtasn1.so.6:
@@ -873,6 +737,10 @@ third_party/whisper.cpp/ggml/src/libggml-base.so.0.9.5:
 /usr/lib32/libgmp.so.10:
 
 /usr/lib/libgmp.so.10:
+
+/usr/lib32/libbrotlicommon.so.1:
+
+/usr/lib/libbrotlicommon.so.1:
 
 /usr/lib32/libicudata.so.78:
 

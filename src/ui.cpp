@@ -14,6 +14,7 @@
 #include <pango/pangocairo.h>
 #include <chrono>
 #include "cursor_backend.h"
+#include "ram_tracker.h"
 
 namespace fs = std::filesystem;
 
@@ -77,9 +78,14 @@ static GtkWidget* g_sliderGooseMudChance = nullptr, * g_labelGooseMudChance = nu
 static GtkWidget* g_sliderGooseMudLife = nullptr,   * g_labelGooseMudLife = nullptr;
 static GtkWidget* g_sliderGooseCursorChance = nullptr, * g_labelGooseCursorChance = nullptr;
 static GtkWidget* g_sliderGooseSnatchDur = nullptr,     * g_labelGooseSnatchDur = nullptr;
+static GtkApplication* g_uiApp = nullptr;
+static GtkWidget* g_escapeHoldHudWindow = nullptr;
+static GtkWidget* g_escapeHoldHudBar = nullptr;
 
 // Forward decl: used by per-goose UI callbacks below.
 static void RefreshSelectedGooseUi();
+void cb_spawn(GtkButton*, gpointer);
+void cb_clear(GtkButton*, gpointer);
 
 static void ApplyDefaultsToGoose(Goose* g) {
     if (!g) return;
@@ -117,8 +123,157 @@ static GtkWidget* g_labelSelectedInfo = nullptr;
 // Debug overlay options (UI-only; not persisted in config.ini)
 static bool g_debugOverlayVerbose = false;
 static bool g_debugOverlaySelectedOnly = false;
+static constexpr double ESC_KILL_HOLD_SECONDS = 1.0;
+static bool g_escapeHeld = false;
+static gint64 g_escapeHeldSinceUs = 0;
+static bool g_escapeKillTriggered = false;
 
 static void RefreshSelectedGooseUi();
+
+static double GetEscapeHoldProgress() {
+    if (!g_escapeHeld || g_escapeHeldSinceUs == 0) return 0.0;
+
+    const gint64 nowUs = g_get_monotonic_time();
+    const double heldSeconds = (double)(nowUs - g_escapeHeldSinceUs) / 1000000.0;
+    return std::clamp(heldSeconds / ESC_KILL_HOLD_SECONDS, 0.0, 1.0);
+}
+
+static void EnsureEscapeHoldHud() {
+    if (g_escapeHoldHudWindow || !g_uiApp) return;
+
+    GtkWindow* win = GTK_WINDOW(gtk_application_window_new(g_uiApp));
+    g_escapeHoldHudWindow = GTK_WIDGET(win);
+    gtk_window_set_decorated(win, FALSE);
+    gtk_window_set_resizable(win, FALSE);
+    gtk_window_set_default_size(win, 320, 64);
+
+    gtk_layer_init_for_window(win);
+    gtk_layer_set_layer(win, GTK_LAYER_SHELL_LAYER_TOP);
+    gtk_layer_set_anchor(win, GTK_LAYER_SHELL_EDGE_LEFT, 1);
+    gtk_layer_set_anchor(win, GTK_LAYER_SHELL_EDGE_RIGHT, 1);
+    gtk_layer_set_anchor(win, GTK_LAYER_SHELL_EDGE_BOTTOM, 1);
+    gtk_layer_set_keyboard_mode(win, GTK_LAYER_SHELL_KEYBOARD_MODE_NONE);
+    gtk_layer_set_margin(win, GTK_LAYER_SHELL_EDGE_BOTTOM, 20);
+
+    GtkWidget* outer = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_set_halign(outer, GTK_ALIGN_CENTER);
+    gtk_widget_set_valign(outer, GTK_ALIGN_CENTER);
+    gtk_window_set_child(win, outer);
+
+    GtkWidget* frame = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
+    gtk_widget_set_size_request(frame, 320, -1);
+    gtk_widget_set_margin_top(frame, 10);
+    gtk_widget_set_margin_bottom(frame, 10);
+    gtk_widget_set_margin_start(frame, 12);
+    gtk_widget_set_margin_end(frame, 12);
+    gtk_box_append(GTK_BOX(outer), frame);
+
+    GtkWidget* label = gtk_label_new("Hold Esc to clear geese");
+    gtk_widget_set_halign(label, GTK_ALIGN_CENTER);
+    gtk_box_append(GTK_BOX(frame), label);
+
+    g_escapeHoldHudBar = gtk_progress_bar_new();
+    gtk_progress_bar_set_show_text(GTK_PROGRESS_BAR(g_escapeHoldHudBar), FALSE);
+    gtk_widget_set_hexpand(g_escapeHoldHudBar, TRUE);
+    gtk_widget_set_size_request(g_escapeHoldHudBar, 280, 16);
+    gtk_box_append(GTK_BOX(frame), g_escapeHoldHudBar);
+
+    GtkCssProvider* css = gtk_css_provider_new();
+    gtk_css_provider_load_from_string(css,
+        ".escape-hold-hud { background: rgba(18, 20, 24, 0.88); border-radius: 12px; padding: 8px; }"
+        ".escape-hold-hud progressbar trough { min-height: 16px; background: rgba(255, 255, 255, 0.12); border-radius: 999px; }"
+        ".escape-hold-hud progressbar progress { min-height: 16px; background: rgba(236, 72, 52, 0.96); border-radius: 999px; }"
+        ".escape-hold-hud label { color: white; font-weight: 700; }");
+    gtk_widget_add_css_class(frame, "escape-hold-hud");
+    gtk_style_context_add_provider_for_display(gdk_display_get_default(), GTK_STYLE_PROVIDER(css), 801);
+    g_object_unref(css);
+
+    gtk_widget_set_visible(g_escapeHoldHudWindow, FALSE);
+}
+
+static void UpdateEscapeHoldHud() {
+    EnsureEscapeHoldHud();
+    if (!g_escapeHoldHudWindow || !g_escapeHoldHudBar) return;
+
+    const double progress = GetEscapeHoldProgress();
+    if (progress <= 0.0 || g_escapeKillTriggered) {
+        gtk_widget_set_visible(g_escapeHoldHudWindow, FALSE);
+        return;
+    }
+
+    gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(g_escapeHoldHudBar), progress);
+    gtk_widget_set_visible(g_escapeHoldHudWindow, TRUE);
+    gtk_window_present(GTK_WINDOW(g_escapeHoldHudWindow));
+}
+
+static void ClearAllGooseState() {
+    for (auto& item : g_droppedItems) {
+        delete item.data;
+    }
+    g_droppedItems.clear();
+    g_footprints.clear();
+    g_geese.clear();
+    g_cursorGrabberId = -1;
+    g_selectedGooseId = 0;
+    g_nextId = 0;
+    RefreshSelectedGooseUi();
+}
+
+static void MaybeTriggerEscapeKill() {
+    if (!g_escapeHeld || g_escapeKillTriggered) return;
+
+    const gint64 nowUs = g_get_monotonic_time();
+    const double heldSeconds = (double)(nowUs - g_escapeHeldSinceUs) / 1000000.0;
+    if (heldSeconds < ESC_KILL_HOLD_SECONDS) return;
+
+    ClearAllGooseState();
+    UiLogPush("Emergency clear: held Esc for 1 second removed all geese.");
+    g_escapeKillTriggered = true;
+    UpdateEscapeHoldHud();
+}
+
+static gboolean cb_window_key_pressed(GtkEventControllerKey*, guint keyval, guint, GdkModifierType, gpointer) {
+    if (keyval != GDK_KEY_Escape) return FALSE;
+
+    if (!g_escapeHeld) {
+        g_escapeHeld = true;
+        g_escapeHeldSinceUs = g_get_monotonic_time();
+        g_escapeKillTriggered = false;
+    }
+    UpdateEscapeHoldHud();
+    return FALSE;
+}
+
+static void cb_window_key_released(GtkEventControllerKey*, guint keyval, guint, GdkModifierType, gpointer) {
+    if (keyval != GDK_KEY_Escape) return;
+
+    g_escapeHeld = false;
+    g_escapeHeldSinceUs = 0;
+    g_escapeKillTriggered = false;
+    UpdateEscapeHoldHud();
+}
+
+static void ResetEscapeHoldState() {
+    g_escapeHeld = false;
+    g_escapeHeldSinceUs = 0;
+    g_escapeKillTriggered = false;
+    UpdateEscapeHoldHud();
+}
+
+static void cb_window_focus_leave(GtkEventControllerFocus*, gpointer) {
+    ResetEscapeHoldState();
+}
+
+static void AttachEmergencyEscController(GtkWidget* window) {
+    GtkEventController* controller = gtk_event_controller_key_new();
+    g_signal_connect(controller, "key-pressed", G_CALLBACK(cb_window_key_pressed), NULL);
+    g_signal_connect(controller, "key-released", G_CALLBACK(cb_window_key_released), NULL);
+    gtk_widget_add_controller(window, controller);
+
+    GtkEventController* focus = gtk_event_controller_focus_new();
+    g_signal_connect(focus, "leave", G_CALLBACK(cb_window_focus_leave), NULL);
+    gtk_widget_add_controller(window, focus);
+}
 
 // --- Input region ------------------------------------------------------------
 // Make overlay click-through except where geese/items are drawn.
@@ -432,7 +587,7 @@ void draw_overlay(GtkDrawingArea* area, cairo_t* cr, int width, int height, gpoi
             cairo_stroke(cr);
 
             PangoLayout* layout = pango_cairo_create_layout(cr);
-            pango_layout_set_text(layout, item.data->textContent.c_str(), -1);
+            pango_layout_set_text(layout, item.data->Text().c_str(), -1);
             pango_layout_set_width(layout, (item.data->w - 10) * PANGO_SCALE);
             cairo_move_to(cr, 5, 5);
             pango_cairo_show_layout(cr, layout);
@@ -629,6 +784,8 @@ void draw_overlay(GtkDrawingArea* area, cairo_t* cr, int width, int height, gpoi
 
 gboolean on_tick(gpointer data) {
     g_time += 1.0 / 60.0;
+    MaybeTriggerEscapeKill();
+    UpdateEscapeHoldHud();
 
     for (auto& g : g_geese)
         g.Update(1.0 / 60.0, g_time, g_screenWidth, g_screenHeight);
@@ -696,7 +853,7 @@ void cb_spawn(GtkButton*, gpointer) {
         g.noteFetchBias = 0;
     }
 }
-void cb_clear(GtkButton*, gpointer) { g_geese.clear(); g_droppedItems.clear(); g_nextId = 0; }
+void cb_clear(GtkButton*, gpointer) { ClearAllGooseState(); }
 void cb_clear_log(GtkButton*, gpointer) { g_uiLog.clear(); }
 
 void cb_fetch_meme(GtkButton*, gpointer) {
@@ -1006,18 +1163,10 @@ void cb_attack_cursor(GtkButton*, gpointer) {
     }
 }
 
-// When the control panel is closed, just hide it instead of quitting the whole
-// application. This lets users close/move the window without terminating the app.
+// Any legacy windows hide when closed. The runtime control surface is CLI-only.
 static gboolean cb_control_close(GtkWindow* window, gpointer) {
-    // Ask the window's application to quit; this will terminate the program.
-    GtkApplication* app = gtk_window_get_application(window);
-    if (app) {
-        g_application_quit(G_APPLICATION(app));
-    } else {
-        // Fallback: hide the window if we can't find the app
-        gtk_widget_set_visible(GTK_WIDGET(window), FALSE);
-    }
-    return TRUE; // Stop further handling
+    gtk_widget_set_visible(GTK_WIDGET(window), FALSE);
+    return TRUE;
 }
 
 // --- UI helpers --------------------------------------------------------------
@@ -1150,7 +1299,6 @@ void PopulateConfigSection(GtkWidget* container, const char* sectionName) {
     }
 }
 
-
 // --- Initial Name Prompt -----------------------------------------------------
 struct PromptData {
     GtkWidget* dialog;
@@ -1176,6 +1324,7 @@ void ShowInitialNamePrompt(GtkApplication* app) {
     GtkWidget* win = gtk_application_window_new(app);
     gtk_window_set_title(GTK_WINDOW(win), "New Goose");
     gtk_window_set_default_size(GTK_WINDOW(win), 280, 120);
+    AttachEmergencyEscController(win);
     
     GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
     gtk_widget_set_margin_top(box, 15);
@@ -1211,9 +1360,11 @@ static void cb_root_size_allocate(GtkWidget* widget, GtkAllocation* allocation, 
 
 // --- Control panel -----------------------------------------------------------
 void activate_control_panel(GtkApplication* app) {
+    g_uiApp = app;
     GtkWidget* win = gtk_application_window_new(app);
     gtk_window_set_title(GTK_WINDOW(win), "Goose Control Panel");
     gtk_window_set_default_size(GTK_WINDOW(win), 360, 680);
+    AttachEmergencyEscController(win);
 
     GtkWidget* notebook = gtk_notebook_new();
     gtk_window_set_child(GTK_WINDOW(win), notebook);
@@ -1382,6 +1533,7 @@ void activate_control_panel(GtkApplication* app) {
 
 // --- Overlay window ----------------------------------------------------------
 void setup_overlay_window(GtkApplication* app) {
+    g_uiApp = app;
     ASSET_ROOT = fs::current_path() / ASSET_ROOT_NAME;
     if (!fs::exists(ASSET_ROOT))
         ASSET_ROOT = fs::canonical("/proc/self/exe").parent_path() / ASSET_ROOT_NAME;
@@ -1394,6 +1546,7 @@ void setup_overlay_window(GtkApplication* app) {
     
     int minX = 0, minY = 0, maxX = 0, maxY = 0;
     g_monitors.clear();
+    g_overlayCanvases.clear();
 
     for (unsigned int i = 0; i < g_list_model_get_n_items(monitors); i++) {
         GdkMonitor* monitor = (GdkMonitor*)g_list_model_get_item(monitors, i);
@@ -1428,6 +1581,7 @@ void setup_overlay_window(GtkApplication* app) {
         // Pass the MonitorInfo reference
         gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(canvas), draw_overlay, &g_monitors.back(), NULL);
         gtk_window_set_child(overlay, canvas);
+        g_overlayCanvases.push_back(canvas);
 
         g_timeout_add(16, on_tick, canvas);
         gtk_window_present(overlay);
@@ -1449,4 +1603,6 @@ void setup_overlay_window(GtkApplication* app) {
     GtkCssProvider* css = gtk_css_provider_new();
     gtk_css_provider_load_from_string(css, "window { background: transparent; }");
     gtk_style_context_add_provider_for_display(display, GTK_STYLE_PROVIDER(css), 800);
+    // Initialize RAM tracker (pushes samples to the in-game UI log once per second)
+    RamTracker_Init();
 }

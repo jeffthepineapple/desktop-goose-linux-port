@@ -4,6 +4,7 @@ project(CppGoose)
 set(CMAKE_CXX_STANDARD 17)
 
 find_package(PkgConfig REQUIRED)
+find_package(Threads REQUIRED)
 pkg_check_modules(GTK4 REQUIRED gtk4)
 pkg_check_modules(LS REQUIRED gtk4-layer-shell-0)
 pkg_check_modules(SDL2 REQUIRED sdl2)
@@ -71,6 +72,7 @@ target_link_libraries(CppGoose
     ${X11_LIBRARIES}
     ${X11_XTest_LIB}
     ${WAYLAND_CLIENT_LIBRARIES}
+    Threads::Threads
     m
     stdc++fs
 )
