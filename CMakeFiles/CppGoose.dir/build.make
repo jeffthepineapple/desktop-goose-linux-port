@@ -178,10 +178,24 @@ CMakeFiles/CppGoose.dir/src/hyprland.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/CppGoose.dir/src/hyprland.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S "/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/src/hyprland.cpp" -o CMakeFiles/CppGoose.dir/src/hyprland.cpp.s
 
+CMakeFiles/CppGoose.dir/src/ram_tracker.cpp.o: CMakeFiles/CppGoose.dir/flags.make
+CMakeFiles/CppGoose.dir/src/ram_tracker.cpp.o: src/ram_tracker.cpp
+CMakeFiles/CppGoose.dir/src/ram_tracker.cpp.o: CMakeFiles/CppGoose.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/CppGoose.dir/src/ram_tracker.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CppGoose.dir/src/ram_tracker.cpp.o -MF CMakeFiles/CppGoose.dir/src/ram_tracker.cpp.o.d -o CMakeFiles/CppGoose.dir/src/ram_tracker.cpp.o -c "/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/src/ram_tracker.cpp"
+
+CMakeFiles/CppGoose.dir/src/ram_tracker.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/CppGoose.dir/src/ram_tracker.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E "/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/src/ram_tracker.cpp" > CMakeFiles/CppGoose.dir/src/ram_tracker.cpp.i
+
+CMakeFiles/CppGoose.dir/src/ram_tracker.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/CppGoose.dir/src/ram_tracker.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S "/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/src/ram_tracker.cpp" -o CMakeFiles/CppGoose.dir/src/ram_tracker.cpp.s
+
 CMakeFiles/CppGoose.dir/src/ui.cpp.o: CMakeFiles/CppGoose.dir/flags.make
 CMakeFiles/CppGoose.dir/src/ui.cpp.o: src/ui.cpp
 CMakeFiles/CppGoose.dir/src/ui.cpp.o: CMakeFiles/CppGoose.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/CppGoose.dir/src/ui.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object CMakeFiles/CppGoose.dir/src/ui.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CppGoose.dir/src/ui.cpp.o -MF CMakeFiles/CppGoose.dir/src/ui.cpp.o.d -o CMakeFiles/CppGoose.dir/src/ui.cpp.o -c "/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/src/ui.cpp"
 
 CMakeFiles/CppGoose.dir/src/ui.cpp.i: cmake_force
@@ -195,7 +209,7 @@ CMakeFiles/CppGoose.dir/src/ui.cpp.s: cmake_force
 CMakeFiles/CppGoose.dir/src/wlroots_backend.cpp.o: CMakeFiles/CppGoose.dir/flags.make
 CMakeFiles/CppGoose.dir/src/wlroots_backend.cpp.o: src/wlroots_backend.cpp
 CMakeFiles/CppGoose.dir/src/wlroots_backend.cpp.o: CMakeFiles/CppGoose.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object CMakeFiles/CppGoose.dir/src/wlroots_backend.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_12) "Building CXX object CMakeFiles/CppGoose.dir/src/wlroots_backend.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CppGoose.dir/src/wlroots_backend.cpp.o -MF CMakeFiles/CppGoose.dir/src/wlroots_backend.cpp.o.d -o CMakeFiles/CppGoose.dir/src/wlroots_backend.cpp.o -c "/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/src/wlroots_backend.cpp"
 
 CMakeFiles/CppGoose.dir/src/wlroots_backend.cpp.i: cmake_force
@@ -209,7 +223,7 @@ CMakeFiles/CppGoose.dir/src/wlroots_backend.cpp.s: cmake_force
 CMakeFiles/CppGoose.dir/src/world.cpp.o: CMakeFiles/CppGoose.dir/flags.make
 CMakeFiles/CppGoose.dir/src/world.cpp.o: src/world.cpp
 CMakeFiles/CppGoose.dir/src/world.cpp.o: CMakeFiles/CppGoose.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_12) "Building CXX object CMakeFiles/CppGoose.dir/src/world.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_13) "Building CXX object CMakeFiles/CppGoose.dir/src/world.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CppGoose.dir/src/world.cpp.o -MF CMakeFiles/CppGoose.dir/src/world.cpp.o.d -o CMakeFiles/CppGoose.dir/src/world.cpp.o -c "/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/src/world.cpp"
 
 CMakeFiles/CppGoose.dir/src/world.cpp.i: cmake_force
@@ -223,7 +237,7 @@ CMakeFiles/CppGoose.dir/src/world.cpp.s: cmake_force
 CMakeFiles/CppGoose.dir/src/x11_backend.cpp.o: CMakeFiles/CppGoose.dir/flags.make
 CMakeFiles/CppGoose.dir/src/x11_backend.cpp.o: src/x11_backend.cpp
 CMakeFiles/CppGoose.dir/src/x11_backend.cpp.o: CMakeFiles/CppGoose.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_13) "Building CXX object CMakeFiles/CppGoose.dir/src/x11_backend.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_14) "Building CXX object CMakeFiles/CppGoose.dir/src/x11_backend.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CppGoose.dir/src/x11_backend.cpp.o -MF CMakeFiles/CppGoose.dir/src/x11_backend.cpp.o.d -o CMakeFiles/CppGoose.dir/src/x11_backend.cpp.o -c "/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/src/x11_backend.cpp"
 
 CMakeFiles/CppGoose.dir/src/x11_backend.cpp.i: cmake_force
@@ -237,7 +251,7 @@ CMakeFiles/CppGoose.dir/src/x11_backend.cpp.s: cmake_force
 CMakeFiles/CppGoose.dir/main.cpp.o: CMakeFiles/CppGoose.dir/flags.make
 CMakeFiles/CppGoose.dir/main.cpp.o: main.cpp
 CMakeFiles/CppGoose.dir/main.cpp.o: CMakeFiles/CppGoose.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_14) "Building CXX object CMakeFiles/CppGoose.dir/main.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_15) "Building CXX object CMakeFiles/CppGoose.dir/main.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/CppGoose.dir/main.cpp.o -MF CMakeFiles/CppGoose.dir/main.cpp.o.d -o CMakeFiles/CppGoose.dir/main.cpp.o -c "/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/main.cpp"
 
 CMakeFiles/CppGoose.dir/main.cpp.i: cmake_force
@@ -251,7 +265,7 @@ CMakeFiles/CppGoose.dir/main.cpp.s: cmake_force
 CMakeFiles/CppGoose.dir/wlr-virtual-pointer-unstable-v1-protocol.c.o: CMakeFiles/CppGoose.dir/flags.make
 CMakeFiles/CppGoose.dir/wlr-virtual-pointer-unstable-v1-protocol.c.o: wlr-virtual-pointer-unstable-v1-protocol.c
 CMakeFiles/CppGoose.dir/wlr-virtual-pointer-unstable-v1-protocol.c.o: CMakeFiles/CppGoose.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_15) "Building C object CMakeFiles/CppGoose.dir/wlr-virtual-pointer-unstable-v1-protocol.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_16) "Building C object CMakeFiles/CppGoose.dir/wlr-virtual-pointer-unstable-v1-protocol.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/CppGoose.dir/wlr-virtual-pointer-unstable-v1-protocol.c.o -MF CMakeFiles/CppGoose.dir/wlr-virtual-pointer-unstable-v1-protocol.c.o.d -o CMakeFiles/CppGoose.dir/wlr-virtual-pointer-unstable-v1-protocol.c.o -c "/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/wlr-virtual-pointer-unstable-v1-protocol.c"
 
 CMakeFiles/CppGoose.dir/wlr-virtual-pointer-unstable-v1-protocol.c.i: cmake_force
@@ -271,6 +285,7 @@ CppGoose_OBJECTS = \
 "CMakeFiles/CppGoose.dir/src/cursor_backend.cpp.o" \
 "CMakeFiles/CppGoose.dir/src/goose.cpp.o" \
 "CMakeFiles/CppGoose.dir/src/hyprland.cpp.o" \
+"CMakeFiles/CppGoose.dir/src/ram_tracker.cpp.o" \
 "CMakeFiles/CppGoose.dir/src/ui.cpp.o" \
 "CMakeFiles/CppGoose.dir/src/wlroots_backend.cpp.o" \
 "CMakeFiles/CppGoose.dir/src/world.cpp.o" \
@@ -288,6 +303,7 @@ CppGoose: CMakeFiles/CppGoose.dir/src/config.cpp.o
 CppGoose: CMakeFiles/CppGoose.dir/src/cursor_backend.cpp.o
 CppGoose: CMakeFiles/CppGoose.dir/src/goose.cpp.o
 CppGoose: CMakeFiles/CppGoose.dir/src/hyprland.cpp.o
+CppGoose: CMakeFiles/CppGoose.dir/src/ram_tracker.cpp.o
 CppGoose: CMakeFiles/CppGoose.dir/src/ui.cpp.o
 CppGoose: CMakeFiles/CppGoose.dir/src/wlroots_backend.cpp.o
 CppGoose: CMakeFiles/CppGoose.dir/src/world.cpp.o
@@ -307,7 +323,7 @@ CppGoose: /usr/lib/libX11.so
 CppGoose: /usr/lib/libXext.so
 CppGoose: /usr/lib/libXtst.so
 CppGoose: CMakeFiles/CppGoose.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir="/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_16) "Linking CXX executable CppGoose"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir="/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_17) "Linking CXX executable CppGoose"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/CppGoose.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

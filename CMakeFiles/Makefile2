@@ -85,12 +85,12 @@ clean: CMakeFiles/CppGoose.dir/clean
 CMakeFiles/CppGoose.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/CppGoose.dir/build.make CMakeFiles/CppGoose.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/CppGoose.dir/build.make CMakeFiles/CppGoose.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/CMakeFiles" --progress-num=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16 "Built target CppGoose"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/CMakeFiles" --progress-num=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17 "Built target CppGoose"
 .PHONY : CMakeFiles/CppGoose.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/CppGoose.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start "/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/CMakeFiles" 16
+	$(CMAKE_COMMAND) -E cmake_progress_start "/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/CMakeFiles" 17
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/CppGoose.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start "/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/CMakeFiles" 0
 .PHONY : CMakeFiles/CppGoose.dir/rule
@@ -102,7 +102,7 @@ CppGoose: CMakeFiles/CppGoose.dir/rule
 # codegen rule for target.
 CMakeFiles/CppGoose.dir/codegen:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/CppGoose.dir/build.make CMakeFiles/CppGoose.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/CMakeFiles" --progress-num=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16 "Finished codegen for target CppGoose"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/CMakeFiles" --progress-num=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17 "Finished codegen for target CppGoose"
 .PHONY : CMakeFiles/CppGoose.dir/codegen
 
 # clean rule for target.

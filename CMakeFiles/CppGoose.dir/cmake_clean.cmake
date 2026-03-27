@@ -16,6 +16,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/CppGoose.dir/src/goose.cpp.o.d"
   "CMakeFiles/CppGoose.dir/src/hyprland.cpp.o"
   "CMakeFiles/CppGoose.dir/src/hyprland.cpp.o.d"
+  "CMakeFiles/CppGoose.dir/src/ram_tracker.cpp.o"
+  "CMakeFiles/CppGoose.dir/src/ram_tracker.cpp.o.d"
   "CMakeFiles/CppGoose.dir/src/ui.cpp.o"
   "CMakeFiles/CppGoose.dir/src/ui.cpp.o.d"
   "CMakeFiles/CppGoose.dir/src/wlroots_backend.cpp.o"

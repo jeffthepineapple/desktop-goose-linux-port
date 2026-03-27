@@ -49,6 +49,12 @@ static Vector2 s_predictedCursor = { -1.0f, -1.0f };
 
 // tiny helper
 static inline double Rand01() { return (double)(rand() % 1000) / 1000.0; }
+static Vector2 GetSnatchForward(float dirDegrees, const Vector2& isoScale) {
+    Vector2 rawFwd = Vector2::FromAngleDegrees(dirDegrees);
+    Vector2 fwd{ rawFwd.x * isoScale.x, rawFwd.y * isoScale.y };
+    if (Vector2::Length(fwd) < 1e-4f) return { 1.0f, 0.0f };
+    return Vector2::Normalize(fwd);
+}
 
 Vector2 Goose::GetPredictedCursor() {
     return s_predictedCursor;
@@ -212,11 +218,14 @@ void Goose::Update(double dt, double time, int w, int h) {
         bt.y = std::clamp(bt.y, 0.0f, (float)std::max(0, h - 1));
         g_backendManager.GetActiveBackend()->MoveCursorAbs(std::lround(bt.x), std::lround(bt.y));
 
-        Vector2 rawFwd = Vector2::FromAngleDegrees(dir);
-        Vector2 fwd{ rawFwd.x * ISO_SCALE.x, rawFwd.y * ISO_SCALE.y };
+        Vector2 fwd = GetSnatchForward(dir, ISO_SCALE);
+        Vector2 right{ -fwd.y, fwd.x };
 
-        // Endpoint drag (no spiral): pull to a fixed point behind the goose.
-        Vector2 endpoint = pos - fwd * snatchPullDistance;
+        // Keep the pull point relative to the side/front the pointer came from,
+        // but bias it behind the goose so it still reads as a drag.
+        float lateralBias = Clamp(snatchOffset.y, -snatchPullDistance * 0.75f, snatchPullDistance * 0.75f);
+        float forwardBias = Clamp(snatchOffset.x * 0.25f, -snatchPullDistance * 0.35f, snatchPullDistance * 0.15f);
+        Vector2 endpoint = pos - fwd * snatchPullDistance + right * lateralBias + fwd * forwardBias;
         endpoint.x = std::clamp(endpoint.x, 0.0f, (float)std::max(0, w - 1));
         endpoint.y = std::clamp(endpoint.y, 0.0f, (float)std::max(0, h - 1));
         target = endpoint;
@@ -248,6 +257,13 @@ void Goose::Update(double dt, double time, int w, int h) {
                 g_cursorGrabberId = id;
                 state = SNATCH_CURSOR;
                 snatchStartTime = time;
+                {
+                    Vector2 catchFwd = GetSnatchForward(dir, ISO_SCALE);
+                    Vector2 catchRight{ -catchFwd.y, catchFwd.x };
+                    Vector2 cursorDelta = target - pos;
+                    snatchOffset.x = Clamp(Dot(cursorDelta, catchFwd), -120.0f, 120.0f);
+                    snatchOffset.y = Clamp(Dot(cursorDelta, catchRight), -120.0f, 120.0f);
+                }
                 snatchAngle = 0.0f;
                 snatchRadius = 40.0f + (rand() % 80);
                 snatchAngularSpeed = ((rand() % 2) ? 1.0f : -1.0f) * (1.5f + (rand() % 200) / 100.0f);
@@ -592,23 +608,6 @@ void Goose::Update(double dt, double time, int w, int h) {
             vel.y = -std::abs(vel.y) - 50.0f;
         }
     }
-    // Smooth rotation
-    if (Vector2::Length(vel) > 1.0f) {
-        Vector2 curDirVec = Vector2::FromAngleDegrees(dir);
-        Vector2 targetDirVec = Vector2::Normalize(vel);
-
-        // Pulling look: face the thing you're dragging
-        if (state == RETURNING || state == SNATCH_CURSOR) targetDirVec = targetDirVec * -1.0f;
-
-        Vector2 blend = Vector2::Lerp(curDirVec, targetDirVec, 0.15f);
-        dir = std::atan2(blend.y, blend.x) * RAD_TO_DEG;
-    }
-
-    // Final pose for this frame
-    UpdateRig();
-    SolveFeet(time);
-    UpdateDrag(dt);
-
     CursorBackend* backend = g_backendManager.GetActiveBackend();
     bool canGetPos  = (backend->Caps() & CAP_GET_POS);
     bool canMoveAbs = (backend->Caps() & CAP_MOVE_ABS);
@@ -622,6 +621,29 @@ void Goose::Update(double dt, double time, int w, int h) {
         // Initialize if invalid
         if (s_predictedCursor.x < 0) s_predictedCursor = { (float)w/2, (float)h/2 };
     }
+
+    // Smooth rotation
+    if (Vector2::Length(vel) > 1.0f) {
+        Vector2 curDirVec = Vector2::FromAngleDegrees(dir);
+        Vector2 targetDirVec = Vector2::Normalize(vel);
+
+        // Pulling look: face the dragged item or the current cursor anchor.
+        if (state == RETURNING) {
+            targetDirVec = targetDirVec * -1.0f;
+        } else if (state == SNATCH_CURSOR) {
+            Vector2 toCursor = s_predictedCursor - pos;
+            if (Vector2::Length(toCursor) > 2.0f) targetDirVec = Vector2::Normalize(toCursor);
+            else targetDirVec = targetDirVec * -1.0f;
+        }
+
+        Vector2 blend = Vector2::Lerp(curDirVec, targetDirVec, 0.15f);
+        dir = std::atan2(blend.y, blend.x) * RAD_TO_DEG;
+    }
+
+    // Final pose for this frame
+    UpdateRig();
+    SolveFeet(time);
+    UpdateDrag(dt);
 
     if (state == SNATCH_CURSOR) {
         Vector2 bt = WorldToDevice(GetBeakTipWorld());

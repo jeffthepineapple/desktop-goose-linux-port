@@ -11,6 +11,7 @@ set(OLD_GLOB
   "/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/src/cursor_backend.cpp"
   "/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/src/goose.cpp"
   "/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/src/hyprland.cpp"
+  "/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/src/ram_tracker.cpp"
   "/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/src/ui.cpp"
   "/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/src/wlroots_backend.cpp"
   "/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/src/world.cpp"
