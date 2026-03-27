@@ -9,6 +9,7 @@ CppGoose: \
   CMakeFiles/CppGoose.dir/src/cursor_backend.cpp.o \
   CMakeFiles/CppGoose.dir/src/goose.cpp.o \
   CMakeFiles/CppGoose.dir/src/hyprland.cpp.o \
+  CMakeFiles/CppGoose.dir/src/ram_tracker.cpp.o \
   CMakeFiles/CppGoose.dir/src/ui.cpp.o \
   CMakeFiles/CppGoose.dir/src/wlroots_backend.cpp.o \
   CMakeFiles/CppGoose.dir/src/world.cpp.o \
@@ -268,6 +269,8 @@ CMakeFiles/CppGoose.dir/src/cursor_backend.cpp.o:
 CMakeFiles/CppGoose.dir/src/goose.cpp.o:
 
 CMakeFiles/CppGoose.dir/src/hyprland.cpp.o:
+
+CMakeFiles/CppGoose.dir/src/ram_tracker.cpp.o:
 
 CMakeFiles/CppGoose.dir/src/ui.cpp.o:
 

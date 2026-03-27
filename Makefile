@@ -322,6 +322,30 @@ src/hyprland.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/CppGoose.dir/build.make CMakeFiles/CppGoose.dir/src/hyprland.cpp.s
 .PHONY : src/hyprland.cpp.s
 
+src/ram_tracker.o: src/ram_tracker.cpp.o
+.PHONY : src/ram_tracker.o
+
+# target to build an object file
+src/ram_tracker.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/CppGoose.dir/build.make CMakeFiles/CppGoose.dir/src/ram_tracker.cpp.o
+.PHONY : src/ram_tracker.cpp.o
+
+src/ram_tracker.i: src/ram_tracker.cpp.i
+.PHONY : src/ram_tracker.i
+
+# target to preprocess a source file
+src/ram_tracker.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/CppGoose.dir/build.make CMakeFiles/CppGoose.dir/src/ram_tracker.cpp.i
+.PHONY : src/ram_tracker.cpp.i
+
+src/ram_tracker.s: src/ram_tracker.cpp.s
+.PHONY : src/ram_tracker.s
+
+# target to generate assembly for a file
+src/ram_tracker.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/CppGoose.dir/build.make CMakeFiles/CppGoose.dir/src/ram_tracker.cpp.s
+.PHONY : src/ram_tracker.cpp.s
+
 src/ui.o: src/ui.cpp.o
 .PHONY : src/ui.o
 
@@ -475,6 +499,9 @@ help:
 	@echo "... src/hyprland.o"
 	@echo "... src/hyprland.i"
 	@echo "... src/hyprland.s"
+	@echo "... src/ram_tracker.o"
+	@echo "... src/ram_tracker.i"
+	@echo "... src/ram_tracker.s"
 	@echo "... src/ui.o"
 	@echo "... src/ui.i"
 	@echo "... src/ui.s"

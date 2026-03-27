@@ -17,6 +17,7 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/src/cursor_backend.cpp" "CMakeFiles/CppGoose.dir/src/cursor_backend.cpp.o" "gcc" "CMakeFiles/CppGoose.dir/src/cursor_backend.cpp.o.d"
   "/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/src/goose.cpp" "CMakeFiles/CppGoose.dir/src/goose.cpp.o" "gcc" "CMakeFiles/CppGoose.dir/src/goose.cpp.o.d"
   "/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/src/hyprland.cpp" "CMakeFiles/CppGoose.dir/src/hyprland.cpp.o" "gcc" "CMakeFiles/CppGoose.dir/src/hyprland.cpp.o.d"
+  "/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/src/ram_tracker.cpp" "CMakeFiles/CppGoose.dir/src/ram_tracker.cpp.o" "gcc" "CMakeFiles/CppGoose.dir/src/ram_tracker.cpp.o.d"
   "/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/src/ui.cpp" "CMakeFiles/CppGoose.dir/src/ui.cpp.o" "gcc" "CMakeFiles/CppGoose.dir/src/ui.cpp.o.d"
   "/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/src/wlroots_backend.cpp" "CMakeFiles/CppGoose.dir/src/wlroots_backend.cpp.o" "gcc" "CMakeFiles/CppGoose.dir/src/wlroots_backend.cpp.o.d"
   "/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/src/world.cpp" "CMakeFiles/CppGoose.dir/src/world.cpp.o" "gcc" "CMakeFiles/CppGoose.dir/src/world.cpp.o.d"

@@ -57,7 +57,7 @@ public:
 
     // Cursor chase/snatch state
     double snatchStartTime = 0.0;
-    Vector2 snatchOffset{};  // Offset from goose beak to cursor during snatch
+    Vector2 snatchOffset{};  // Cursor anchor stored in goose-local forward/right space during snatch
     // How far the goose pulls the cursor behind it when snatching
     float snatchPullDistance = 140.0f;
     // Circular snatch motion parameters
