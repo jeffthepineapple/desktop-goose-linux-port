@@ -6,9 +6,11 @@ build/
 CMakeFiles/
 CMakeCache.txt
 CTestTestfile.cmake
-Makefile
+Makefile[^s]*
+!Makefile
 cmake_install.cmake
 compile_commands.json
+result
 
 CppGoose
 gemini_client_test

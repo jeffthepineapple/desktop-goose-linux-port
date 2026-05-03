@@ -96,3 +96,5 @@ target_compile_options(CppGoose PUBLIC
     ${GDKPIXBUF_CFLAGS_OTHER}
     ${WAYLAND_CLIENT_CFLAGS_OTHER}
 )
+
+install(TARGETS CppGoose DESTINATION bin)
