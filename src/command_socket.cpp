@@ -198,6 +198,7 @@ void CommandSocket_StopServer() {
     if (!g_serverRunning.exchange(false)) return;
 
     if (g_serverFd >= 0) {
+        shutdown(g_serverFd, SHUT_RDWR);
         close(g_serverFd);
         g_serverFd = -1;
     }
