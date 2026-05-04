@@ -1,4 +1,5 @@
 #include <gtk/gtk.h>
+#include <glib-unix.h>
 #include <fcntl.h>
 #include <iostream>
 #include <signal.h>
@@ -57,7 +58,7 @@ static int DaemonizeProcess() {
     }
 
     if (setsid() < 0) _exit(1);
-    signal(SIGHUP, SIG_IGN);
+    signal(SIGHUP, SIG_IGN); // suppress SIGHUP during second fork; overridden after exec
 
     pid = fork();
     if (pid < 0) _exit(1);
@@ -147,6 +148,19 @@ int main(int argc, char** argv) {
 
     GtkApplication* app = gtk_application_new("com.goose.wayland", G_APPLICATION_DEFAULT_FLAGS);
     g_signal_connect(app, "activate", G_CALLBACK(on_activate), NULL);
+
+    auto quit_cb = [](gpointer data) -> gboolean {
+        GtkApplication* a = GTK_APPLICATION(data);
+        GList* wins = g_list_copy(gtk_application_get_windows(a));
+        for (GList* l = wins; l; l = l->next)
+            gtk_window_destroy(GTK_WINDOW(l->data));
+        g_list_free(wins);
+        g_application_quit(G_APPLICATION(data));
+        return G_SOURCE_REMOVE;
+    };
+    for (int sig : { SIGTERM, SIGHUP, SIGINT })
+        g_unix_signal_add(sig, quit_cb, app);
+
     int status = g_application_run(G_APPLICATION(app), runArgc, runArgv);
     CommandSocket_StopServer();
     g_object_unref(app);
