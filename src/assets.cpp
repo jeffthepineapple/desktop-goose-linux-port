@@ -32,6 +32,7 @@ AssetManager::~AssetManager() {
 
     if (SDL_WasInit(SDL_INIT_AUDIO)) {
         Mix_CloseAudio();
+        Mix_Quit();
         SDL_QuitSubSystem(SDL_INIT_AUDIO);
     }
 }
@@ -39,11 +40,12 @@ AssetManager::~AssetManager() {
 void AssetManager::Init() {
     // Audio
     if (SDL_Init(SDL_INIT_AUDIO) == 0) {
+        Mix_Init(MIX_INIT_MP3);
         Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048);
         LoadAudio(honks, "Sound/NotEmbedded/Honk1.mp3");
         LoadAudio(honks, "Sound/NotEmbedded/Honk2.mp3");
-        LoadAudio(pats, "Sound/NotEmbedded/Pat1.mp3");
-        LoadAudio(pats, "Sound/NotEmbedded/Pat2.mp3");
+        LoadAudio(honks, "Sound/NotEmbedded/Honk3.mp3");
+        LoadAudio(honks, "Sound/NotEmbedded/Honk4.mp3");
     }
 
     // Memes
