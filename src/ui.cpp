@@ -783,6 +783,7 @@ void draw_overlay(GtkDrawingArea* area, cairo_t* cr, int width, int height, gpoi
 }
 
 gboolean on_tick(gpointer data) {
+    if (!GTK_IS_WIDGET(data)) return G_SOURCE_REMOVE;
     g_time += 1.0 / 60.0;
     MaybeTriggerEscapeKill();
     UpdateEscapeHoldHud();
