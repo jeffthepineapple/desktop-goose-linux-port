@@ -1,3 +1,0 @@
-/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/build/CMakeFiles/CppGoose.dir
-/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/build/CMakeFiles/edit_cache.dir
-/home/dill/Downloads/desktop-goose/Desktop Goose v0.31/DesktopGoosev0.31/build/CMakeFiles/rebuild_cache.dir
