@@ -47,6 +47,7 @@ extern std::vector<ConfigOption> g_configRegistry;
 void Config_InitRegistry();
 std::string Config_GetPath();
 const ConfigOption* Config_FindOptionByKey(const std::string& key);
+const ConfigOption* Config_FindOptionByName(const std::string& keyOrLabel);
 bool Config_GetValueByKey(const std::string& key, std::string* valueOut, std::string* errorOut = nullptr);
 bool Config_SetValueByKey(const std::string& key, const std::string& value, std::string* errorOut = nullptr);
 bool Config_SaveNow(std::string* errorOut = nullptr);

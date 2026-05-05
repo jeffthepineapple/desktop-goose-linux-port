@@ -203,7 +203,15 @@ Selected keys:
 | `mud_lifetime` | `15` | Default footprint lifetime in seconds |
 | `debug_visuals` | `0` | Draw debug hitboxes and state labels |
 
-Settings are edited through `~/.config/desktop-goose/config.ini`. There is no settings UI and no CLI settings editor.
+Settings can be viewed or changed from the CLI:
+
+```bash
+CppGoose settings
+CppGoose settings get walk_speed
+CppGoose settings set walk_speed 220
+```
+
+When the daemon is running, changes are applied live and persisted to `~/.config/desktop-goose/config.ini`.
 
 ---
 

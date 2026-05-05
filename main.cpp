@@ -42,6 +42,7 @@ static bool IsControlCommand(const std::string& command) {
            command == "spawn" ||
            command == "clear" ||
            command == "ram" ||
+           command == "settings" ||
            command == "status" ||
            command == "quit";
 }
@@ -110,6 +111,9 @@ static int HandleCliCommand(int argc, char** argv, int* appArgc) {
             << "  CppGoose spawn [name]\n"
             << "  CppGoose clear\n"
             << "  CppGoose ram\n"
+            << "  CppGoose settings\n"
+            << "  CppGoose settings get <key>\n"
+            << "  CppGoose settings set <key> <value>\n"
             << "  CppGoose status\n"
             << "  CppGoose quit\n"
             << "\n"
@@ -165,6 +169,13 @@ static int HandleCliCommand(int argc, char** argv, int* appArgc) {
 
     std::vector<std::string> args;
     for (int i = 1; i < argc; ++i) args.emplace_back(argv[i]);
+
+    if (command == "settings" && !IsRunning()) {
+        Config_InitRegistry();
+        std::string response = AppActions_HandleCommand(args);
+        if (!response.empty()) std::cout << response;
+        return response.rfind("error ", 0) == 0 ? 1 : 0;
+    }
 
     std::string response;
     std::string error;

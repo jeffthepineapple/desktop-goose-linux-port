@@ -82,6 +82,10 @@ const ConfigOption* Config_FindOptionByKey(const std::string& key) {
     return nullptr;
 }
 
+const ConfigOption* Config_FindOptionByName(const std::string& keyOrLabel) {
+    return FindOptionByAnyKey(keyOrLabel);
+}
+
 static bool AssignValueToOption(const ConfigOption& opt, const std::string& rawValue, std::string* errorOut) {
     try {
         if (opt.type == CFG_BOOL) {
@@ -95,12 +99,40 @@ static bool AssignValueToOption(const ConfigOption& opt, const std::string& rawV
         }
 
         if (opt.type == CFG_INT) {
-            *(int*)opt.ptr = std::stoi(Trim(rawValue));
+            const std::string trimmed = Trim(rawValue);
+            size_t parsedChars = 0;
+            const int parsed = std::stoi(trimmed, &parsedChars);
+            if (parsedChars != trimmed.size()) {
+                if (errorOut) *errorOut = "Invalid value for " + std::string(opt.key);
+                return false;
+            }
+            if ((float)parsed < opt.min || (float)parsed > opt.max) {
+                if (errorOut) {
+                    *errorOut = "Value for " + std::string(opt.key) + " must be between " +
+                                std::to_string(opt.min) + " and " + std::to_string(opt.max);
+                }
+                return false;
+            }
+            *(int*)opt.ptr = parsed;
             return true;
         }
 
         if (opt.type == CFG_FLOAT) {
-            *(float*)opt.ptr = std::stof(Trim(rawValue));
+            const std::string trimmed = Trim(rawValue);
+            size_t parsedChars = 0;
+            const float parsed = std::stof(trimmed, &parsedChars);
+            if (parsedChars != trimmed.size()) {
+                if (errorOut) *errorOut = "Invalid value for " + std::string(opt.key);
+                return false;
+            }
+            if (parsed < opt.min || parsed > opt.max) {
+                if (errorOut) {
+                    *errorOut = "Value for " + std::string(opt.key) + " must be between " +
+                                std::to_string(opt.min) + " and " + std::to_string(opt.max);
+                }
+                return false;
+            }
+            *(float*)opt.ptr = parsed;
             return true;
         }
 
