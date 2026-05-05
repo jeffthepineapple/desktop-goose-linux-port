@@ -94,6 +94,10 @@ std::string AppActions_GetStatus() {
         out << opt.key << "=" << value << "\n";
     }
 
+    for (const auto& goose : g_geese) {
+        out << "goose." << goose.id << ".name=" << goose.name << "\n";
+    }
+
     return out.str();
 }
 

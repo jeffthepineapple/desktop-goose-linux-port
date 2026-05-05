@@ -155,16 +155,22 @@ You can also start it explicitly:
 ./build/CppGoose start
 ```
 
+Or start it with a named goose:
+
+```bash
+./build/CppGoose start "Pip"
+```
+
 Or keep it attached to the current terminal for debugging:
 
 ```bash
-./build/CppGoose start --foreground
+./build/CppGoose start "Pip" --foreground
 ```
 
 Common CLI commands:
 
 ```bash
-./build/CppGoose start
+./build/CppGoose start "Pip"
 ./build/CppGoose spawn Pip
 ./build/CppGoose clear
 ./build/CppGoose ram

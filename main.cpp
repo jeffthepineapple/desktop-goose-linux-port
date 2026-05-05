@@ -13,6 +13,8 @@
 #include "config.h"
 #include "cursor_backend.h"
 
+static std::string g_initialGooseName;
+
 static void on_activate(GtkApplication* app) {
     static bool initialized = false;
     AppActions_SetApplication(app);
@@ -27,7 +29,11 @@ static void on_activate(GtkApplication* app) {
     if (!CommandSocket_StartServer(AppActions_HandleCommand, &error) && !error.empty()) {
         std::cerr << error << std::endl;
     }
-    AppActions_EnsureInitialGoose();
+    if (!g_initialGooseName.empty()) {
+        AppActions_SpawnGoose(g_initialGooseName);
+    } else {
+        AppActions_EnsureInitialGoose();
+    }
     initialized = true;
 }
 
@@ -99,25 +105,57 @@ static int HandleCliCommand(int argc, char** argv, int* appArgc) {
         std::cout
             << "Desktop Goose commands:\n"
             << "  CppGoose\n"
-            << "  CppGoose start\n"
-            << "  CppGoose start --foreground\n"
+            << "  CppGoose start [name]\n"
+            << "  CppGoose start [name] --foreground\n"
             << "  CppGoose spawn [name]\n"
             << "  CppGoose clear\n"
             << "  CppGoose ram\n"
             << "  CppGoose status\n"
-            << "  CppGoose quit\n";
+            << "  CppGoose quit\n"
+            << "\n"
+            << "Examples:\n"
+            << "  CppGoose start \"Pip\"      Start with a named goose\n"
+            << "  CppGoose spawn \"Pip\"      Add a named goose to a running daemon\n";
         return 0;
     }
 
     if (!IsControlCommand(command)) return -1;
 
     if (command == "start") {
-        if (argc > 2 && std::string(argv[2]) == "--foreground") {
+        bool foreground = false;
+        std::string requestedName;
+
+        for (int i = 2; i < argc; ++i) {
+            const std::string arg = argv[i];
+            if (arg == "--foreground") {
+                foreground = true;
+            } else if (requestedName.empty()) {
+                requestedName = arg;
+            } else {
+                std::cerr << "Usage: CppGoose start [name] [--foreground]" << std::endl;
+                return 1;
+            }
+        }
+
+        g_initialGooseName = requestedName;
+
+        if (foreground) {
             *appArgc = 1;
             return -1;
         }
 
         if (IsRunning()) {
+            if (!requestedName.empty()) {
+                std::string response;
+                std::string error;
+                if (!CommandSocket_Send({"spawn", requestedName}, &response, &error)) {
+                    std::cerr << error << std::endl;
+                    return 1;
+                }
+                if (!response.empty()) std::cout << response;
+                return 0;
+            }
+
             std::cout << "Desktop Goose is already running" << std::endl;
             return 0;
         }
