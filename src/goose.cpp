@@ -275,11 +275,22 @@ void Goose::Update(double dt, double time, int w, int h) {
                 PickNewTarget(w, h);
             }
         }
+    } else if (state == FETCHING) {
+        // The pickup point is intentionally off-screen. Body proximity is more
+        // reliable here than beak proximity because edge clamping can keep the
+        // animated beak from ever touching the hidden target exactly.
+        float beakThreshold = std::max(30.0f * g_config.globalScale, 25.0f);
+        bool reachedPickupEdge = (target.x < 0.0f && pos.x <= 10.0f) ||
+                                 (target.x > (float)w && pos.x >= (float)w - 10.0f) ||
+                                 (target.y < 0.0f && pos.y <= 10.0f) ||
+                                 (target.y > (float)h && pos.y >= (float)h - 10.0f);
+        reached = Vector2::Distance(btPoint, target) < beakThreshold ||
+                  Vector2::Distance(pos, target) < 90.0f ||
+                  reachedPickupEdge;
     } else {
-        // FETCHING, RETURNING etc. use visual contact point (Beak Tip in device space)
-        // Use a much larger threshold for RETURNING to ensure items get dropped easily
-        float threshold = (state == RETURNING) ? std::max(60.0f * g_config.globalScale, 50.0f)
-                                               : std::max(30.0f * g_config.globalScale, 25.0f);
+        // RETURNING uses visual contact point and a larger threshold so items
+        // get dropped cleanly when the dragged meme reaches the destination.
+        float threshold = std::max(60.0f * g_config.globalScale, 50.0f);
         reached = (Vector2::Distance(btPoint, target) < threshold);
     }
 

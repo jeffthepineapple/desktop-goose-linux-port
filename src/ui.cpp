@@ -1535,9 +1535,24 @@ void activate_control_panel(GtkApplication* app) {
 // --- Overlay window ----------------------------------------------------------
 void setup_overlay_window(GtkApplication* app) {
     g_uiApp = app;
-    ASSET_ROOT = fs::current_path() / ASSET_ROOT_NAME;
-    if (!fs::exists(ASSET_ROOT))
-        ASSET_ROOT = fs::canonical("/proc/self/exe").parent_path() / ASSET_ROOT_NAME;
+    std::vector<fs::path> assetCandidates;
+    assetCandidates.push_back(fs::current_path() / ASSET_ROOT_NAME);
+
+    std::error_code ec;
+    fs::path exeDir = fs::canonical("/proc/self/exe", ec).parent_path();
+    if (!ec && !exeDir.empty()) {
+        assetCandidates.push_back(exeDir / ASSET_ROOT_NAME);
+        assetCandidates.push_back(exeDir.parent_path() / ASSET_ROOT_NAME);
+    }
+
+    ASSET_ROOT.clear();
+    for (const auto& candidate : assetCandidates) {
+        if (fs::exists(candidate)) {
+            ASSET_ROOT = candidate;
+            break;
+        }
+    }
+    if (ASSET_ROOT.empty()) ASSET_ROOT = assetCandidates.front();
 
     g_assets.Init();
 

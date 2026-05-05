@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <sstream>
 #include "glib.h"
+#include "assets.h"
 #include "config.h"
 #include "world.h"
 
@@ -177,6 +178,9 @@ std::string AppActions_GetStatus() {
     out << "running=1\n";
     out << "goose_count=" << g_geese.size() << "\n";
     out << "config_path=" << Config_GetPath() << "\n";
+    out << "asset_root=" << ASSET_ROOT.string() << "\n";
+    out << "meme_count=" << g_assets.memePaths.size() << "\n";
+    out << "note_count=" << g_assets.textPaths.size() << "\n";
     out << GetRamUsageReport();
 
     for (const auto& opt : g_configRegistry) {
