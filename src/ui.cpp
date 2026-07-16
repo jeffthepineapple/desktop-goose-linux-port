@@ -12,37 +12,9 @@
 #include <filesystem>
 #include <string>
 #include <pango/pangocairo.h>
-#include <chrono>
 #include "cursor_backend.h"
 
 namespace fs = std::filesystem;
-
-// Manual replacement for gdk_cairo_set_source_pixbuf
-static void set_source_pixbuf_manual(cairo_t *cr, GdkPixbuf *pixbuf, double x, double y) {
-    if (!pixbuf) return;
-    gint width = gdk_pixbuf_get_width(pixbuf);
-    gint height = gdk_pixbuf_get_height(pixbuf);
-    gint stride = gdk_pixbuf_get_rowstride(pixbuf);
-    guchar *pixels = gdk_pixbuf_get_pixels(pixbuf);
-
-    // GdkPixbuf is typically RGB (3 bytes) or RGBA (4 bytes, non-premultiplied).
-    // Cairo RGB24/ARGB32 both expect 4 bytes per pixel.
-    cairo_format_t format = CAIRO_FORMAT_ARGB32;
-    int minStride = cairo_format_stride_for_width(format, width);
-    
-    if (stride < minStride) {
-        // This is where the "invalid value for stride" crash happens.
-        // If we reach here, the pixbuf is 3-bytes per pixel and Cairo won't touch it.
-        return;
-    }
-
-    cairo_surface_t *surface = cairo_image_surface_create_for_data(
-        pixels, format, width, height, stride
-    );
-
-    cairo_set_source_surface(cr, surface, x, y);
-    cairo_surface_destroy(surface);
-}
 
 // Optional: keep the debug log bounded so it doesn't grow forever.
 static constexpr size_t UI_LOG_MAX = 60;
@@ -490,6 +462,62 @@ static void draw_debug_overlay(cairo_t* cr) {
     cairo_restore(cr);
 }
 
+static bool BoundsIntersectMonitor(const MonitorInfo& monitor,
+                                   float minX, float minY, float maxX, float maxY) {
+    return maxX >= monitor.x &&
+           minX <= monitor.x + monitor.width &&
+           maxY >= monitor.y &&
+           minY <= monitor.y + monitor.height;
+}
+
+static bool CircleIntersectsMonitor(const MonitorInfo& monitor,
+                                    Vector2 center, float radius) {
+    return BoundsIntersectMonitor(
+        monitor,
+        center.x - radius,
+        center.y - radius,
+        center.x + radius,
+        center.y + radius
+    );
+}
+
+static bool GooseIntersectsMonitor(const Goose& goose, const MonitorInfo& monitor) {
+    const float scale = g_config.globalScale;
+    float minX = INFINITY;
+    float minY = INFINITY;
+    float maxX = -INFINITY;
+    float maxY = -INFINITY;
+
+    auto include = [&](Vector2 point, float padding) {
+        const Vector2 device = goose.pos + (point - goose.pos) * scale;
+        minX = std::min(minX, device.x - padding);
+        minY = std::min(minY, device.y - padding);
+        maxX = std::max(maxX, device.x + padding);
+        maxY = std::max(maxY, device.y + padding);
+    };
+
+    const float bodyPadding = 30.0f * scale + 2.0f;
+    include(goose.pos, bodyPadding);
+    include(goose.rig.underbody, bodyPadding);
+    include(goose.rig.body, bodyPadding);
+    include(goose.rig.neckBase, bodyPadding);
+    include(goose.rig.neckHead, bodyPadding);
+    include(goose.rig.head1, bodyPadding);
+    include(goose.rig.head2, bodyPadding);
+    include(goose.rig.lFoot.currentPos, 6.0f * scale + 2.0f);
+    include(goose.rig.rFoot.currentPos, 6.0f * scale + 2.0f);
+
+    if (goose.heldItem) {
+        const float itemRadius = std::hypot(
+            goose.heldItem->w * 0.5f,
+            (float)goose.heldItem->h
+        ) * scale + 2.0f;
+        include(goose.dragPos, itemRadius);
+    }
+
+    return BoundsIntersectMonitor(monitor, minX, minY, maxX, maxY);
+}
+
 void draw_overlay(GtkDrawingArea* area, cairo_t* cr, int width, int height, gpointer data) {
     MonitorInfo* m = (MonitorInfo*)data;
     if (!m || cairo_status(cr) != CAIRO_STATUS_SUCCESS) return;
@@ -509,9 +537,26 @@ void draw_overlay(GtkDrawingArea* area, cairo_t* cr, int width, int height, gpoi
     // Translation for multi-monitor: move everything by negative monitor offset
     // so world coordinates are drawn correctly in monitor-local window.
     cairo_translate(cr, -m->x, -m->y);
+    const bool cullToMonitor =
+        g_config.multiMonitorEnabled && g_monitors.size() > 1;
+
+    PangoLayout* nameLayout = nullptr;
+    if (!g_geese.empty()) {
+        nameLayout = pango_cairo_create_layout(cr);
+        PangoFontDescription* description =
+            pango_font_description_from_string("Sans Bold 10");
+        pango_layout_set_font_description(nameLayout, description);
+        pango_font_description_free(description);
+    }
+    PangoLayout* debugLayout =
+        g_config.debugVisuals ? pango_cairo_create_layout(cr) : nullptr;
 
     // Draw mud footprints
     for (auto& fp : g_footprints) {
+        if (cullToMonitor) {
+            const float footprintRadius = g_config.globalScale * 12.0f + 2.0f;
+            if (!CircleIntersectsMonitor(*m, fp.pos, footprintRadius)) continue;
+        }
         double age = g_time - fp.timeSpawned;
         float alpha = 0.5f;
         float life = (fp.lifetime > 0.0f) ? fp.lifetime : g_config.mudLifetime;
@@ -558,10 +603,18 @@ void draw_overlay(GtkDrawingArea* area, cairo_t* cr, int width, int height, gpoi
             continue; // Skip corrupted items
         }
 
+        const float s = g_config.globalScale;
+        const Vector2 center =
+            item.pos + Vector2{(float)item.data->w * 0.5f, (float)item.data->h * 0.5f} * s;
+        if (cullToMonitor && !g_config.debugVisuals) {
+            const float itemRadius =
+                std::hypot(item.data->w * 0.5f, item.data->h * 0.5f) * s + 2.0f;
+            if (!CircleIntersectsMonitor(*m, center, itemRadius)) continue;
+        }
+
         cairo_save(cr);
-        float s = g_config.globalScale;
         // Center the coordinate system on the item, applying global scale
-        cairo_translate(cr, item.pos.x + item.data->w * 0.5f * s, item.pos.y + item.data->h * 0.5f * s);
+        cairo_translate(cr, center.x, center.y);
         cairo_scale(cr, s, s);
         cairo_rotate(cr, item.rotation);
         
@@ -574,9 +627,11 @@ void draw_overlay(GtkDrawingArea* area, cairo_t* cr, int width, int height, gpoi
         // Draw from top-left relative to scaled center
         cairo_translate(cr, -item.data->w * 0.5f, -item.data->h * 0.5f);
 
-        if (item.data->type == ItemData::MEME && item.data->pixbuf) {
-            set_source_pixbuf_manual(cr, item.data->pixbuf, 0, 0);
-            cairo_paint(cr);
+        if (item.data->type == ItemData::MEME) {
+            if (cairo_surface_t* surface = item.data->Surface()) {
+                cairo_set_source_surface(cr, surface, 0, 0);
+                cairo_paint(cr);
+            }
         } else if (item.data->type == ItemData::TEXT) {
             cairo_set_source_rgb(cr, 1, 1, 0.85);
             cairo_rectangle(cr, 0, 0, item.data->w, item.data->h);
@@ -597,7 +652,6 @@ void draw_overlay(GtkDrawingArea* area, cairo_t* cr, int width, int height, gpoi
         // Visual debug for items: draw a point at their center
         if (g_config.debugVisuals) {
             cairo_save(cr);
-            Vector2 center = item.pos + Vector2{(float)item.data->w * 0.5f, (float)item.data->h * 0.5f} * s;
             cairo_set_source_rgba(cr, 1, 0.5, 0, 0.8); // Orange point
             cairo_arc(cr, center.x, center.y, 4, 0, G_PI * 2);
             cairo_fill(cr);
@@ -606,11 +660,9 @@ void draw_overlay(GtkDrawingArea* area, cairo_t* cr, int width, int height, gpoi
             char timeBuf[16];
             snprintf(timeBuf, sizeof(timeBuf), "%.1fs", 15.0 - (g_time - item.timeDropped));
             cairo_move_to(cr, center.x + 8, center.y + 8);
-            PangoLayout* tLayout = pango_cairo_create_layout(cr);
-            pango_layout_set_text(tLayout, timeBuf, -1);
+            pango_layout_set_text(debugLayout, timeBuf, -1);
             cairo_set_source_rgba(cr, 1, 1, 1, 0.6);
-            pango_cairo_show_layout(cr, tLayout);
-            g_object_unref(tLayout);
+            pango_cairo_show_layout(cr, debugLayout);
             cairo_restore(cr);
         }
     }
@@ -618,37 +670,30 @@ void draw_overlay(GtkDrawingArea* area, cairo_t* cr, int width, int height, gpoi
     // Draw Geese
     for (auto& g : g_geese) {
         if (cairo_status(cr) != CAIRO_STATUS_SUCCESS) break;
-        g.Draw(cr);
+        if (!cullToMonitor || GooseIntersectsMonitor(g, *m)) g.Draw(cr);
 
         // Minecraft-style name tag
         if (!g.name.empty()) {
-            cairo_save(cr);
-            PangoLayout* layout = pango_cairo_create_layout(cr);
-            std::string tagText = "[#" + std::to_string(g.id) + "] " + g.name;
-            pango_layout_set_text(layout, tagText.c_str(), -1);
-            
-            PangoFontDescription* desc = pango_font_description_from_string("Sans Bold 10");
-            pango_layout_set_font_description(layout, desc);
-            pango_font_description_free(desc);
+            const std::string tagText = "[#" + std::to_string(g.id) + "] " + g.name;
+            pango_layout_set_text(nameLayout, tagText.c_str(), -1);
 
             int tw, th;
-            pango_layout_get_pixel_size(layout, &tw, &th);
+            pango_layout_get_pixel_size(nameLayout, &tw, &th);
 
-            float tagX = g.pos.x - tw / 2.0f;
-            float tagY = g.pos.y - 75.0f * g_config.globalScale; // Position above head
+            const float tagX = g.pos.x - tw / 2.0f;
+            const float tagY = g.pos.y - 75.0f * g_config.globalScale;
+            if (!cullToMonitor || BoundsIntersectMonitor(
+                    *m, tagX - 4, tagY - 2, tagX + tw + 4, tagY + th + 2)) {
+                cairo_save(cr);
+                cairo_set_source_rgba(cr, 0, 0, 0, 0.4);
+                cairo_rectangle(cr, tagX - 4, tagY - 2, tw + 8, th + 4);
+                cairo_fill(cr);
 
-            // Background rectangle (translucent dark)
-            cairo_set_source_rgba(cr, 0, 0, 0, 0.4);
-            cairo_rectangle(cr, tagX - 4, tagY - 2, tw + 8, th + 4);
-            cairo_fill(cr);
-
-            // White text
-            cairo_set_source_rgb(cr, 1, 1, 1);
-            cairo_move_to(cr, tagX, tagY);
-            pango_cairo_show_layout(cr, layout);
-
-            g_object_unref(layout);
-            cairo_restore(cr);
+                cairo_set_source_rgb(cr, 1, 1, 1);
+                cairo_move_to(cr, tagX, tagY);
+                pango_cairo_show_layout(cr, nameLayout);
+                cairo_restore(cr);
+            }
         }
 
         // Visual debug: highlight all geese when enabled
@@ -668,10 +713,8 @@ void draw_overlay(GtkDrawingArea* area, cairo_t* cr, int width, int height, gpoi
             snprintf(idBuf, sizeof(idBuf), "ID %d", g.id);
             cairo_set_source_rgba(cr, 1, 1, 0, 0.9);
             cairo_move_to(cr, g.pos.x + 15, g.pos.y - 25);
-            PangoLayout* idLayout = pango_cairo_create_layout(cr);
-            pango_layout_set_text(idLayout, idBuf, -1);
-            pango_cairo_show_layout(cr, idLayout);
-            g_object_unref(idLayout);
+            pango_layout_set_text(debugLayout, idBuf, -1);
+            pango_cairo_show_layout(cr, debugLayout);
 
             // 3. Target point and line to target
             // Note: Use btPoint if we're in a beak-targeting state, otherwise pos
@@ -723,10 +766,8 @@ void draw_overlay(GtkDrawingArea* area, cairo_t* cr, int width, int height, gpoi
             
             cairo_set_source_rgba(cr, 1, 1, 1, 0.7);
             cairo_move_to(cr, g.pos.x + 15, g.pos.y - 10);
-            PangoLayout* infoLayout = pango_cairo_create_layout(cr);
-            pango_layout_set_text(infoLayout, infoBuf, -1);
-            pango_cairo_show_layout(cr, infoLayout);
-            g_object_unref(infoLayout);
+            pango_layout_set_text(debugLayout, infoBuf, -1);
+            pango_cairo_show_layout(cr, debugLayout);
 
             // 6. Draw Beak Tip (btPoint) clearly
             Vector2 bt = g.WorldToDevice(g.GetBeakTipWorld());
@@ -772,6 +813,8 @@ void draw_overlay(GtkDrawingArea* area, cairo_t* cr, int width, int height, gpoi
             cairo_restore(cr);
         }
     }
+    if (nameLayout) g_object_unref(nameLayout);
+    if (debugLayout) g_object_unref(debugLayout);
 
     cairo_restore(cr); 
 

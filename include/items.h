@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <gdk-pixbuf/gdk-pixbuf.h>
+#include <cairo.h>
 #include "goose_math.h"
 
 struct ItemData {
@@ -14,10 +15,16 @@ struct ItemData {
 
     ItemData();
     ~ItemData();
+    cairo_surface_t* Surface();
+    ItemData(const ItemData&) = delete;
+    ItemData& operator=(const ItemData&) = delete;
     const std::string& Text() const {
         static const std::string empty;
         return textContent ? *textContent : empty;
     }
+
+private:
+    cairo_surface_t* surface = nullptr;
 };
 
 struct DroppedItem {

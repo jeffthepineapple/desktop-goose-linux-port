@@ -9,8 +9,34 @@
 const std::string ASSET_ROOT_NAME = "Assets";
 fs::path ASSET_ROOT;
 
-ItemData::ItemData() : pixbuf(nullptr), w(0), h(0) {}
-ItemData::~ItemData() { if(pixbuf) g_object_unref(pixbuf); }
+ItemData::ItemData() = default;
+
+ItemData::~ItemData() {
+    if (surface) cairo_surface_destroy(surface);
+    if (pixbuf) g_object_unref(pixbuf);
+}
+
+cairo_surface_t* ItemData::Surface() {
+    if (surface || !pixbuf) return surface;
+
+    const int width = gdk_pixbuf_get_width(pixbuf);
+    const int height = gdk_pixbuf_get_height(pixbuf);
+    const int stride = gdk_pixbuf_get_rowstride(pixbuf);
+    if (stride < cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32, width)) return nullptr;
+
+    surface = cairo_image_surface_create_for_data(
+        gdk_pixbuf_get_pixels(pixbuf),
+        CAIRO_FORMAT_ARGB32,
+        width,
+        height,
+        stride
+    );
+    if (cairo_surface_status(surface) != CAIRO_STATUS_SUCCESS) {
+        cairo_surface_destroy(surface);
+        surface = nullptr;
+    }
+    return surface;
+}
 
 AssetManager g_assets;
 

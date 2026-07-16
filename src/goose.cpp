@@ -16,7 +16,7 @@ static const float OUTLINE_GRAY[] = { 0.82f, 0.82f, 0.82f };
 static const float ORANGE[]       = { 1.0f, 0.64f, 0.0f };
 // Beak tuning
 static const float BEAK_LEN = 12.0f; // much larger beak
-static const float BEAK_WID = 16.0f;
+static const float BEAK_WID = 9.0f;
 
 // ✅ NEW: Desktop Goose-ish face anchoring (keeps beak/eyes attached to head)
 static const float BEAK_BASE_OFFSET = 4.0f;   // from neckHead forward
@@ -795,13 +795,11 @@ void Goose::SolveFeet(double time) {
 // RENDERING
 // =========================================================
 
-void Goose::DrawEyes(cairo_t* cr, Vector2 fwd) {
+void Goose::DrawEyes(cairo_t* cr, Vector2 fwd, float back) {
     Vector2 rawSide = Vector2::FromAngleDegrees(dir + 90.0f);
     Vector2 side{ rawSide.x * ISO_SCALE.x, rawSide.y * ISO_SCALE.y };
     Vector2 up{ 0, -1 };
 
-    float facing = Dot(Vector2::Normalize(fwd), Vector2{0, 1});
-    float back   = Clamp(-facing, 0.0f, 1.0f);
 
     // eyes stay visible, compress when facing away
     float eyeSep  = Lerp(5.0f, 2.8f, back);
@@ -833,25 +831,10 @@ void Goose::DrawHeldItem(cairo_t* cr) {
     cairo_rotate(cr, dragRot);
     cairo_translate(cr, -heldItem->w / 2, 0);
 
-    if (heldItem->type == ItemData::MEME && heldItem->pixbuf) {
-        GdkPixbuf* pb = heldItem->pixbuf;
-        int width = gdk_pixbuf_get_width(pb);
-        int height = gdk_pixbuf_get_height(pb);
-        int stride = gdk_pixbuf_get_rowstride(pb);
-        cairo_format_t format = CAIRO_FORMAT_ARGB32;
-        int minStride = cairo_format_stride_for_width(format, width);
-
-        if (stride >= minStride) {
-            cairo_surface_t *surface = cairo_image_surface_create_for_data(
-                gdk_pixbuf_get_pixels(pb),
-                format,
-                width,
-                height,
-                stride
-            );
+    if (heldItem->type == ItemData::MEME) {
+        if (cairo_surface_t* surface = heldItem->Surface()) {
             cairo_set_source_surface(cr, surface, 0, 0);
             cairo_paint(cr);
-            cairo_surface_destroy(surface);
         }
     } else if (heldItem->type == ItemData::TEXT) {
         // Notepad look
@@ -914,34 +897,31 @@ void Goose::Draw(cairo_t* cr) {
     Vector2 underFront= rig.underbody + fwd * 7.0f;
     Vector2 underBack = rig.underbody - fwd * 7.0f;
 
-    // outlines
-    DrawLine(cr, bodyFront, bodyBack, 24, OUTLINE_GRAY);
-    DrawLine(cr, rig.neckBase, rig.neckHead, 15, OUTLINE_GRAY);
-    DrawLine(cr, rig.neckHead, rig.head1, 17, OUTLINE_GRAY);
-    DrawLine(cr, rig.head1, rig.head2, 12, OUTLINE_GRAY);
-    DrawLine(cr, underFront, underBack, 15, OUTLINE_GRAY);
-
-    // ✅ UPDATED: beak anchored to neckHead (prevents sliding), short + round-cap
-    float beakBright = 1.0f; // original goose doesn't really dim; occlusion does the job
-    float beakW = std::min(BEAK_WID, 9.0f);   // keep your constant, but clamp to original-ish width
+    cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
+    cairo_set_source_rgb(cr, OUTLINE_GRAY[0], OUTLINE_GRAY[1], OUTLINE_GRAY[2]);
+    DrawLine(cr, bodyFront, bodyBack, 24);
+    DrawLine(cr, rig.neckBase, rig.neckHead, 15);
+    DrawLine(cr, rig.neckHead, rig.head1, 17);
+    DrawLine(cr, rig.head1, rig.head2, 12);
+    DrawLine(cr, underFront, underBack, 15);
 
     Vector2 beakBase = rig.neckHead + fwd * BEAK_BASE_OFFSET;
-    Vector2 beakTip  = GetBeakTipWorld();
+    Vector2 beakTip = beakBase + fwd * BEAK_LEN;
 
-    // draw early so fill can occlude when facing away (your original intent)
-    DrawLine(cr, beakBase, beakTip, beakW,
-             ORANGE[0] * beakBright, ORANGE[1] * beakBright, ORANGE[2] * beakBright);
+    // Draw early so the white fill occludes the beak when facing away.
+    cairo_set_source_rgb(cr, ORANGE[0], ORANGE[1], ORANGE[2]);
+    DrawLine(cr, beakBase, beakTip, BEAK_WID);
 
-    // fill
-    DrawLine(cr, bodyFront, bodyBack, 22, 1,1,1);
-    DrawLine(cr, rig.neckBase, rig.neckHead, 13, 1,1,1);
-    DrawLine(cr, rig.neckHead, rig.head1, 15, 1,1,1);
-    DrawLine(cr, rig.head1, rig.head2, 10, 1,1,1);
+    cairo_set_source_rgb(cr, 1, 1, 1);
+    DrawLine(cr, bodyFront, bodyBack, 22);
+    DrawLine(cr, rig.neckBase, rig.neckHead, 13);
+    DrawLine(cr, rig.neckHead, rig.head1, 15);
+    DrawLine(cr, rig.head1, rig.head2, 10);
 
     cairo_restore(cr); // body squash scope
 
     // eyes
-    DrawEyes(cr, fwd);
+    DrawEyes(cr, fwd, back);
 
     // held item front
     if (heldItem && !facingBack) DrawHeldItem(cr);
@@ -964,15 +944,8 @@ void Goose::DrawEllipse(cairo_t* cr, Vector2 p, int rx, int ry,
     cairo_restore(cr);
 }
 
-void Goose::DrawLine(cairo_t* cr, Vector2 a, Vector2 b, float w, const float color[]) {
-    DrawLine(cr, a, b, w, color[0], color[1], color[2]);
-}
-
-void Goose::DrawLine(cairo_t* cr, Vector2 a, Vector2 b, float w,
-                     float r, float g, float bl) {
-    cairo_set_line_width(cr, w);
-    cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
-    cairo_set_source_rgb(cr, r, g, bl);
+void Goose::DrawLine(cairo_t* cr, Vector2 a, Vector2 b, float width) {
+    cairo_set_line_width(cr, width);
     cairo_move_to(cr, a.x, a.y);
     cairo_line_to(cr, b.x, b.y);
     cairo_stroke(cr);

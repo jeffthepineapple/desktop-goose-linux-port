@@ -113,14 +113,13 @@ private:
     void UpdateDrag(double dt);
     void StartFetch(int w, int h);
     void DrawHeldItem(cairo_t* cr);
-    void DrawEyes(cairo_t* cr, Vector2 fwd);
+    void DrawEyes(cairo_t* cr, Vector2 fwd, float back);
     void PickNewTarget(int w, int h);
     Vector2 GetFootHome(float angleOffset);
     void SolveFeet(double time);
     void UpdateRig();
     void DrawEllipse(cairo_t* cr, Vector2 p, int rx, int ry, float r, float g, float b, float a=1.0);
-    void DrawLine(cairo_t* cr, Vector2 a, Vector2 b, float w, const float color[]);
-    void DrawLine(cairo_t* cr, Vector2 a, Vector2 b, float w, float r, float g, float bl);
+    void DrawLine(cairo_t* cr, Vector2 a, Vector2 b, float width);
 };
 
 #endif // GOOSE_H
