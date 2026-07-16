@@ -84,7 +84,6 @@ The application supports multiple simultaneous geese, each with its own name and
 | SDL2_mixer | Sound effect mixing |
 | gdk-pixbuf-2.0 | Image loading for meme assets |
 | wayland-client | Wayland protocol base |
-| libcurl | (retained in build; unused after AI backend removal) |
 | X11 | X11 cursor position queries |
 | Xtst | X11 cursor movement injection |
 
@@ -105,19 +104,19 @@ One of the above is required for cursor chase and snatch behavior. The applicati
 On Arch Linux:
 
 ```
-sudo pacman -S cmake gtk4 gtk4-layer-shell sdl2 sdl2_mixer gdk-pixbuf2 wayland libcurl xorg-server-devel libxtst
+sudo pacman -S cmake gtk4 gtk4-layer-shell sdl2 sdl2_mixer gdk-pixbuf2 wayland xorg-server-devel libxtst
 ```
 
 On Fedora:
 
 ```
-sudo dnf install cmake gtk4-devel gtk4-layer-shell-devel SDL2-devel SDL2_mixer-devel gdk-pixbuf2-devel wayland-devel libcurl-devel libX11-devel libXtst-devel
+sudo dnf install cmake gtk4-devel gtk4-layer-shell-devel SDL2-devel SDL2_mixer-devel gdk-pixbuf2-devel wayland-devel libX11-devel libXtst-devel
 ```
 
 On Ubuntu 24.04 or later:
 
 ```
-sudo apt install cmake libgtk-4-dev libgtk4-layer-shell-dev libsdl2-dev libsdl2-mixer-dev libgdk-pixbuf-2.0-dev libwayland-dev libcurl4-openssl-dev libx11-dev libxtst-dev
+sudo apt install cmake libgtk-4-dev libgtk4-layer-shell-dev libsdl2-dev libsdl2-mixer-dev libgdk-pixbuf-2.0-dev libwayland-dev libx11-dev libxtst-dev
 ```
 
 > **Note:** `gtk4-layer-shell` may not be available in older Ubuntu/Debian repositories. Build it from source from [github.com/wmww/gtk4-layer-shell](https://github.com/wmww/gtk4-layer-shell) if your package manager does not provide it.

@@ -74,7 +74,6 @@ target_link_libraries(CppGoose
     ${WAYLAND_CLIENT_LIBRARIES}
     Threads::Threads
     m
-    stdc++fs
 )
 
 target_include_directories(CppGoose PUBLIC

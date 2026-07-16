@@ -15,6 +15,8 @@
 struct MonitorInfo {
     int x, y, width, height;
     GdkMonitor* monitor;
+    GtkWindow* window = nullptr;
+    GtkWidget* canvas = nullptr;
 };
 
 struct Footprint {
@@ -24,7 +26,7 @@ struct Footprint {
     float lifetime;
 };
 
-extern std::list<Goose> g_geese;
+extern std::vector<Goose> g_geese;
 extern std::list<MonitorInfo> g_monitors;
 extern std::list<DroppedItem> g_droppedItems;
 extern std::list<Footprint> g_footprints;
@@ -34,7 +36,6 @@ extern int g_screenHeight;
 extern int g_selectedGooseId;
 extern GtkWidget* g_entryNote;
 extern std::deque<std::string> g_uiLog;
-extern std::vector<GtkWidget*> g_overlayCanvases;
 extern int g_cursorGrabberId; // id of goose currently dragging the cursor, -1 = none
 
 void UiLogPush(const std::string& s);

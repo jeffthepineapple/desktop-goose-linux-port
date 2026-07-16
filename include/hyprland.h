@@ -11,7 +11,8 @@ public:
     bool Init() override;
     Vector2 GetCursorPos() override;
     void MoveCursorAbs(int x, int y) override;
-    
-    // Internal helper remains available if needed, but usually hidden
-    static bool isAvailable(); 
+
+private:
+    bool SendCommand(const std::string& command, std::string* response);
+    std::string m_socketPath;
 };

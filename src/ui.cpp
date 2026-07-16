@@ -14,7 +14,6 @@
 #include <pango/pangocairo.h>
 #include <chrono>
 #include "cursor_backend.h"
-#include "ram_tracker.h"
 
 namespace fs = std::filesystem;
 
@@ -782,41 +781,34 @@ void draw_overlay(GtkDrawingArea* area, cairo_t* cr, int width, int height, gpoi
     }
 }
 
-gboolean on_tick(gpointer data) {
-    if (!GTK_IS_WIDGET(data)) return G_SOURCE_REMOVE;
+gboolean on_tick(gpointer) {
     g_time += 1.0 / 60.0;
     MaybeTriggerEscapeKill();
     UpdateEscapeHoldHud();
 
-    for (auto& g : g_geese)
-        g.Update(1.0 / 60.0, g_time, g_screenWidth, g_screenHeight);
+    for (auto& goose : g_geese) {
+        goose.Update(1.0 / 60.0, g_time, g_screenWidth, g_screenHeight);
+    }
 
-    g_droppedItems.remove_if([](DroppedItem& i) {
-        bool exp = i.isExpired(g_time);
-        if (exp) delete i.data;
-        return exp;
+    g_droppedItems.remove_if([](DroppedItem& item) {
+        const bool expired = item.isExpired(g_time);
+        if (expired) delete item.data;
+        return expired;
     });
 
-    g_footprints.remove_if([](Footprint& fp) {
-        float life = (fp.lifetime > 0.0f) ? fp.lifetime : g_config.mudLifetime;
-        return (g_time - fp.timeSpawned) > life;
+    g_footprints.remove_if([](Footprint& footprint) {
+        const float lifetime = footprint.lifetime > 0.0f
+            ? footprint.lifetime
+            : g_config.mudLifetime;
+        return g_time - footprint.timeSpawned > lifetime;
     });
 
-    // We pass a window to setup_overlay, but we need to update ALL overlays.
-    // However, on_tick is associated with a specific canvas.
-    // To keep it simple, we queue draw on all monitors.
-    // This is handled by setup_overlay_window which spawns timers or we can use a global signal.
-    gtk_widget_queue_draw(GTK_WIDGET(data));
-    
-    // Find matching MonitorInfo for this canvas to update its input region
-    for (auto& mi : g_monitors) {
-        // This is a bit hacky but works: find window that contains this canvas
-        GtkRoot* root = gtk_widget_get_root(GTK_WIDGET(data));
-        if (root && GTK_IS_WINDOW(root)) {
-            // Need to match monitor to window. Let's store window in MonitorInfo.
-            // Simplified: just update input region for this specific window.
-            UpdateInputRegion(GTK_WINDOW(root), mi);
-            break; 
+    for (auto& monitor : g_monitors) {
+        if (monitor.canvas && GTK_IS_WIDGET(monitor.canvas)) {
+            gtk_widget_queue_draw(monitor.canvas);
+        }
+        if (monitor.window && GTK_IS_WINDOW(monitor.window)) {
+            UpdateInputRegion(monitor.window, monitor);
         }
     }
 
@@ -1562,7 +1554,6 @@ void setup_overlay_window(GtkApplication* app) {
     
     int minX = 0, minY = 0, maxX = 0, maxY = 0;
     g_monitors.clear();
-    g_overlayCanvases.clear();
 
     for (unsigned int i = 0; i < g_list_model_get_n_items(monitors); i++) {
         GdkMonitor* monitor = (GdkMonitor*)g_list_model_get_item(monitors, i);
@@ -1576,6 +1567,7 @@ void setup_overlay_window(GtkApplication* app) {
         mi.height = geom.height;
         mi.monitor = monitor;
         g_monitors.push_back(mi);
+        MonitorInfo& monitorInfo = g_monitors.back();
 
         if (mi.x < minX) minX = mi.x;
         if (mi.y < minY) minY = mi.y;
@@ -1595,12 +1587,16 @@ void setup_overlay_window(GtkApplication* app) {
 
         GtkWidget* canvas = gtk_drawing_area_new();
         // Pass the MonitorInfo reference
-        gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(canvas), draw_overlay, &g_monitors.back(), NULL);
+        gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(canvas), draw_overlay, &monitorInfo, NULL);
         gtk_window_set_child(overlay, canvas);
-        g_overlayCanvases.push_back(canvas);
+        monitorInfo.window = overlay;
+        monitorInfo.canvas = canvas;
 
-        g_timeout_add(16, on_tick, canvas);
         gtk_window_present(overlay);
+    }
+
+    if (!g_monitors.empty()) {
+        g_timeout_add(16, on_tick, nullptr);
     }
 
     // Set globally unified screen dimensions.
@@ -1619,6 +1615,4 @@ void setup_overlay_window(GtkApplication* app) {
     GtkCssProvider* css = gtk_css_provider_new();
     gtk_css_provider_load_from_string(css, "window { background: transparent; }");
     gtk_style_context_add_provider_for_display(display, GTK_STYLE_PROVIDER(css), 800);
-    // Initialize RAM tracker (pushes samples to the in-game UI log once per second)
-    RamTracker_Init();
 }

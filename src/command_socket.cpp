@@ -130,14 +130,11 @@ std::string SocketPathForRuntime() {
 
 } // namespace
 
-std::string CommandSocket_GetPath() {
-    return SocketPathForRuntime();
-}
 
 bool CommandSocket_StartServer(CommandHandler handler, std::string* errorOut) {
     if (g_serverRunning.load()) return true;
 
-    const std::string socketPath = CommandSocket_GetPath();
+    const std::string socketPath = SocketPathForRuntime();
     sockaddr_un addr{};
     if (socketPath.size() >= sizeof(addr.sun_path)) {
         if (errorOut) *errorOut = "Socket path is too long";
@@ -209,7 +206,7 @@ void CommandSocket_StopServer() {
 }
 
 bool CommandSocket_Send(const std::vector<std::string>& args, std::string* responseOut, std::string* errorOut) {
-    const std::string socketPath = CommandSocket_GetPath();
+    const std::string socketPath = SocketPathForRuntime();
     sockaddr_un addr{};
     if (socketPath.size() >= sizeof(addr.sun_path)) {
         if (errorOut) *errorOut = "Socket path is too long";

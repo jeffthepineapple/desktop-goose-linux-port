@@ -11,7 +11,7 @@ void UiLogPush(const std::string& s) {
     if (g_uiLog.size() > UI_LOG_MAX) g_uiLog.pop_front();
 }
 
-std::list<Goose> g_geese;
+std::vector<Goose> g_geese;
 std::list<MonitorInfo> g_monitors;
 std::list<DroppedItem> g_droppedItems;
 std::list<Footprint> g_footprints;
@@ -20,7 +20,6 @@ int g_screenWidth = 1920;
 int g_screenHeight = 1080;
 int g_selectedGooseId = 0;
 GtkWidget* g_entryNote = nullptr;
-std::vector<GtkWidget*> g_overlayCanvases;
 int g_cursorGrabberId = -1;
 
 Goose* GetGooseById(int id) {

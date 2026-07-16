@@ -37,12 +37,15 @@ public:
 
     void Init();
     CursorBackend* GetActiveBackend() { return m_activeBackend; }
+    Vector2 GetCursorPos(double frameTime);
 
 private:
-    void RegisterBackend(std::shared_ptr<CursorBackend> backend);
-    
-    std::vector<std::shared_ptr<CursorBackend>> m_backends;
+    void RegisterBackend(std::unique_ptr<CursorBackend> backend);
+
+    std::vector<std::unique_ptr<CursorBackend>> m_backends;
     CursorBackend* m_activeBackend = nullptr;
+    double m_cursorSampleTime = -1.0;
+    Vector2 m_cursorSample{-1.0f, -1.0f};
 };
 
 extern CursorBackendManager g_backendManager;

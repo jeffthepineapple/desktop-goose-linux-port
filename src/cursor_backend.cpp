@@ -2,11 +2,8 @@
 #include "hyprland.h"
 #include "x11_backend.h"
 #include "wlroots_backend.h"
-#include <algorithm>
 #include <iostream>
 
-// Defined here for now, eventually will include specific backend headers
-// We will register them in Init()
 
 CursorBackendManager g_backendManager;
 
@@ -18,20 +15,28 @@ CursorBackendManager::CursorBackendManager() {
         uint32_t Caps() const override { return CAP_NONE; }
         bool Init() override { return true; }
     };
-    // Don't register null backend in the list, just set as fallback active
-    static auto nullBackend = std::make_shared<NullBackend>();
-    m_activeBackend = nullBackend.get();
+    static NullBackend nullBackend;
+    m_activeBackend = &nullBackend;
 }
 
-void CursorBackendManager::RegisterBackend(std::shared_ptr<CursorBackend> backend) {
-    m_backends.push_back(backend);
+void CursorBackendManager::RegisterBackend(std::unique_ptr<CursorBackend> backend) {
+    m_backends.push_back(std::move(backend));
+}
+
+Vector2 CursorBackendManager::GetCursorPos(double frameTime) {
+    if (frameTime != m_cursorSampleTime) {
+        m_cursorSample = m_activeBackend->GetCursorPos();
+        m_cursorSampleTime = frameTime;
+    }
+    return m_cursorSample;
 }
 
 void CursorBackendManager::Init() {
+    m_cursorSampleTime = -1.0;
     // Register known backends
-    RegisterBackend(std::make_shared<HyprlandBackend>());
-    RegisterBackend(std::make_shared<WlrootsBackend>());
-    RegisterBackend(std::make_shared<X11Backend>());
+    RegisterBackend(std::make_unique<HyprlandBackend>());
+    RegisterBackend(std::make_unique<WlrootsBackend>());
+    RegisterBackend(std::make_unique<X11Backend>());
 
     std::cout << "Initializing Cursor Backends..." << std::endl;
 

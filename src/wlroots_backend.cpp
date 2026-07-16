@@ -5,8 +5,6 @@
 #include <cstring>
 #include "world.h" // g_screenWidth/Height
 
-#include "world.h" // g_screenWidth/Height
-
 struct WlrootsImpl {
     struct wl_display* display = nullptr;
     struct wl_registry* registry = nullptr;

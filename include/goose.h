@@ -78,9 +78,6 @@ public:
     int  mudChance = 15;
     float mudLifetime = 15.0f;
 
-    // Honk timing (legacy fields; current impl uses internal map state in goose.cpp)
-    double nextIdleHonkTime = 0.0;
-    double lastChaseHonkTime = 0.0;
 
     Goose(int _id, const std::string& _name, int screenW, int screenH);
 
@@ -103,6 +100,16 @@ public:
     static Vector2 GetPredictedCursor(); // Returns s_predictedCursor
 
 private:
+    struct HonkState {
+        bool initialized = false;
+        double nextIdle = 0.0;
+        double lastAny = -1e9;
+        double lastChase = -1e9;
+        double lastFetch = -1e9;
+        double lastGeneric = -1e9;
+    };
+
+    HonkState m_honk;
     void UpdateDrag(double dt);
     void StartFetch(int w, int h);
     void DrawHeldItem(cairo_t* cr);

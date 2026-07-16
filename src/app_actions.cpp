@@ -40,8 +40,8 @@ void AppActions_ClearGeese() {
     g_cursorGrabberId = -1;
     g_selectedGooseId = 0;
     g_nextId = 0;
-    for (GtkWidget* canvas : g_overlayCanvases) {
-        if (canvas) gtk_widget_queue_draw(canvas);
+    for (const auto& monitor : g_monitors) {
+        if (monitor.canvas) gtk_widget_queue_draw(monitor.canvas);
     }
     UiLogPush("Cleared all geese.");
 }

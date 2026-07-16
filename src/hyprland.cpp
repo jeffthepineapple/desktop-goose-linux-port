@@ -28,10 +28,9 @@ static std::string GetSocketPath() {
     return p1; // best guess
 }
 
-static bool SendHyprCommand(const std::string& cmd, std::string* out) {
+static bool SendHyprCommand(const std::string& sockPath, const std::string& cmd,
+                            std::string* out) {
     if (out) out->clear();
-
-    const std::string sockPath = GetSocketPath();
     if (sockPath.empty()) return false;
 
     int fd = ::socket(AF_UNIX, SOCK_STREAM, 0);
@@ -97,20 +96,22 @@ static bool ExtractJsonNumber(const std::string& s, const char* key, double* out
     return true;
 }
 
-bool HyprlandBackend::isAvailable() {
-    const std::string sockPath = GetSocketPath();
-    return !sockPath.empty() && std::filesystem::exists(sockPath);
+bool HyprlandBackend::Init() {
+    m_socketPath = GetSocketPath();
+    return !m_socketPath.empty() && std::filesystem::exists(m_socketPath);
 }
 
-bool HyprlandBackend::Init() {
-    return isAvailable();
+bool HyprlandBackend::SendCommand(const std::string& command, std::string* response) {
+    if (SendHyprCommand(m_socketPath, command, response)) return true;
+
+    m_socketPath = GetSocketPath();
+    return SendHyprCommand(m_socketPath, command, response);
 }
 
 Vector2 HyprlandBackend::GetCursorPos() {
-    if (!isAvailable()) return {-1.0f, -1.0f};
 
     std::string resp;
-    if (!SendHyprCommand("j/cursorpos", &resp)) return {-1.0f, -1.0f};
+    if (!SendCommand("j/cursorpos", &resp)) return {-1.0f, -1.0f};
 
     double x = -1, y = -1;
     if (!ExtractJsonNumber(resp, "x", &x) || !ExtractJsonNumber(resp, "y", &y)) {
@@ -120,9 +121,8 @@ Vector2 HyprlandBackend::GetCursorPos() {
 }
 
 void HyprlandBackend::MoveCursorAbs(int x, int y) {
-    if (!isAvailable()) return;
 
     // Dispatcher: movecursor takes absolute x y
     std::string cmd = "dispatch movecursor " + std::to_string(x) + " " + std::to_string(y);
-    (void)SendHyprCommand(cmd, nullptr);
+    (void)SendCommand(cmd, nullptr);
 }

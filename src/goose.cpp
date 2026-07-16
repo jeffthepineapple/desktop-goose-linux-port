@@ -7,7 +7,6 @@
 #include <cstdlib>
 #include <algorithm>
 #include <iostream>
-#include <unordered_map>   // ✅ NEW (honk timing state)
 
 // =========================================================
 // CONSTANTS
@@ -32,16 +31,6 @@ static const double HONK_CHASE_CD   = 1.80;
 static const double HONK_FETCH_CD   = 1.20;
 static const double HONK_GENERIC_CD = 0.90;
 
-// per-goose honk state stored here (no header changes)
-struct HonkState {
-    bool   init = false;
-    double nextIdleHonk = 0.0;
-    double lastAny = -1e9;
-    double lastChase = -1e9;
-    double lastFetch = -1e9;
-    double lastGeneric = -1e9;
-};
-static std::unordered_map<int, HonkState> s_honk;
 
 // ✅ NEW: Predicted cursor for backends that can't read global position (or for Tier 3 drag logic)
 // We initialize to center for lack of better info.
@@ -142,15 +131,10 @@ void Goose::UpdateDrag(double dt) {
 
 void Goose::Update(double dt, double time, int w, int h) {
 
-    // ✅ NEW: honk timing init + helper (no header edits)
-    HonkState& hs = s_honk[id];
-    if (!hs.init) {
-        hs.init = true;
-        hs.lastAny = -1e9;
-        hs.lastChase = -1e9;
-        hs.lastFetch = -1e9;
-        hs.lastGeneric = -1e9;
-        hs.nextIdleHonk = time + HONK_IDLE_MIN + Rand01() * (HONK_IDLE_MAX - HONK_IDLE_MIN);
+    HonkState& hs = m_honk;
+    if (!hs.initialized) {
+        hs.initialized = true;
+        hs.nextIdle = time + HONK_IDLE_MIN + Rand01() * (HONK_IDLE_MAX - HONK_IDLE_MIN);
     }
 
     auto TryHonk = [&](double cd, double& lastBucket) {
@@ -174,13 +158,13 @@ void Goose::Update(double dt, double time, int w, int h) {
     }
 
     // ✅ NEW: idle honk schedule (Desktop Goose vibe)
-    if (state == WANDER && time >= hs.nextIdleHonk) {
+    if (state == WANDER && time >= hs.nextIdle) {
         // not always; occasional is funnier
         if ((rand() % 3) == 0) {
             // treat as generic bucket
             TryHonk(HONK_GENERIC_CD, hs.lastGeneric);
         }
-        hs.nextIdleHonk = time + HONK_IDLE_MIN + Rand01() * (HONK_IDLE_MAX - HONK_IDLE_MIN);
+        hs.nextIdle = time + HONK_IDLE_MIN + Rand01() * (HONK_IDLE_MAX - HONK_IDLE_MIN);
     }
 
     // --- CHASE_CURSOR: target follows cursor ---
@@ -190,9 +174,8 @@ void Goose::Update(double dt, double time, int w, int h) {
             state = WANDER;
             PickNewTarget(w, h);
         } else {
-            // Use active backend
-            CursorBackend* backend = g_backendManager.GetActiveBackend();
-            Vector2 cursorPos = backend->GetCursorPos();
+            Vector2 cursorPos = g_backendManager.GetCursorPos(time);
+            s_predictedCursor = cursorPos;
             
             if (cursorPos.x >= 0 && cursorPos.y >= 0) {
                 target = cursorPos; // Update target every frame to follow mouse
@@ -209,14 +192,6 @@ void Goose::Update(double dt, double time, int w, int h) {
 
     // --- SNATCH_CURSOR: keep running in a small circle behind while holding cursor ---
     if (state == SNATCH_CURSOR) {
-        // Canonical Beak Tip Point Sync: Warp cursor to the exact visual tip.
-        // We use std::lround for frame-perfect alignment without "shimmering" or 1px jitter.
-        Vector2 bt = WorldToDevice(GetBeakTipWorld());
-        // Clamp cursor so we never push into invalid monitor edges when multi-monitor is disabled.
-        // (w/h are the active bounds passed in from UI.)
-        bt.x = std::clamp(bt.x, 0.0f, (float)std::max(0, w - 1));
-        bt.y = std::clamp(bt.y, 0.0f, (float)std::max(0, h - 1));
-        g_backendManager.GetActiveBackend()->MoveCursorAbs(std::lround(bt.x), std::lround(bt.y));
 
         Vector2 fwd = GetSnatchForward(dir, ISO_SCALE);
         Vector2 right{ -fwd.y, fwd.x };
@@ -305,7 +280,7 @@ void Goose::Update(double dt, double time, int w, int h) {
                 if (totalChance > 100) totalChance = 100;
                 if ((rand() % 100) < totalChance) {
                     state = CHASE_CURSOR;
-                    Vector2 cursorPos = g_backendManager.GetActiveBackend()->GetCursorPos();
+                    Vector2 cursorPos = g_backendManager.GetCursorPos(time);
                     if (cursorPos.x >= 0 && cursorPos.y >= 0) target = cursorPos; // Stay in Device space
 
                     // ✅ UPDATED: chase honk cooldown
@@ -539,20 +514,10 @@ void Goose::Update(double dt, double time, int w, int h) {
         float margin = 40.0f;
         Vector2 avoidance{0, 0};
         
-        // Multi-monitor aware boundaries
-        float bMinX = 0, bMinY = 0, bMaxX = (float)w, bMaxY = (float)h;
-        if (!g_config.multiMonitorEnabled && !g_monitors.empty()) {
-            for (auto& m : g_monitors) {
-                if (m.x == 0 && m.y == 0) {
-                    bMaxX = m.width; bMaxY = m.height; break;
-                }
-            }
-        }
-
-        if (probePos.x < bMinX + margin) avoidance.x = currentSpeed;
-        else if (probePos.x > bMaxX - margin) avoidance.x = -currentSpeed;
-        if (probePos.y < bMinY + margin) avoidance.y = currentSpeed;
-        else if (probePos.y > bMaxY - margin) avoidance.y = -currentSpeed;
+        if (probePos.x < margin) avoidance.x = currentSpeed;
+        else if (probePos.x > (float)w - margin) avoidance.x = -currentSpeed;
+        if (probePos.y < margin) avoidance.y = currentSpeed;
+        else if (probePos.y > (float)h - margin) avoidance.y = -currentSpeed;
 
         if (Vector2::Length(avoidance) > 0.1f) {
             steerForce += (avoidance - vel) * 3.0f;
@@ -579,14 +544,6 @@ void Goose::Update(double dt, double time, int w, int h) {
     // --- SCREEN CLAMPING: prevent geese from wandering off-screen ---
     float minX = 0, minY = 0, maxX = (float)w, maxY = (float)h;
     
-    // Multi-monitor aware clamping
-    if (!g_config.multiMonitorEnabled && !g_monitors.empty()) {
-        for (auto& m : g_monitors) {
-            if (m.x == 0 && m.y == 0) {
-                maxX = (float)m.width; maxY = (float)m.height; break;
-            }
-        }
-    }
 
     if (state == FETCHING) {
         minX -= 50.0f; maxX += 50.0f; minY -= 50.0f; maxY += 50.0f;
@@ -595,7 +552,6 @@ void Goose::Update(double dt, double time, int w, int h) {
     }
     // Explicit clamping with bounce logic for SNATCH_CURSOR and RETURNING (dragging items)
     // We also include FETCHING here to prevent geese from wandering too far off-screen.
-    float bounceWall = 5.0f; // extra nudge to prevent sticking
     if (pos.x < minX) {
         pos.x = minX + 1.0f;
         if ((state == SNATCH_CURSOR || state == RETURNING || state == FETCHING) && vel.x < 0) {
@@ -620,18 +576,9 @@ void Goose::Update(double dt, double time, int w, int h) {
         }
     }
     CursorBackend* backend = g_backendManager.GetActiveBackend();
-    bool canGetPos  = (backend->Caps() & CAP_GET_POS);
     bool canMoveAbs = (backend->Caps() & CAP_MOVE_ABS);
     bool canMoveRel = (backend->Caps() & CAP_MOVE_REL);
 
-    // Sync predicted cursor if we can read the real one
-    if (canGetPos) {
-        Vector2 realPos = backend->GetCursorPos();
-        if (realPos.x >= 0) s_predictedCursor = realPos;
-    } else {
-        // Initialize if invalid
-        if (s_predictedCursor.x < 0) s_predictedCursor = { (float)w/2, (float)h/2 };
-    }
 
     // Smooth rotation
     if (Vector2::Length(vel) > 1.0f) {
@@ -658,6 +605,8 @@ void Goose::Update(double dt, double time, int w, int h) {
 
     if (state == SNATCH_CURSOR) {
         Vector2 bt = WorldToDevice(GetBeakTipWorld());
+        bt.x = std::clamp(bt.x, 0.0f, (float)std::max(0, w - 1));
+        bt.y = std::clamp(bt.y, 0.0f, (float)std::max(0, h - 1));
         
         if (canMoveAbs) {
             // Tier 1/2: Warp cursor to beak
