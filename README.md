@@ -166,16 +166,82 @@ Or keep it attached to the current terminal for debugging:
 ./build/CppGoose start "Pip" --foreground
 ```
 
-Common CLI commands:
+Run `./build/CppGoose help` for the full command list. Common commands:
 
 ```bash
 ./build/CppGoose start "Pip"
 ./build/CppGoose spawn Pip
-./build/CppGoose clear
-./build/CppGoose ram
 ./build/CppGoose status
+./build/CppGoose skins
+./build/CppGoose ram
+./build/CppGoose freeze
+./build/CppGoose rules
+./build/CppGoose clear
 ./build/CppGoose quit
 ```
+
+### Goose skins
+
+Each goose has separate hat and glasses slots. Equip a built-in look, or mix the
+slots yourself:
+
+```bash
+CppGoose skins
+CppGoose skins equip 0 party
+CppGoose skins set 0 hat crown
+CppGoose skins set 0 glasses aviators
+CppGoose skins show 0
+```
+
+The built-in looks are `classic`, `scholar`, `party`, `pilot`, `royal`, and
+`incognito`. Save any combination under a lowercase name to reuse it:
+
+```bash
+CppGoose skins save 0 crown-pilot
+CppGoose skins equip 1 crown-pilot
+CppGoose skins delete crown-pilot
+```
+
+Saved looks live in `~/.config/desktop-goose/skins.ini`. Listing and deleting
+saved looks works while the daemon is stopped. Equipping, editing, inspecting,
+and saving a goose outfit requires a running daemon.
+
+### Freezing the flock
+
+Pause every goose in place with a single command. Frozen geese stop moving and
+custom rules stop firing until you unfreeze them. Requires a running daemon.
+
+```bash
+CppGoose freeze          # freeze all geese
+CppGoose freeze on       # explicit freeze
+CppGoose freeze off      # resume
+CppGoose freeze toggle   # flip current state
+```
+
+The current state is reported by `CppGoose status` as `frozen=0|1`.
+
+### Custom rules
+
+Rules force matching geese to perform an action, either once or on a repeating
+interval. Target a single goose by id or `all` geese at once. Requires a running
+daemon.
+
+```bash
+CppGoose rules                              # list active rules
+CppGoose rules add all meme 10             # every goose fetches a meme every 10s
+CppGoose rules add 0 chase 5               # goose 0 chases the cursor every 5s
+CppGoose rules add 0 wander                # force goose 0 to wander once
+CppGoose rules add all text 30 honk honk   # every goose carries "honk honk" every 30s
+CppGoose rules remove 2                     # delete rule 2
+CppGoose rules clear                        # delete every rule
+```
+
+Actions are `wander`, `meme` (fetch a meme), `note` (fetch a note), `chase`
+(chase the cursor), and `text` (carry a custom message). The optional interval is
+in seconds; omit it for a one-shot rule that fires on the next tick and is then
+removed automatically. For `text`, any words after the interval become the
+message. `chase` only takes effect when a cursor backend can read the pointer.
+`CppGoose status` reports the number of active rules as `rule_count`.
 
 ### Wayland notes
 
@@ -225,6 +291,8 @@ CppGoose/
     ui.cpp                   Overlay drawing and tick loop
     assets.cpp               Asset resolution, image/sound loading, item data construction
     config.cpp               INI-based config registry
+    cosmetics.cpp            Cosmetic catalog, saved looks, and Cairo drawing
+    cli_visuals.cpp           Interactive terminal formatting
     cursor_backend.cpp       Backend manager and selection logic
     hyprland.cpp             Hyprland IPC cursor backend
     wlroots_backend.cpp      wlroots virtual-pointer cursor backend

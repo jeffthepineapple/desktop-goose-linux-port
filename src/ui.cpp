@@ -13,6 +13,7 @@
 #include <string>
 #include <pango/pangocairo.h>
 #include "cursor_backend.h"
+#include "app_actions.h"
 
 namespace fs = std::filesystem;
 
@@ -829,8 +830,11 @@ gboolean on_tick(gpointer) {
     MaybeTriggerEscapeKill();
     UpdateEscapeHoldHud();
 
-    for (auto& goose : g_geese) {
-        goose.Update(1.0 / 60.0, g_time, g_screenWidth, g_screenHeight);
+    if (!g_frozen) {
+        Rules_Tick(g_time, g_screenWidth, g_screenHeight);
+        for (auto& goose : g_geese) {
+            goose.Update(1.0 / 60.0, g_time, g_screenWidth, g_screenHeight);
+        }
     }
 
     g_droppedItems.remove_if([](DroppedItem& item) {

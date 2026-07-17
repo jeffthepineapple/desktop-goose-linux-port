@@ -922,6 +922,9 @@ void Goose::Draw(cairo_t* cr) {
 
     // eyes
     DrawEyes(cr, fwd, back);
+    Vector2 rawSide = Vector2::FromAngleDegrees(dir + 90.0f);
+    Vector2 side{rawSide.x * ISO_SCALE.x, rawSide.y * ISO_SCALE.y};
+    Cosmetics_Draw(cr, skin, {rig.neckHead, fwd, side, back});
 
     // held item front
     if (heldItem && !facingBack) DrawHeldItem(cr);
@@ -1019,5 +1022,20 @@ void Goose::ForceWander(int w, int h) {
     heldItem = nullptr;
     dragInit = false;
     forcedText.clear();
+    PickNewTarget(w, h);
+}
+
+void Goose::ForceChase(int w, int h) {
+    heldItem = nullptr;
+    dragInit = false;
+    forcedText.clear();
+    // Only chase when a backend can read the cursor and nobody else is snatching.
+    // Update()'s CHASE_CURSOR handler resolves the live cursor target next frame.
+    if (g_cursorGrabberId == -1 &&
+        (g_backendManager.GetActiveBackend()->Caps() & CAP_GET_POS)) {
+        state = CHASE_CURSOR;
+        return;
+    }
+    state = WANDER;
     PickNewTarget(w, h);
 }

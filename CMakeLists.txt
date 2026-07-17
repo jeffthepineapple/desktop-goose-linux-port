@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.17)
 project(CppGoose)
+include(CTest)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -97,3 +98,21 @@ target_compile_options(CppGoose PUBLIC
 )
 
 install(TARGETS CppGoose DESTINATION bin)
+
+if(BUILD_TESTING)
+    add_executable(CppGooseCosmeticsTest
+        tests/cosmetics_test.cpp
+        src/cosmetics.cpp
+    )
+    target_include_directories(CppGooseCosmeticsTest PRIVATE
+        ${GTK4_INCLUDE_DIRS}
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+    )
+    target_compile_options(CppGooseCosmeticsTest PRIVATE ${GTK4_CFLAGS_OTHER})
+    target_link_libraries(CppGooseCosmeticsTest ${GTK4_LIBRARIES} m)
+    add_test(NAME cosmetics_contracts COMMAND CppGooseCosmeticsTest)
+    add_test(NAME cli_help COMMAND CppGoose help)
+    set_tests_properties(cli_help PROPERTIES PASS_REGULAR_EXPRESSION "SKIN LOCKER")
+    add_test(NAME cli_skin_catalog COMMAND CppGoose skins)
+    set_tests_properties(cli_skin_catalog PROPERTIES PASS_REGULAR_EXPRESSION "preset.party=Party Bird")
+endif()

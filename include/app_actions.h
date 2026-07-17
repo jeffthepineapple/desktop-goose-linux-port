@@ -13,3 +13,4 @@ void AppActions_ClearGeese();
 void AppActions_Quit();
 std::string AppActions_GetStatus();
 std::string AppActions_HandleCommand(const std::vector<std::string>& args);
+void Rules_Tick(double time, int w, int h);

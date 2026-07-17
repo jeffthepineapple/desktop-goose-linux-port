@@ -1,11 +1,14 @@
 #include "app_actions.h"
 
+#include <algorithm>
+#include <charconv>
 #include <fstream>
 #include <iomanip>
 #include <sstream>
 #include "glib.h"
 #include "assets.h"
 #include "config.h"
+#include "cosmetics.h"
 #include "world.h"
 
 static GtkApplication* g_appActionsApp = nullptr;
@@ -173,6 +176,309 @@ static std::string HandleSettingsCommand(const std::vector<std::string>& args) {
     return "error usage: settings [list|get|set]\n";
 }
 
+static bool ParseGooseId(const std::string& text, int* idOut) {
+    if (text.empty()) return false;
+    int id = -1;
+    const char* begin = text.data();
+    const char* end = begin + text.size();
+    const auto result = std::from_chars(begin, end, id);
+    if (result.ec != std::errc() || result.ptr != end || id < 0) return false;
+    if (idOut) *idOut = id;
+    return true;
+}
+
+static Goose* FindCommandGoose(const std::string& text, std::string* errorOut) {
+    int id = -1;
+    if (!ParseGooseId(text, &id)) {
+        if (errorOut) *errorOut = "invalid goose id: " + text;
+        return nullptr;
+    }
+    Goose* goose = GetGooseById(id);
+    if (!goose && errorOut) *errorOut = "goose not found: " + std::to_string(id);
+    return goose;
+}
+
+static void QueueOverlayRedraw() {
+    for (const MonitorInfo& monitor : g_monitors) {
+        if (monitor.canvas) gtk_widget_queue_draw(monitor.canvas);
+    }
+}
+
+static std::string FormatSkinState(const Goose& goose, bool includeOk) {
+    std::ostringstream out;
+    if (includeOk) out << "ok\n";
+    out << "goose_id=" << goose.id << "\n";
+    out << "goose_name=" << goose.name << "\n";
+    out << "profile=" << Cosmetics_MatchingProfile(goose.skin) << "\n";
+    out << "hat=" << goose.skin.hat << "\n";
+    out << "glasses=" << goose.skin.glasses << "\n";
+    return out.str();
+}
+
+static std::string GetSkinCatalog() {
+    Cosmetics_Initialize();
+    std::ostringstream out;
+    out << "skins_config=" << Cosmetics_ConfigPath() << "\n";
+    for (const CosmeticItem& item : Cosmetics_Items()) {
+        out << Cosmetics_SlotName(item.slot) << "." << item.id << "=" << item.label << "\n";
+    }
+    for (const SkinProfile& profile : Cosmetics_BuiltInProfiles()) {
+        out << "preset." << profile.id << "=" << profile.label << "|"
+            << profile.skin.hat << "|" << profile.skin.glasses << "\n";
+    }
+    for (const SkinProfile& profile : Cosmetics_CustomProfiles()) {
+        out << "profile." << profile.id << "=" << profile.label << "|"
+            << profile.skin.hat << "|" << profile.skin.glasses << "\n";
+    }
+    return out.str();
+}
+
+static std::string HandleSkinsCommand(const std::vector<std::string>& args) {
+    Cosmetics_Initialize();
+    if (args.size() == 1) return GetSkinCatalog();
+    if (args[1] == "list") {
+        return args.size() == 2
+            ? GetSkinCatalog()
+            : "error usage: skins list\n";
+    }
+
+    if (args[1] == "show") {
+        if (args.size() != 3) return "error usage: skins show <goose-id>\n";
+        std::string error;
+        Goose* goose = FindCommandGoose(args[2], &error);
+        return goose ? FormatSkinState(*goose, false) : "error " + error + "\n";
+    }
+
+    if (args[1] == "equip") {
+        if (args.size() != 4) return "error usage: skins equip <goose-id> <look>\n";
+        std::string error;
+        Goose* goose = FindCommandGoose(args[2], &error);
+        if (!goose) return "error " + error + "\n";
+        if (!Cosmetics_ApplyProfile(goose->skin, args[3], &error)) {
+            return "error " + error + "\n";
+        }
+        QueueOverlayRedraw();
+        UiLogPush("Equipped " + goose->name + " with skin " + args[3]);
+        return FormatSkinState(*goose, true);
+    }
+
+    if (args[1] == "set") {
+        if (args.size() != 5) {
+            return "error usage: skins set <goose-id> <hat|glasses> <item|none>\n";
+        }
+        std::string error;
+        Goose* goose = FindCommandGoose(args[2], &error);
+        if (!goose) return "error " + error + "\n";
+        CosmeticSlot slot;
+        if (!Cosmetics_ParseSlot(args[3], &slot)) {
+            return "error unknown skin slot: " + args[3] + " (use hat or glasses)\n";
+        }
+        if (!Cosmetics_SetItem(goose->skin, slot, args[4], &error)) {
+            return "error " + error + "\n";
+        }
+        QueueOverlayRedraw();
+        UiLogPush("Set " + goose->name + " " + args[3] + "=" + args[4]);
+        return FormatSkinState(*goose, true);
+    }
+
+    if (args[1] == "save") {
+        if (args.size() != 4) return "error usage: skins save <goose-id> <look>\n";
+        std::string error;
+        Goose* goose = FindCommandGoose(args[2], &error);
+        if (!goose) return "error " + error + "\n";
+        if (!Cosmetics_SaveProfile(args[3], goose->skin, &error)) {
+            return "error " + error + "\n";
+        }
+        UiLogPush("Saved skin " + args[3]);
+        return FormatSkinState(*goose, true);
+    }
+
+    if (args[1] == "delete") {
+        if (args.size() != 3) return "error usage: skins delete <look>\n";
+        std::string error;
+        if (!Cosmetics_DeleteProfile(args[2], &error)) return "error " + error + "\n";
+        UiLogPush("Deleted skin " + args[2]);
+        return "ok deleted=" + args[2] + "\n";
+    }
+
+    return "error usage: skins [list|show|equip|set|save|delete]\n";
+}
+
+
+static bool ParseRuleAction(const std::string& text, RuleAction* out) {
+    if (text == "wander") *out = RuleAction::Wander;
+    else if (text == "meme" || text == "fetch-meme") *out = RuleAction::FetchMeme;
+    else if (text == "note" || text == "fetch-note") *out = RuleAction::FetchNote;
+    else if (text == "text" || text == "say") *out = RuleAction::FetchText;
+    else if (text == "chase" || text == "chase-cursor") *out = RuleAction::Chase;
+    else return false;
+    return true;
+}
+
+static const char* RuleActionName(RuleAction action) {
+    switch (action) {
+        case RuleAction::Wander:    return "wander";
+        case RuleAction::FetchMeme: return "meme";
+        case RuleAction::FetchNote: return "note";
+        case RuleAction::FetchText: return "text";
+        case RuleAction::Chase:     return "chase";
+    }
+    return "?";
+}
+
+static void ApplyRuleAction(Goose& goose, const GooseRule& rule, int w, int h) {
+    switch (rule.action) {
+        case RuleAction::Wander:    goose.ForceWander(w, h); break;
+        case RuleAction::FetchMeme: goose.ForceFetch(0, w, h); break;
+        case RuleAction::FetchNote: goose.ForceFetch(1, w, h); break;
+        case RuleAction::FetchText: goose.ForceFetchText(rule.text, w, h); break;
+        case RuleAction::Chase:     goose.ForceChase(w, h); break;
+    }
+}
+
+void Rules_Tick(double time, int w, int h) {
+    for (auto& rule : g_rules) {
+        if (rule.fired || time < rule.nextFire) continue;
+
+        if (rule.target < 0) {
+            for (auto& goose : g_geese) ApplyRuleAction(goose, rule, w, h);
+        } else if (Goose* goose = GetGooseById(rule.target)) {
+            ApplyRuleAction(*goose, rule, w, h);
+        }
+
+        if (rule.interval > 0.0) rule.nextFire = time + rule.interval;
+        else rule.fired = true; // one-shot
+    }
+
+    g_rules.erase(std::remove_if(g_rules.begin(), g_rules.end(),
+                                 [](const GooseRule& r) { return r.fired; }),
+                  g_rules.end());
+}
+
+static std::string HandleFreezeCommand(const std::vector<std::string>& args) {
+    if (args.size() > 2) return "error usage: freeze [on|off|toggle]\n";
+
+    if (args.size() == 2) {
+        const std::string& mode = args[1];
+        if (mode == "on") g_frozen = true;
+        else if (mode == "off") g_frozen = false;
+        else if (mode == "toggle") g_frozen = !g_frozen;
+        else return "error usage: freeze [on|off|toggle]\n";
+    } else {
+        g_frozen = true;
+    }
+
+    UiLogPush(g_frozen ? "Froze all geese" : "Unfroze all geese");
+    return std::string("ok frozen=") + (g_frozen ? "1" : "0") + "\n";
+}
+
+static std::string FormatRuleLine(const GooseRule& rule) {
+    std::ostringstream out;
+    out << "rule." << rule.id << " target="
+        << (rule.target < 0 ? "all" : std::to_string(rule.target))
+        << " action=" << RuleActionName(rule.action);
+    if (rule.action == RuleAction::FetchText) out << " text=\"" << rule.text << "\"";
+    if (rule.interval > 0.0) out << " every=" << rule.interval << "s";
+    else out << " once";
+    out << "\n";
+    return out.str();
+}
+
+static std::string GetRulesList() {
+    if (g_rules.empty()) return "ok rules=0\n";
+    std::ostringstream out;
+    out << "ok rules=" << g_rules.size() << "\n";
+    for (const GooseRule& rule : g_rules) out << FormatRuleLine(rule);
+    return out.str();
+}
+
+static std::string HandleRulesCommand(const std::vector<std::string>& args) {
+    if (args.size() == 1 || args[1] == "list") {
+        if (args.size() > 2) return "error usage: rules list\n";
+        return GetRulesList();
+    }
+
+    if (args[1] == "clear") {
+        if (args.size() != 2) return "error usage: rules clear\n";
+        size_t count = g_rules.size();
+        g_rules.clear();
+        UiLogPush("Cleared all rules");
+        return "ok cleared=" + std::to_string(count) + "\n";
+    }
+
+    if (args[1] == "remove") {
+        if (args.size() != 3) return "error usage: rules remove <rule-id>\n";
+        int ruleId = -1;
+        if (!ParseGooseId(args[2], &ruleId)) return "error invalid rule id: " + args[2] + "\n";
+        auto before = g_rules.size();
+        g_rules.erase(std::remove_if(g_rules.begin(), g_rules.end(),
+                                     [ruleId](const GooseRule& r) { return r.id == ruleId; }),
+                      g_rules.end());
+        if (g_rules.size() == before) return "error rule not found: " + args[2] + "\n";
+        UiLogPush("Removed rule " + args[2]);
+        return "ok removed=" + args[2] + "\n";
+    }
+
+    if (args[1] == "add") {
+        // rules add <goose-id|all> <action> [interval-seconds] [text...]
+        if (args.size() < 4) {
+            return "error usage: rules add <goose-id|all> <wander|meme|note|chase|text> [interval] [text]\n";
+        }
+
+        int target = -1;
+        if (args[2] != "all" && !ParseGooseId(args[2], &target)) {
+            return "error invalid goose id: " + args[2] + " (use a goose id or 'all')\n";
+        }
+        if (target >= 0 && !GetGooseById(target)) {
+            return "error goose not found: " + args[2] + "\n";
+        }
+
+        RuleAction action;
+        if (!ParseRuleAction(args[3], &action)) {
+            return "error unknown action: " + args[3] + " (wander|meme|note|chase|text)\n";
+        }
+
+        double interval = 0.0;
+        size_t textStart = 4;
+        if (args.size() > 4) {
+            const std::string& maybeInterval = args[4];
+            double parsed = 0.0;
+            const char* begin = maybeInterval.data();
+            const char* end = begin + maybeInterval.size();
+            auto result = std::from_chars(begin, end, parsed);
+            if (result.ec == std::errc() && result.ptr == end) {
+                if (parsed < 0.0) return "error interval must be >= 0\n";
+                interval = parsed;
+                textStart = 5;
+            }
+        }
+
+        std::string text;
+        for (size_t i = textStart; i < args.size(); ++i) {
+            if (!text.empty()) text += " ";
+            text += args[i];
+        }
+        if (action == RuleAction::FetchText && text.empty()) {
+            return "error text action requires a message: rules add <target> text [interval] <message>\n";
+        }
+
+        GooseRule rule;
+        rule.id = g_nextRuleId++;
+        rule.target = target;
+        rule.action = action;
+        rule.text = text;
+        rule.interval = interval;
+        // Repeating rules first fire after one interval; one-shot rules fire on the next tick.
+        rule.nextFire = (interval > 0.0) ? g_time + interval : g_time;
+        g_rules.push_back(rule);
+
+        UiLogPush("Added rule " + std::to_string(rule.id) + " (" + RuleActionName(action) + ")");
+        return "ok " + FormatRuleLine(rule);
+    }
+
+    return "error usage: rules [list|add|remove|clear]\n";
+}
+
 std::string AppActions_GetStatus() {
     std::ostringstream out;
     out << "running=1\n";
@@ -182,6 +488,8 @@ std::string AppActions_GetStatus() {
     out << "meme_count=" << g_assets.memePaths.size() << "\n";
     out << "note_count=" << g_assets.textPaths.size() << "\n";
     out << GetRamUsageReport();
+    out << "frozen=" << (g_frozen ? 1 : 0) << "\n";
+    out << "rule_count=" << g_rules.size() << "\n";
 
     for (const auto& opt : g_configRegistry) {
         std::string value;
@@ -191,6 +499,10 @@ std::string AppActions_GetStatus() {
 
     for (const auto& goose : g_geese) {
         out << "goose." << goose.id << ".name=" << goose.name << "\n";
+        out << "goose." << goose.id << ".skin="
+            << Cosmetics_MatchingProfile(goose.skin) << "\n";
+        out << "goose." << goose.id << ".hat=" << goose.skin.hat << "\n";
+        out << "goose." << goose.id << ".glasses=" << goose.skin.glasses << "\n";
     }
 
     return out.str();
@@ -218,8 +530,20 @@ std::string AppActions_HandleCommand(const std::vector<std::string>& args) {
         return HandleSettingsCommand(args);
     }
 
+    if (command == "skins") {
+        return HandleSkinsCommand(args);
+    }
+
     if (command == "ram") {
         return GetRamUsageReport();
+    }
+
+    if (command == "freeze") {
+        return HandleFreezeCommand(args);
+    }
+
+    if (command == "rules") {
+        return HandleRulesCommand(args);
     }
 
     if (command == "quit") {

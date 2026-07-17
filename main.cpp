@@ -7,9 +7,11 @@
 #include <vector>
 #include <unistd.h>
 #include "app_actions.h"
+#include "cli_visuals.h"
 #include "command_socket.h"
 #include "ui.h"
 #include "world.h"
+#include "cosmetics.h"
 #include "config.h"
 #include "cursor_backend.h"
 
@@ -22,6 +24,7 @@ static void on_activate(GtkApplication* app) {
     if (initialized) return;
 
     Config_InitRegistry();
+    Cosmetics_Initialize();
     g_geese.reserve(8);
     setup_overlay_window(app);
     g_backendManager.Init();
@@ -44,7 +47,10 @@ static bool IsControlCommand(const std::string& command) {
            command == "clear" ||
            command == "ram" ||
            command == "settings" ||
+           command == "skins" ||
            command == "status" ||
+           command == "freeze" ||
+           command == "rules" ||
            command == "quit";
 }
 
@@ -56,12 +62,12 @@ static bool IsRunning() {
 static int DaemonizeProcess() {
     pid_t pid = fork();
     if (pid < 0) {
-        std::cerr << "Failed to fork background process" << std::endl;
+        Cli_PrintNotice(false, "Could not start the background process");
         return 1;
     }
 
     if (pid > 0) {
-        std::cout << "Desktop Goose started in background" << std::endl;
+        Cli_PrintNotice(true, "Desktop Goose started in the background");
         return 0;
     }
 
@@ -90,10 +96,9 @@ static int DaemonizeProcess() {
 static int HandleCliCommand(int argc, char** argv, int* appArgc) {
     if (argc <= 1) {
         if (IsRunning()) {
-            std::cout << "Desktop Goose is already running" << std::endl;
+            Cli_PrintNotice(true, "Desktop Goose is already running");
             return 0;
         }
-
         return DaemonizeProcess();
     }
 
@@ -103,28 +108,15 @@ static int HandleCliCommand(int argc, char** argv, int* appArgc) {
         return -1;
     }
 
-    if (command == "--help" || command == "help") {
-        std::cout
-            << "Desktop Goose commands:\n"
-            << "  CppGoose\n"
-            << "  CppGoose start [name]\n"
-            << "  CppGoose start [name] --foreground\n"
-            << "  CppGoose spawn [name]\n"
-            << "  CppGoose clear\n"
-            << "  CppGoose ram\n"
-            << "  CppGoose settings\n"
-            << "  CppGoose settings get <key>\n"
-            << "  CppGoose settings set <key> <value>\n"
-            << "  CppGoose status\n"
-            << "  CppGoose quit\n"
-            << "\n"
-            << "Examples:\n"
-            << "  CppGoose start \"Pip\"      Start with a named goose\n"
-            << "  CppGoose spawn \"Pip\"      Add a named goose to a running daemon\n";
+    if (command == "--help" || command == "-h" || command == "help") {
+        Cli_PrintHelp();
         return 0;
     }
 
-    if (!IsControlCommand(command)) return -1;
+    if (!IsControlCommand(command)) {
+        Cli_PrintNotice(false, "Unknown command '" + command + "'. Run CppGoose help.");
+        return 1;
+    }
 
     if (command == "start") {
         bool foreground = false;
@@ -137,7 +129,7 @@ static int HandleCliCommand(int argc, char** argv, int* appArgc) {
             } else if (requestedName.empty()) {
                 requestedName = arg;
             } else {
-                std::cerr << "Usage: CppGoose start [name] [--foreground]" << std::endl;
+                Cli_PrintNotice(false, "Usage: CppGoose start [name] [--foreground]");
                 return 1;
             }
         }
@@ -154,14 +146,13 @@ static int HandleCliCommand(int argc, char** argv, int* appArgc) {
                 std::string response;
                 std::string error;
                 if (!CommandSocket_Send({"spawn", requestedName}, &response, &error)) {
-                    std::cerr << error << std::endl;
+                    Cli_PrintNotice(false, error);
                     return 1;
                 }
-                if (!response.empty()) std::cout << response;
-                return 0;
+                return Cli_PrintResponse({"spawn", requestedName}, response);
             }
 
-            std::cout << "Desktop Goose is already running" << std::endl;
+            Cli_PrintNotice(true, "Desktop Goose is already running");
             return 0;
         }
 
@@ -174,19 +165,33 @@ static int HandleCliCommand(int argc, char** argv, int* appArgc) {
     if (command == "settings" && !IsRunning()) {
         Config_InitRegistry();
         std::string response = AppActions_HandleCommand(args);
-        if (!response.empty()) std::cout << response;
-        return response.rfind("error ", 0) == 0 ? 1 : 0;
+        return Cli_PrintResponse(args, response);
+    }
+
+    if (command == "skins" && !IsRunning()) {
+        const bool worksOffline =
+            args.size() == 1 || args[1] == "list" || args[1] == "delete";
+        if (!worksOffline) {
+            Cli_PrintNotice(
+                false,
+                "Desktop Goose is not running. Start it before changing a goose outfit."
+            );
+            return 1;
+        }
+        Config_InitRegistry();
+        Cosmetics_Initialize();
+        std::string response = AppActions_HandleCommand(args);
+        return Cli_PrintResponse(args, response);
     }
 
     std::string response;
     std::string error;
     if (!CommandSocket_Send(args, &response, &error)) {
-        std::cerr << error << std::endl;
+        Cli_PrintNotice(false, error);
         return 1;
     }
 
-    if (!response.empty()) std::cout << response;
-    return 0;
+    return Cli_PrintResponse(args, response);
 }
 
 int main(int argc, char** argv) {

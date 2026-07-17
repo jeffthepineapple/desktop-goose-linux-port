@@ -8,6 +8,7 @@
 #include <gtk/gtk.h>
 #include "goose_math.h"
 #include "assets.h"
+#include "cosmetics.h"
 
 enum GooseState { WANDER, FETCHING, RETURNING, CHASE_CURSOR, SNATCH_CURSOR };
 
@@ -29,6 +30,7 @@ class Goose {
 public:
     int id;
     std::string name;
+    GooseSkin skin;
     Vector2 pos{200, 200};
     Vector2 target{500, 500};
     Vector2 vel{};
@@ -85,6 +87,7 @@ public:
     void ForceFetch(int type, int w, int h);
     void ForceFetchText(const std::string& text, int w, int h);
     void ForceWander(int w, int h);
+    void ForceChase(int w, int h);
     void Draw(cairo_t* cr);
 
     // Coordinate helpers
