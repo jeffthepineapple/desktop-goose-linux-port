@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360" role="img" aria-labelledby="title desc">
+  <title id="title">CppGoose cursor backend routing</title>
+  <desc id="desc">CppGoose selects Hyprland IPC, wlroots virtual pointer, or X11 XTest for cursor control.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#111a20"/><stop offset="1" stop-color="#20343d"/></linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10Z" fill="#718b94"/></marker>
+  </defs>
+  <rect width="1200" height="360" rx="24" fill="url(#bg)"/>
+  <g font-family="Inter, Segoe UI, sans-serif">
+    <text x="60" y="61" fill="#f7f3e8" font-size="28" font-weight="700">Cursor control, selected at runtime</text>
+    <text x="60" y="90" fill="#9db0b7" font-size="17">The goose keeps walking even when no cursor backend is available.</text>
+
+    <g transform="translate(65 135)">
+      <rect width="238" height="135" rx="16" fill="#f7f3e8"/>
+      <text x="26" y="48" fill="#142027" font-size="23" font-weight="700">CppGoose</text>
+      <text x="26" y="78" fill="#52636a" font-size="15">behavior + overlay</text>
+      <text x="26" y="105" fill="#ff8e17" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14">cursor_backend.cpp</text>
+    </g>
+
+    <path d="M303 203 H392" stroke="#718b94" stroke-width="3" marker-end="url(#arrow)"/>
+
+    <g transform="translate(410 119)">
+      <rect width="225" height="168" rx="16" fill="#263b45" stroke="#49636d"/>
+      <text x="25" y="45" fill="#8dd7bf" font-size="20" font-weight="700">1  Hyprland</text>
+      <text x="25" y="75" fill="#cfdbde" font-size="15">IPC socket</text>
+      <text x="25" y="102" fill="#91a4aa" font-size="14">read + move cursor</text>
+      <rect x="25" y="125" width="109" height="25" rx="12" fill="#8dd7bf" opacity=".16"/>
+      <text x="39" y="142" fill="#8dd7bf" font-size="12">best support</text>
+    </g>
+
+    <path d="M635 203 H690" stroke="#718b94" stroke-width="3" marker-end="url(#arrow)"/>
+
+    <g transform="translate(708 119)">
+      <rect width="205" height="168" rx="16" fill="#263b45" stroke="#49636d"/>
+      <text x="23" y="45" fill="#f7f3e8" font-size="20" font-weight="700">2  wlroots</text>
+      <text x="23" y="75" fill="#cfdbde" font-size="15">virtual pointer</text>
+      <text x="23" y="102" fill="#91a4aa" font-size="14">inject movement</text>
+      <text x="23" y="135" fill="#ffb13b" font-size="12">Wayland protocol</text>
+    </g>
+
+    <path d="M913 203 H968" stroke="#718b94" stroke-width="3" marker-end="url(#arrow)"/>
+
+    <g transform="translate(986 119)">
+      <rect width="150" height="168" rx="16" fill="#263b45" stroke="#49636d"/>
+      <text x="22" y="45" fill="#f7f3e8" font-size="20" font-weight="700">3  X11</text>
+      <text x="22" y="75" fill="#cfdbde" font-size="15">XTest</text>
+      <text x="22" y="102" fill="#91a4aa" font-size="14">read + move</text>
+      <text x="22" y="135" fill="#ffb13b" font-size="12">XWayland too</text>
+    </g>
+  </g>
+</svg>
