@@ -104,7 +104,10 @@ target_compile_options(CppGoose PUBLIC
 )
 
 install(TARGETS CppGoose RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
-install(DIRECTORY Assets DESTINATION "${CMAKE_INSTALL_DATADIR}/CppGoose")
+install(DIRECTORY Assets DESTINATION "${CMAKE_INSTALL_DATADIR}/CppGoose"
+    PATTERN "Header.png" EXCLUDE
+    PATTERN "terminal.png" EXCLUDE
+)
 
 if(BUILD_TESTING)
     add_executable(CppGooseCosmeticsTest

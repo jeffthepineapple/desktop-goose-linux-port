@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./docs/assets/header.svg" width="900" alt="CppGoose: a desktop menace for Linux">
+<img src="./Assets/Header.png" width="900" alt="Desktop Goose ported to Linux, surrounded by geese with different outfits">
 
 <br>
 
@@ -42,9 +42,9 @@ chasing, cosmetics, Perlin-generated personalities, and an interactive terminal.
 
 <div align="center">
 
-<img src="./docs/assets/terminal-preview.svg" width="900" alt="CppGoose interactive terminal preview">
+<img src="./Assets/terminal.png" width="900" alt="CppGoose interactive help showing every command page">
 
-<sub>The terminal preview uses real commands and status fields from the current CLI.</sub>
+<sub>The interactive shell keeps every command visible without filling the terminal.</sub>
 
 </div>
 
