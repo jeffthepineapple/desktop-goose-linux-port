@@ -1006,36 +1006,46 @@ Vector2 Goose::GetBeakTipWorld() {
 // UI FORCE COMMANDS
 // =========================================================
 
+void Goose::CancelCurrentBehavior() {
+    if (heldItem) {
+        delete heldItem;
+        heldItem = nullptr;
+    }
+    if (g_cursorGrabberId == id) g_cursorGrabberId = -1;
+    dragInit = false;
+    forceItemFetch = -1;
+    forcedText.clear();
+}
+
 void Goose::ForceFetch(int type, int w, int h) {
+    CancelCurrentBehavior();
     forceItemFetch = type;
     StartFetch(w, h);
 }
 
 void Goose::ForceFetchText(const std::string& text, int w, int h) {
+    CancelCurrentBehavior();
     forceItemFetch = 1;
     forcedText = text;
     StartFetch(w, h);
 }
 
 void Goose::ForceWander(int w, int h) {
+    CancelCurrentBehavior();
     state = WANDER;
-    heldItem = nullptr;
-    dragInit = false;
-    forcedText.clear();
     PickNewTarget(w, h);
 }
 
-void Goose::ForceChase(int w, int h) {
-    heldItem = nullptr;
-    dragInit = false;
-    forcedText.clear();
+bool Goose::ForceChase(int w, int h) {
+    CancelCurrentBehavior();
     // Only chase when a backend can read the cursor and nobody else is snatching.
     // Update()'s CHASE_CURSOR handler resolves the live cursor target next frame.
     if (g_cursorGrabberId == -1 &&
         (g_backendManager.GetActiveBackend()->Caps() & CAP_GET_POS)) {
         state = CHASE_CURSOR;
-        return;
+        return true;
     }
     state = WANDER;
     PickNewTarget(w, h);
+    return false;
 }

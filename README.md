@@ -176,8 +176,11 @@ items. After a command name, an inline grey hint shows the expected arguments.
 ```
 goose> skins equip 1 pa<TAB>      # completes to: skins equip 1 party
 goose> help skins                 # one help page, not the whole reference
-goose> exit                       # leave the shell; the geese keep running
+goose> force set 1 chase           # immediately make goose 1 chase
+goose> exit                        # leave the shell; the geese keep running
 ```
+`force set <goose-id> <wander|meme|note|chase>` immediately interrupts that
+goose's current behavior and starts the selected behavior.
 
 `quit` inside the shell stops the daemon (after confirmation); `cls` clears the
 screen.

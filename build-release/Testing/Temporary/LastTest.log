@@ -1,26 +1,26 @@
-Start testing: Jul 16 23:59 PDT
+Start testing: Jul 17 11:28 PDT
 ----------------------------------------------------------
-1/5 Testing: cosmetics_contracts
-1/5 Test: cosmetics_contracts
+1/6 Testing: cosmetics_contracts
+1/6 Test: cosmetics_contracts
 Command: "/home/dill/Downloads/desktop-goose-linux-port/build-release/CppGooseCosmeticsTest"
 Directory: /home/dill/Downloads/desktop-goose-linux-port/build-release
-"cosmetics_contracts" start time: Jul 16 23:59 PDT
+"cosmetics_contracts" start time: Jul 17 11:28 PDT
 Output:
 ----------------------------------------------------------
 cosmetics contracts passed
 <end of output>
-Test time =   0.04 sec
+Test time =   0.03 sec
 ----------------------------------------------------------
 Test Passed.
-"cosmetics_contracts" end time: Jul 16 23:59 PDT
+"cosmetics_contracts" end time: Jul 17 11:28 PDT
 "cosmetics_contracts" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-2/5 Testing: cli_help
-2/5 Test: cli_help
+2/6 Testing: cli_help
+2/6 Test: cli_help
 Command: "/home/dill/Downloads/desktop-goose-linux-port/build-release/CppGoose" "help"
 Directory: /home/dill/Downloads/desktop-goose-linux-port/build-release
-"cli_help" start time: Jul 16 23:59 PDT
+"cli_help" start time: Jul 17 11:28 PDT
 Output:
 ----------------------------------------------------------
 GOOSE CONTROL // HELP
@@ -30,23 +30,24 @@ GOOSE CONTROL // HELP
   skins     list · show · equip · set · save · delete
   settings  list · get · set
   rules     list · add · remove · clear
+  force     set
 --------------------------------------------------------------------
   help <page|command>  details, e.g. CppGoose help skins
   help all             the full reference
 <end of output>
-Test time =   0.05 sec
+Test time =   0.04 sec
 ----------------------------------------------------------
 Test Pass Reason:
 Required regular expression found. Regex=[help <page]
-"cli_help" end time: Jul 16 23:59 PDT
+"cli_help" end time: Jul 17 11:28 PDT
 "cli_help" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-3/5 Testing: cli_help_page
-3/5 Test: cli_help_page
+3/6 Testing: cli_help_page
+3/6 Test: cli_help_page
 Command: "/home/dill/Downloads/desktop-goose-linux-port/build-release/CppGoose" "help" "skins"
 Directory: /home/dill/Downloads/desktop-goose-linux-port/build-release
-"cli_help_page" start time: Jul 16 23:59 PDT
+"cli_help_page" start time: Jul 17 11:28 PDT
 Output:
 ----------------------------------------------------------
 GOOSE CONTROL // HELP SKINS
@@ -60,19 +61,39 @@ GOOSE CONTROL // HELP SKINS
   e.g. CppGoose skins equip 0 party
   e.g. CppGoose skins set 0 glasses shades
 <end of output>
-Test time =   0.05 sec
+Test time =   0.04 sec
 ----------------------------------------------------------
 Test Pass Reason:
 Required regular expression found. Regex=[Equip a preset or saved look]
-"cli_help_page" end time: Jul 16 23:59 PDT
+"cli_help_page" end time: Jul 17 11:28 PDT
 "cli_help_page" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-4/5 Testing: cli_help_all
-4/5 Test: cli_help_all
+4/6 Testing: cli_help_force
+4/6 Test: cli_help_force
+Command: "/home/dill/Downloads/desktop-goose-linux-port/build-release/CppGoose" "help" "force"
+Directory: /home/dill/Downloads/desktop-goose-linux-port/build-release
+"cli_help_force" start time: Jul 17 11:28 PDT
+Output:
+----------------------------------------------------------
+GOOSE CONTROL // HELP FORCE
+--------------------------------------------------------------------
+  force set <id> <wander|meme|note|chase>        Immediately set one goose's behavior
+  e.g. CppGoose force set 0 wander
+<end of output>
+Test time =   0.04 sec
+----------------------------------------------------------
+Test Pass Reason:
+Required regular expression found. Regex=[force set <id> <wander\|meme\|note\|chase>]
+"cli_help_force" end time: Jul 17 11:28 PDT
+"cli_help_force" time elapsed: 00:00:00
+----------------------------------------------------------
+
+5/6 Testing: cli_help_all
+5/6 Test: cli_help_all
 Command: "/home/dill/Downloads/desktop-goose-linux-port/build-release/CppGoose" "help" "all"
 Directory: /home/dill/Downloads/desktop-goose-linux-port/build-release
-"cli_help_all" start time: Jul 16 23:59 PDT
+"cli_help_all" start time: Jul 17 11:28 PDT
 Output:
 ----------------------------------------------------------
        _.-.                     
@@ -129,21 +150,25 @@ RULES
   rules clear                                    Delete every rule
   e.g. CppGoose rules add all meme 30
 
+FORCE
+  force set <id> <wander|meme|note|chase>        Immediately set one goose's behavior
+  e.g. CppGoose force set 0 wander
+
   Compact view: CppGoose help
 <end of output>
-Test time =   0.05 sec
+Test time =   0.04 sec
 ----------------------------------------------------------
 Test Pass Reason:
 Required regular expression found. Regex=[GOOSE CONTROL]
-"cli_help_all" end time: Jul 16 23:59 PDT
+"cli_help_all" end time: Jul 17 11:28 PDT
 "cli_help_all" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-5/5 Testing: cli_skin_catalog
-5/5 Test: cli_skin_catalog
+6/6 Testing: cli_skin_catalog
+6/6 Test: cli_skin_catalog
 Command: "/home/dill/Downloads/desktop-goose-linux-port/build-release/CppGoose" "skins"
 Directory: /home/dill/Downloads/desktop-goose-linux-port/build-release
-"cli_skin_catalog" start time: Jul 16 23:59 PDT
+"cli_skin_catalog" start time: Jul 17 11:28 PDT
 Output:
 ----------------------------------------------------------
 skins_config=/home/dill/.config/desktop-goose/skins.ini
@@ -162,12 +187,12 @@ preset.pilot=The Pilot|blue-cap|aviators
 preset.royal=Royal Goose|crown|round
 preset.incognito=Incognito|red-cap|shades
 <end of output>
-Test time =   0.05 sec
+Test time =   0.04 sec
 ----------------------------------------------------------
 Test Pass Reason:
 Required regular expression found. Regex=[preset.party=Party Bird]
-"cli_skin_catalog" end time: Jul 16 23:59 PDT
+"cli_skin_catalog" end time: Jul 17 11:28 PDT
 "cli_skin_catalog" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-End testing: Jul 16 23:59 PDT
+End testing: Jul 17 11:28 PDT

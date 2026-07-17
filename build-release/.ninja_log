@@ -1,5 +1,5 @@
 # ninja log v7
-3	19	1784270965408248149	/home/dill/Downloads/desktop-goose-linux-port/build-release/CMakeFiles/cmake.verify_globs	36221a2634f2e0ef
+2	23	1784312751967712937	/home/dill/Downloads/desktop-goose-linux-port/build-release/CMakeFiles/cmake.verify_globs	36221a2634f2e0ef
 23	34	1784225857021932270	wlr-virtual-pointer-unstable-v1-client-protocol.h	de4b3f2110fa6dd3
 23	34	1784225857021932270	/home/dill/Downloads/desktop-goose-linux-port/build-release/wlr-virtual-pointer-unstable-v1-client-protocol.h	de4b3f2110fa6dd3
 23	34	1784225857021932270	wlr-virtual-pointer-unstable-v1-protocol.c	1c72bf021419f910
@@ -26,6 +26,25 @@
 24	1209	1784270965430463876	CMakeFiles/CppGoose.dir/src/cli_registry.cpp.o	fd8561954fbdf299
 30	2776	1784270965435248123	CMakeFiles/CppGoose.dir/third_party/linenoise/linenoise.c.o	15d543ce6eaf4c63
 25	3389	1784270965430768788	CMakeFiles/CppGoose.dir/src/cli_shell.cpp.o	86ac3dbb1a3d9a6d
-2	20	1784271380079910418	/home/dill/Downloads/desktop-goose-linux-port/build-release/CMakeFiles/cmake.verify_globs	36221a2634f2e0ef
-2	23	1784271517037817242	/home/dill/Downloads/desktop-goose-linux-port/build-release/CMakeFiles/cmake.verify_globs	36221a2634f2e0ef
-3	23	1784271540637801804	/home/dill/Downloads/desktop-goose-linux-port/build-release/CMakeFiles/cmake.verify_globs	36221a2634f2e0ef
+23	159	1784312752106462697	build.ninja	71b00f8b3b252373
+23	159	1784312752106462697	/home/dill/Downloads/desktop-goose-linux-port/build-release/cmake_install.cmake	71b00f8b3b252373
+23	159	1784312752106462697	/home/dill/Downloads/desktop-goose-linux-port/build-release/CTestTestfile.cmake	71b00f8b3b252373
+2	21	1784312752126712805	/home/dill/Downloads/desktop-goose-linux-port/build-release/CMakeFiles/cmake.verify_globs	36221a2634f2e0ef
+29	1168	1784312752153712782	CMakeFiles/CppGoose.dir/src/cli_registry.cpp.o	fd8561954fbdf299
+29	2595	1784312752155213337	CMakeFiles/CppGoose.dir/src/wlroots_backend.cpp.o	42c33a4dd92ff9ef
+30	2799	1784312752155429502	CMakeFiles/CppGoose.dir/src/world.cpp.o	f508e122cc82548
+30	3624	1784312752155663050	CMakeFiles/CppGoose.dir/main.cpp.o	c26e43a543e15943
+29	3835	1784312752154520668	CMakeFiles/CppGoose.dir/src/cli_shell.cpp.o	86ac3dbb1a3d9a6d
+29	4416	1784312752154690577	CMakeFiles/CppGoose.dir/src/cli_visuals.cpp.o	996e5064e0aacbd2
+29	4441	1784312752154872307	CMakeFiles/CppGoose.dir/src/goose.cpp.o	45aaa6aaa11d066
+29	4888	1784312752155037056	CMakeFiles/CppGoose.dir/src/ui.cpp.o	9335e915ea14c0e2
+28	5457	1784312752152712783	CMakeFiles/CppGoose.dir/src/app_actions.cpp.o	4447f427b76f2159
+5457	5881	1784312757581708272	CppGoose	dad35b1f290c7dd8
+2	11	1784312897116593469	/home/dill/Downloads/desktop-goose-linux-port/build-release/CMakeFiles/cmake.verify_globs	36221a2634f2e0ef
+15	1622	1784312897131207948	CMakeFiles/CppGoose.dir/src/wlroots_backend.cpp.o	42c33a4dd92ff9ef
+16	1741	1784312897131374781	CMakeFiles/CppGoose.dir/src/world.cpp.o	f508e122cc82548
+16	1953	1784312897131552154	CMakeFiles/CppGoose.dir/main.cpp.o	c26e43a543e15943
+15	2834	1784312897130793992	CMakeFiles/CppGoose.dir/src/goose.cpp.o	45aaa6aaa11d066
+15	3236	1784312897131086962	CMakeFiles/CppGoose.dir/src/ui.cpp.o	9335e915ea14c0e2
+15	3666	1784312897129593459	CMakeFiles/CppGoose.dir/src/app_actions.cpp.o	4447f427b76f2159
+3666	3917	1784312900780590482	CppGoose	dad35b1f290c7dd8

@@ -158,6 +158,7 @@ std::vector<std::string> KindCandidates(CliComplete kind,
         case CliComplete::OnOffToggle: return {"on", "off", "toggle"};
         case CliComplete::Slot:        return {"hat", "glasses"};
         case CliComplete::RuleAction:  return {"wander", "meme", "note", "chase", "text"};
+        case CliComplete::ForceBehavior: return {"wander", "meme", "note", "chase"};
         case CliComplete::SettingKey:  return SettingKeys();
         case CliComplete::Look:        return Looks();
         case CliComplete::RuleId:      return RuleIds();

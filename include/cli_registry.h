@@ -12,8 +12,9 @@ enum class CliComplete {
     Look,        // preset/profile ids from `skins list`
     Slot,        // hat | glasses
     Item,        // item ids from `skins list` (+ none)
-    RuleAction,  // wander | meme | note | chase | text
-    RuleId,      // rule ids from `rules list`
+    RuleAction,     // wander | meme | note | chase | text
+    ForceBehavior,  // wander | meme | note | chase
+    RuleId,         // rule ids from `rules list`
 };
 
 // One row per invocable command form. Adding a command = adding a row here

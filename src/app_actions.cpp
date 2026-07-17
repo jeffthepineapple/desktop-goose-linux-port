@@ -326,6 +326,16 @@ static const char* RuleActionName(RuleAction action) {
     }
     return "?";
 }
+static const char* GooseStateName(GooseState state) {
+    switch (state) {
+        case WANDER:        return "wander";
+        case FETCHING:      return "fetching";
+        case RETURNING:     return "returning";
+        case CHASE_CURSOR:  return "chase";
+        case SNATCH_CURSOR: return "snatch";
+    }
+    return "?";
+}
 
 static void ApplyRuleAction(Goose& goose, const GooseRule& rule, int w, int h) {
     switch (rule.action) {
@@ -504,8 +514,8 @@ std::string AppActions_GetStatus() {
             << Cosmetics_MatchingProfile(goose.skin) << "\n";
         out << "goose." << goose.id << ".hat=" << goose.skin.hat << "\n";
         out << "goose." << goose.id << ".glasses=" << goose.skin.glasses << "\n";
+        out << "goose." << goose.id << ".behavior=" << GooseStateName(goose.state) << "\n";
     }
-
     return out.str();
 }
 
@@ -537,6 +547,29 @@ static std::string HandleQuitCommand(const std::vector<std::string>&) {
     return "ok cleared and quitting\n";
 }
 
+static std::string HandleForceCommand(const std::vector<std::string>& args) {
+    if (args.size() != 4 || args[1] != "set") {
+        return "error usage: force set <goose-id> <wander|meme|note|chase>\n";
+    }
+
+    std::string error;
+    Goose* goose = FindCommandGoose(args[2], &error);
+    if (!goose) return "error " + error + "\n";
+
+    const std::string& behavior = args[3];
+    if (behavior == "wander") goose->ForceWander(g_screenWidth, g_screenHeight);
+    else if (behavior == "meme") goose->ForceFetch(0, g_screenWidth, g_screenHeight);
+    else if (behavior == "note") goose->ForceFetch(1, g_screenWidth, g_screenHeight);
+    else if (behavior == "chase") {
+        if (!goose->ForceChase(g_screenWidth, g_screenHeight)) {
+            return "error cursor chase is unavailable\n";
+        }
+    }
+    else return "error usage: force set <goose-id> <wander|meme|note|chase>\n";
+
+    return "ok goose_id=" + std::to_string(goose->id) + " behavior=" + behavior + "\n";
+}
+
 std::string AppActions_HandleCommand(const std::vector<std::string>& args) {
     static const std::map<std::string, CommandHandlerFn> handlers = {
         {"spawn",    HandleSpawnCommand},
@@ -547,6 +580,7 @@ std::string AppActions_HandleCommand(const std::vector<std::string>& args) {
         {"ram",      HandleRamCommand},
         {"freeze",   HandleFreezeCommand},
         {"rules",    HandleRulesCommand},
+        {"force",    HandleForceCommand},
         {"quit",     HandleQuitCommand},
     };
 

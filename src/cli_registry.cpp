@@ -34,6 +34,8 @@ const std::vector<CliCommandSpec> kRegistry = {
     {"rules",    "add",    "rules",    "<id|all> <action> [interval] [text]", "Schedule wander|meme|note|chase|text", "rules add all meme 30",   false, false, {CliComplete::GooseId, CliComplete::RuleAction, N}},
     {"rules",    "remove", "rules",    "<rule-id>",                      "Delete one rule",                        nullptr,                      false, false, {CliComplete::RuleId, N, N}},
     {"rules",    "clear",  "rules",    "",                               "Delete every rule",                      nullptr,                      false, false, {N, N, N}},
+
+    {"force",    "set",    "force",    "<id> <wander|meme|note|chase>",   "Immediately set one goose's behavior",   "force set 0 wander",       false, false, {CliComplete::GooseId, CliComplete::ForceBehavior, N}},
 };
 
 // Damerau-free edit distance; small strings, small table, good enough for typos.

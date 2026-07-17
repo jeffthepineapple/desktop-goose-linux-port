@@ -87,7 +87,7 @@ public:
     void ForceFetch(int type, int w, int h);
     void ForceFetchText(const std::string& text, int w, int h);
     void ForceWander(int w, int h);
-    void ForceChase(int w, int h);
+    bool ForceChase(int w, int h);
     void Draw(cairo_t* cr);
 
     // Coordinate helpers
@@ -114,6 +114,7 @@ private:
 
     HonkState m_honk;
     void UpdateDrag(double dt);
+    void CancelCurrentBehavior();
     void StartFetch(int w, int h);
     void DrawHeldItem(cairo_t* cr);
     void DrawEyes(cairo_t* cr, Vector2 fwd, float back);
