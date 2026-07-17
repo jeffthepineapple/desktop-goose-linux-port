@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.17)
 project(CppGoose)
 include(CTest)
+include(GNUInstallDirs)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -90,6 +91,9 @@ target_include_directories(CppGoose PUBLIC
     ${CMAKE_CURRENT_BINARY_DIR}
 )
 
+target_compile_definitions(CppGoose PRIVATE
+    CPPGOOSE_INSTALL_DATADIR="${CMAKE_INSTALL_DATADIR}/CppGoose"
+)
 target_compile_options(CppGoose PUBLIC
     ${GTK4_CFLAGS_OTHER}
     ${LS_CFLAGS_OTHER}
@@ -99,7 +103,8 @@ target_compile_options(CppGoose PUBLIC
     ${WAYLAND_CLIENT_CFLAGS_OTHER}
 )
 
-install(TARGETS CppGoose DESTINATION bin)
+install(TARGETS CppGoose RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
+install(DIRECTORY Assets DESTINATION "${CMAKE_INSTALL_DATADIR}/CppGoose")
 
 if(BUILD_TESTING)
     add_executable(CppGooseCosmeticsTest

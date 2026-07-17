@@ -1582,6 +1582,10 @@ void setup_overlay_window(GtkApplication* app) {
     if (!ec && !exeDir.empty()) {
         assetCandidates.push_back(exeDir / ASSET_ROOT_NAME);
         assetCandidates.push_back(exeDir.parent_path() / ASSET_ROOT_NAME);
+#ifdef CPPGOOSE_INSTALL_DATADIR
+        assetCandidates.push_back(
+            exeDir.parent_path() / CPPGOOSE_INSTALL_DATADIR / ASSET_ROOT_NAME);
+#endif
     }
 
     ASSET_ROOT.clear();

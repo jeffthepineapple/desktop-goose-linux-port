@@ -36,7 +36,7 @@ chasing, cosmetics, Perlin-generated personalities, and an interactive terminal.
 - Unique Perlin-generated personality traits for every spawned goose
 - Interactive shell with history, inline hints, TAB completion, and compact help pages
 - Runtime commands for forcing behavior, scheduling rules, changing settings, and inspecting memory
-- Persistent configuration and saved cosmetic profiles under `~/.config/desktop-goose/`
+- Persistent configuration and saved cosmetic profiles in standard XDG directories
 
 ## Preview
 
@@ -89,19 +89,23 @@ If your package repository does not provide `gtk4-layer-shell`, build it from
 
 </details>
 
-Clone and build:
+Clone, build, and install system-wide:
 
 ```bash
 git clone https://github.com/jeffthepineapple/desktop-goose-linux-port.git
 cd desktop-goose-linux-port
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
 cmake --build build
+sudo cmake --install build
 ```
 
-The executable is `build/CppGoose`. After source changes, rebuild with:
+The default prefix installs the executable to `/usr/local/bin/CppGoose` and the
+runtime assets to `/usr/local/share/CppGoose/Assets`. After source changes,
+rebuild and reinstall:
 
 ```bash
 cmake --build build
+sudo cmake --install build
 ```
 
 Run the contracts with:
@@ -115,23 +119,23 @@ The protocol definition lives in `protocols/wlr-virtual-pointer-unstable-v1.xml`
 
 ## Quick start
 
-Run commands from the repository root so the executable can resolve `Assets/`.
+The installed command works from any directory:
 
 ```bash
-./build/CppGoose start "Pip"   # start the daemon with one named goose
-./build/CppGoose spawn Sam     # add another goose
-./build/CppGoose status        # inspect the flock
-./build/CppGoose shell         # open the interactive terminal
-./build/CppGoose quit          # remove the geese and stop the daemon
+CppGoose start "Pip"   # start the daemon with one named goose
+CppGoose spawn Sam     # add another goose
+CppGoose status        # inspect the flock
+CppGoose shell         # open the interactive terminal
+CppGoose quit          # remove the geese and stop the daemon
 ```
 
-Running `./build/CppGoose` starts the daemon when it is stopped. If the daemon is
-already running, the same command opens the shell.
+Running `CppGoose` starts the daemon when it is stopped. If the daemon is already
+running, the same command opens the shell.
 
 For foreground logs during development:
 
 ```bash
-./build/CppGoose start "Pip" --foreground
+CppGoose start "Pip" --foreground
 ```
 
 ## Command reference
@@ -165,7 +169,7 @@ one section, while `CppGoose help all` prints the full reference.
 | `CppGoose skins delete <look>` | Delete a saved look |
 
 Built-in looks are `classic`, `scholar`, `party`, `pilot`, `royal`, and
-`incognito`. Saved looks live in `~/.config/desktop-goose/skins.ini`.
+`incognito`. Saved looks live in the standard XDG config directory.
 
 ### Settings and behavior
 
@@ -186,9 +190,9 @@ become the note message.
 
 ### Interactive shell
 
-The shell keeps up to 500 history entries in
-`~/.local/state/cppgoose/history`. TAB completes commands, subcommands, setting
-keys, goose IDs, skin names, cosmetic items, rule IDs, and force behaviors.
+The shell keeps up to 500 history entries in the standard XDG state directory.
+TAB completes commands, subcommands, setting keys, goose IDs, skin names,
+cosmetic items, rule IDs, and force behaviors.
 Inline hints show the remaining arguments without filling the screen.
 
 ```text
@@ -227,8 +231,9 @@ goose.1.trait_note=16
 
 ## Configuration
 
-Settings are stored in `~/.config/desktop-goose/config.ini`. A working-directory
-`config.ini` is still read as a migration fallback.
+Settings are stored under `$XDG_CONFIG_HOME/desktop-goose`, falling back to
+`$HOME/.config/desktop-goose`. A working-directory `config.ini` is still read as
+a migration fallback.
 
 | Key | Default | Meaning |
 |---|---:|---|
