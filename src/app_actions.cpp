@@ -515,6 +515,10 @@ std::string AppActions_GetStatus() {
         out << "goose." << goose.id << ".hat=" << goose.skin.hat << "\n";
         out << "goose." << goose.id << ".glasses=" << goose.skin.glasses << "\n";
         out << "goose." << goose.id << ".behavior=" << GooseStateName(goose.state) << "\n";
+        out << "goose." << goose.id << ".trait_seed=" << goose.traitSeed << "\n";
+        out << "goose." << goose.id << ".trait_attack=" << goose.attackMouseBias << "\n";
+        out << "goose." << goose.id << ".trait_meme=" << goose.memeFetchBias << "\n";
+        out << "goose." << goose.id << ".trait_note=" << goose.noteFetchBias << "\n";
     }
     return out.str();
 }

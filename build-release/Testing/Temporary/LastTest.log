@@ -1,10 +1,10 @@
-Start testing: Jul 17 11:28 PDT
+Start testing: Jul 17 11:53 PDT
 ----------------------------------------------------------
-1/6 Testing: cosmetics_contracts
-1/6 Test: cosmetics_contracts
+1/7 Testing: cosmetics_contracts
+1/7 Test: cosmetics_contracts
 Command: "/home/dill/Downloads/desktop-goose-linux-port/build-release/CppGooseCosmeticsTest"
 Directory: /home/dill/Downloads/desktop-goose-linux-port/build-release
-"cosmetics_contracts" start time: Jul 17 11:28 PDT
+"cosmetics_contracts" start time: Jul 17 11:53 PDT
 Output:
 ----------------------------------------------------------
 cosmetics contracts passed
@@ -12,15 +12,30 @@ cosmetics contracts passed
 Test time =   0.03 sec
 ----------------------------------------------------------
 Test Passed.
-"cosmetics_contracts" end time: Jul 17 11:28 PDT
+"cosmetics_contracts" end time: Jul 17 11:53 PDT
 "cosmetics_contracts" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-2/6 Testing: cli_help
-2/6 Test: cli_help
+2/7 Testing: goose_traits_contracts
+2/7 Test: goose_traits_contracts
+Command: "/home/dill/Downloads/desktop-goose-linux-port/build-release/CppGooseTraitsTest"
+Directory: /home/dill/Downloads/desktop-goose-linux-port/build-release
+"goose_traits_contracts" start time: Jul 17 11:53 PDT
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"goose_traits_contracts" end time: Jul 17 11:53 PDT
+"goose_traits_contracts" time elapsed: 00:00:00
+----------------------------------------------------------
+
+3/7 Testing: cli_help
+3/7 Test: cli_help
 Command: "/home/dill/Downloads/desktop-goose-linux-port/build-release/CppGoose" "help"
 Directory: /home/dill/Downloads/desktop-goose-linux-port/build-release
-"cli_help" start time: Jul 17 11:28 PDT
+"cli_help" start time: Jul 17 11:53 PDT
 Output:
 ----------------------------------------------------------
 GOOSE CONTROL // HELP
@@ -39,15 +54,15 @@ Test time =   0.04 sec
 ----------------------------------------------------------
 Test Pass Reason:
 Required regular expression found. Regex=[help <page]
-"cli_help" end time: Jul 17 11:28 PDT
+"cli_help" end time: Jul 17 11:53 PDT
 "cli_help" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-3/6 Testing: cli_help_page
-3/6 Test: cli_help_page
+4/7 Testing: cli_help_page
+4/7 Test: cli_help_page
 Command: "/home/dill/Downloads/desktop-goose-linux-port/build-release/CppGoose" "help" "skins"
 Directory: /home/dill/Downloads/desktop-goose-linux-port/build-release
-"cli_help_page" start time: Jul 17 11:28 PDT
+"cli_help_page" start time: Jul 17 11:53 PDT
 Output:
 ----------------------------------------------------------
 GOOSE CONTROL // HELP SKINS
@@ -65,15 +80,15 @@ Test time =   0.04 sec
 ----------------------------------------------------------
 Test Pass Reason:
 Required regular expression found. Regex=[Equip a preset or saved look]
-"cli_help_page" end time: Jul 17 11:28 PDT
+"cli_help_page" end time: Jul 17 11:53 PDT
 "cli_help_page" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-4/6 Testing: cli_help_force
-4/6 Test: cli_help_force
+5/7 Testing: cli_help_force
+5/7 Test: cli_help_force
 Command: "/home/dill/Downloads/desktop-goose-linux-port/build-release/CppGoose" "help" "force"
 Directory: /home/dill/Downloads/desktop-goose-linux-port/build-release
-"cli_help_force" start time: Jul 17 11:28 PDT
+"cli_help_force" start time: Jul 17 11:53 PDT
 Output:
 ----------------------------------------------------------
 GOOSE CONTROL // HELP FORCE
@@ -85,15 +100,15 @@ Test time =   0.04 sec
 ----------------------------------------------------------
 Test Pass Reason:
 Required regular expression found. Regex=[force set <id> <wander\|meme\|note\|chase>]
-"cli_help_force" end time: Jul 17 11:28 PDT
+"cli_help_force" end time: Jul 17 11:53 PDT
 "cli_help_force" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-5/6 Testing: cli_help_all
-5/6 Test: cli_help_all
+6/7 Testing: cli_help_all
+6/7 Test: cli_help_all
 Command: "/home/dill/Downloads/desktop-goose-linux-port/build-release/CppGoose" "help" "all"
 Directory: /home/dill/Downloads/desktop-goose-linux-port/build-release
-"cli_help_all" start time: Jul 17 11:28 PDT
+"cli_help_all" start time: Jul 17 11:53 PDT
 Output:
 ----------------------------------------------------------
        _.-.                     
@@ -160,15 +175,15 @@ Test time =   0.04 sec
 ----------------------------------------------------------
 Test Pass Reason:
 Required regular expression found. Regex=[GOOSE CONTROL]
-"cli_help_all" end time: Jul 17 11:28 PDT
+"cli_help_all" end time: Jul 17 11:53 PDT
 "cli_help_all" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-6/6 Testing: cli_skin_catalog
-6/6 Test: cli_skin_catalog
+7/7 Testing: cli_skin_catalog
+7/7 Test: cli_skin_catalog
 Command: "/home/dill/Downloads/desktop-goose-linux-port/build-release/CppGoose" "skins"
 Directory: /home/dill/Downloads/desktop-goose-linux-port/build-release
-"cli_skin_catalog" start time: Jul 17 11:28 PDT
+"cli_skin_catalog" start time: Jul 17 11:53 PDT
 Output:
 ----------------------------------------------------------
 skins_config=/home/dill/.config/desktop-goose/skins.ini
@@ -191,8 +206,8 @@ Test time =   0.04 sec
 ----------------------------------------------------------
 Test Pass Reason:
 Required regular expression found. Regex=[preset.party=Party Bird]
-"cli_skin_catalog" end time: Jul 17 11:28 PDT
+"cli_skin_catalog" end time: Jul 17 11:53 PDT
 "cli_skin_catalog" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-End testing: Jul 17 11:28 PDT
+End testing: Jul 17 11:53 PDT

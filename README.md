@@ -211,6 +211,17 @@ Common commands:
 ./build/CppGoose quit
 ```
 
+### Goose personalities
+
+Each spawn samples a unique personality from a randomly seeded 2D Perlin noise
+map. The sample sets three existing behavior biases: cursor attacks, meme
+fetching, and note fetching. Nearby samples come from the same continuous field,
+so the values feel related without giving every goose the same profile.
+
+`CppGoose status` shows each goose's trait seed and its attack, meme, and note
+biases. Global settings still apply; the sampled biases only change that goose's
+behavior probabilities.
+
 ### Goose skins
 
 Each goose has separate hat and glasses slots. Equip a built-in look, or mix the

@@ -113,6 +113,14 @@ if(BUILD_TESTING)
     target_compile_options(CppGooseCosmeticsTest PRIVATE ${GTK4_CFLAGS_OTHER})
     target_link_libraries(CppGooseCosmeticsTest ${GTK4_LIBRARIES} m)
     add_test(NAME cosmetics_contracts COMMAND CppGooseCosmeticsTest)
+    add_executable(CppGooseTraitsTest
+        tests/goose_traits_test.cpp
+        src/goose_traits.cpp
+    )
+    target_include_directories(CppGooseTraitsTest PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+    )
+    add_test(NAME goose_traits_contracts COMMAND CppGooseTraitsTest)
     add_test(NAME cli_help COMMAND CppGoose help)
     set_tests_properties(cli_help PROPERTIES PASS_REGULAR_EXPRESSION "help <page")
     add_test(NAME cli_help_page COMMAND CppGoose help skins)

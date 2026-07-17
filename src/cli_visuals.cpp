@@ -103,6 +103,11 @@ void PrintStatus(const std::string& response) {
         std::string profile = "custom";
         std::string hat = "none";
         std::string glasses = "none";
+        std::string behavior = "wander";
+        std::string traitSeed = "0";
+        std::string traitAttack = "0";
+        std::string traitMeme = "0";
+        std::string traitNote = "0";
     };
     std::map<int, GooseRow> geese;
     for (const auto& field : fields) {
@@ -119,6 +124,11 @@ void PrintStatus(const std::string& response) {
         else if (property == "skin") row.profile = field.second;
         else if (property == "hat") row.hat = field.second;
         else if (property == "glasses") row.glasses = field.second;
+        else if (property == "behavior") row.behavior = field.second;
+        else if (property == "trait_seed") row.traitSeed = field.second;
+        else if (property == "trait_attack") row.traitAttack = field.second;
+        else if (property == "trait_meme") row.traitMeme = field.second;
+        else if (property == "trait_note") row.traitNote = field.second;
     }
 
     std::cout << Paint(CYAN, "FLOCK MANIFEST", true) << '\n';
@@ -133,7 +143,13 @@ void PrintStatus(const std::string& response) {
                       << Pad(goose.name, 21)
                       << Pad(goose.profile, 14)
                       << Pad(goose.hat, 13)
-                      << Shorten(goose.glasses, 12) << '\n';
+                      << Shorten(goose.glasses, 12) << '\n'
+                      << Paint(STEEL, "      behavior " + goose.behavior +
+                                             "  traits attack:" + goose.traitAttack +
+                                             " meme:" + goose.traitMeme +
+                                             " note:" + goose.traitNote +
+                                             "  seed:" + Shorten(goose.traitSeed, 12))
+                      << '\n';
         }
     }
 

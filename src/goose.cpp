@@ -1,4 +1,5 @@
 #include "goose.h"
+#include "goose_traits.h"
 #include "config.h"     // g_config
 #include "assets.h"     // g_assets
 #include "world.h"      // g_droppedItems
@@ -57,10 +58,11 @@ Goose::Goose(int _id, const std::string& _name, int screenW, int screenH) : id(_
     pos.x = rand() % (screenW - 100) + 50;
     pos.y = rand() % (screenH - 100) + 50;
 
-    // Default random biases (matches ui.cpp spawns)
-    attackMouseBias = rand() % 51; // 0..50
-    memeFetchBias = rand() % 61;   // 0..60
-    noteFetchBias = rand() % 41;   // 0..40
+    const GooseTraits traits = GooseTraits_Next();
+    traitSeed = traits.seed;
+    attackMouseBias = traits.attackMouseBias;
+    memeFetchBias = traits.memeFetchBias;
+    noteFetchBias = traits.noteFetchBias;
 
     // Initialize from global defaults
     cursorChaseEnabled = g_config.cursorChaseEnabled;

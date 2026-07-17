@@ -307,6 +307,15 @@ build CMakeFiles/CppGoose.dir/src/goose.cpp.o: CXX_COMPILER__CppGoose_unscanned_
   OBJECT_FILE_DIR = CMakeFiles/CppGoose.dir/src
   TARGET_SUPPORT_DIR = CMakeFiles/CppGoose.dir
 
+build CMakeFiles/CppGoose.dir/src/goose_traits.cpp.o: CXX_COMPILER__CppGoose_unscanned_Release /home/dill/Downloads/desktop-goose-linux-port/src/goose_traits.cpp || cmake_object_order_depends_target_CppGoose
+  CONFIG = Release
+  DEP_FILE = CMakeFiles/CppGoose.dir/src/goose_traits.cpp.o.d
+  FLAGS = -O3 -DNDEBUG -std=gnu++17 -mfpmath=sse -msse -msse2 -pthread -D_GNU_SOURCE=1 -D_REENTRANT
+  INCLUDES = -I/usr/include/gtk-4.0 -I/usr/include/pango-1.0 -I/usr/include/fribidi -I/usr/include/harfbuzz -I/usr/include/gdk-pixbuf-2.0 -I/usr/include/glycin-2 -I/usr/include/cairo -I/usr/include/freetype2 -I/usr/include/libpng16 -I/usr/include/pixman-1 -I/usr/include/graphene-1.0 -I/usr/lib/graphene-1.0/include -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include -I/usr/include/libmount -I/usr/include/blkid -I/usr/include/sysprof-6 -I/usr/include/gtk4-layer-shell -I/usr/include/SDL2 -I/home/dill/Downloads/desktop-goose-linux-port/include -I/home/dill/Downloads/desktop-goose-linux-port/third_party/linenoise -I/home/dill/Downloads/desktop-goose-linux-port/build-release
+  OBJECT_DIR = CMakeFiles/CppGoose.dir
+  OBJECT_FILE_DIR = CMakeFiles/CppGoose.dir/src
+  TARGET_SUPPORT_DIR = CMakeFiles/CppGoose.dir
+
 build CMakeFiles/CppGoose.dir/src/hyprland.cpp.o: CXX_COMPILER__CppGoose_unscanned_Release /home/dill/Downloads/desktop-goose-linux-port/src/hyprland.cpp || cmake_object_order_depends_target_CppGoose
   CONFIG = Release
   DEP_FILE = CMakeFiles/CppGoose.dir/src/hyprland.cpp.o.d
@@ -387,7 +396,7 @@ build CMakeFiles/CppGoose.dir/wlr-virtual-pointer-unstable-v1-protocol.c.o: C_CO
 #############################################
 # Link the executable CppGoose
 
-build CppGoose: CXX_EXECUTABLE_LINKER__CppGoose_Release CMakeFiles/CppGoose.dir/src/app_actions.cpp.o CMakeFiles/CppGoose.dir/src/assets.cpp.o CMakeFiles/CppGoose.dir/src/cli_registry.cpp.o CMakeFiles/CppGoose.dir/src/cli_shell.cpp.o CMakeFiles/CppGoose.dir/src/cli_visuals.cpp.o CMakeFiles/CppGoose.dir/src/command_socket.cpp.o CMakeFiles/CppGoose.dir/src/config.cpp.o CMakeFiles/CppGoose.dir/src/cosmetics.cpp.o CMakeFiles/CppGoose.dir/src/cursor_backend.cpp.o CMakeFiles/CppGoose.dir/src/goose.cpp.o CMakeFiles/CppGoose.dir/src/hyprland.cpp.o CMakeFiles/CppGoose.dir/src/ui.cpp.o CMakeFiles/CppGoose.dir/src/wlroots_backend.cpp.o CMakeFiles/CppGoose.dir/src/world.cpp.o CMakeFiles/CppGoose.dir/src/x11_backend.cpp.o CMakeFiles/CppGoose.dir/main.cpp.o CMakeFiles/CppGoose.dir/third_party/linenoise/linenoise.c.o CMakeFiles/CppGoose.dir/wlr-virtual-pointer-unstable-v1-protocol.c.o | /usr/lib/libSM.so /usr/lib/libICE.so /usr/lib/libX11.so /usr/lib/libXext.so /usr/lib/libXtst.so /usr/lib/libSM.so /usr/lib/libICE.so /usr/lib/libX11.so /usr/lib/libXext.so /usr/lib/libXtst.so
+build CppGoose: CXX_EXECUTABLE_LINKER__CppGoose_Release CMakeFiles/CppGoose.dir/src/app_actions.cpp.o CMakeFiles/CppGoose.dir/src/assets.cpp.o CMakeFiles/CppGoose.dir/src/cli_registry.cpp.o CMakeFiles/CppGoose.dir/src/cli_shell.cpp.o CMakeFiles/CppGoose.dir/src/cli_visuals.cpp.o CMakeFiles/CppGoose.dir/src/command_socket.cpp.o CMakeFiles/CppGoose.dir/src/config.cpp.o CMakeFiles/CppGoose.dir/src/cosmetics.cpp.o CMakeFiles/CppGoose.dir/src/cursor_backend.cpp.o CMakeFiles/CppGoose.dir/src/goose.cpp.o CMakeFiles/CppGoose.dir/src/goose_traits.cpp.o CMakeFiles/CppGoose.dir/src/hyprland.cpp.o CMakeFiles/CppGoose.dir/src/ui.cpp.o CMakeFiles/CppGoose.dir/src/wlroots_backend.cpp.o CMakeFiles/CppGoose.dir/src/world.cpp.o CMakeFiles/CppGoose.dir/src/x11_backend.cpp.o CMakeFiles/CppGoose.dir/main.cpp.o CMakeFiles/CppGoose.dir/third_party/linenoise/linenoise.c.o CMakeFiles/CppGoose.dir/wlr-virtual-pointer-unstable-v1-protocol.c.o | /usr/lib/libSM.so /usr/lib/libICE.so /usr/lib/libX11.so /usr/lib/libXext.so /usr/lib/libXtst.so /usr/lib/libSM.so /usr/lib/libICE.so /usr/lib/libX11.so /usr/lib/libXext.so /usr/lib/libXtst.so
   CONFIG = Release
   DEP_FILE = CMakeFiles/CppGoose.dir/link.d
   FLAGS = -O3 -DNDEBUG
@@ -447,6 +456,53 @@ build CppGooseCosmeticsTest: CXX_EXECUTABLE_LINKER__CppGooseCosmeticsTest_Releas
   TARGET_FILE = CppGooseCosmeticsTest
   TARGET_PDB = CppGooseCosmeticsTest.dbg
   TARGET_SUPPORT_DIR = CMakeFiles/CppGooseCosmeticsTest.dir
+
+# =============================================================================
+# Object build statements for EXECUTABLE target CppGooseTraitsTest
+
+
+#############################################
+# Order-only phony target for CppGooseTraitsTest
+
+build cmake_object_order_depends_target_CppGooseTraitsTest: phony || .
+
+build CMakeFiles/CppGooseTraitsTest.dir/tests/goose_traits_test.cpp.o: CXX_COMPILER__CppGooseTraitsTest_unscanned_Release /home/dill/Downloads/desktop-goose-linux-port/tests/goose_traits_test.cpp || cmake_object_order_depends_target_CppGooseTraitsTest
+  CONFIG = Release
+  DEP_FILE = CMakeFiles/CppGooseTraitsTest.dir/tests/goose_traits_test.cpp.o.d
+  FLAGS = -O3 -DNDEBUG -std=gnu++17
+  INCLUDES = -I/home/dill/Downloads/desktop-goose-linux-port/include
+  OBJECT_DIR = CMakeFiles/CppGooseTraitsTest.dir
+  OBJECT_FILE_DIR = CMakeFiles/CppGooseTraitsTest.dir/tests
+  TARGET_SUPPORT_DIR = CMakeFiles/CppGooseTraitsTest.dir
+
+build CMakeFiles/CppGooseTraitsTest.dir/src/goose_traits.cpp.o: CXX_COMPILER__CppGooseTraitsTest_unscanned_Release /home/dill/Downloads/desktop-goose-linux-port/src/goose_traits.cpp || cmake_object_order_depends_target_CppGooseTraitsTest
+  CONFIG = Release
+  DEP_FILE = CMakeFiles/CppGooseTraitsTest.dir/src/goose_traits.cpp.o.d
+  FLAGS = -O3 -DNDEBUG -std=gnu++17
+  INCLUDES = -I/home/dill/Downloads/desktop-goose-linux-port/include
+  OBJECT_DIR = CMakeFiles/CppGooseTraitsTest.dir
+  OBJECT_FILE_DIR = CMakeFiles/CppGooseTraitsTest.dir/src
+  TARGET_SUPPORT_DIR = CMakeFiles/CppGooseTraitsTest.dir
+
+
+# =============================================================================
+# Link build statements for EXECUTABLE target CppGooseTraitsTest
+
+
+#############################################
+# Link the executable CppGooseTraitsTest
+
+build CppGooseTraitsTest: CXX_EXECUTABLE_LINKER__CppGooseTraitsTest_Release CMakeFiles/CppGooseTraitsTest.dir/tests/goose_traits_test.cpp.o CMakeFiles/CppGooseTraitsTest.dir/src/goose_traits.cpp.o
+  CONFIG = Release
+  DEP_FILE = CMakeFiles/CppGooseTraitsTest.dir/link.d
+  FLAGS = -O3 -DNDEBUG
+  LINK_FLAGS = -Wl,--dependency-file=CMakeFiles/CppGooseTraitsTest.dir/link.d
+  OBJECT_DIR = CMakeFiles/CppGooseTraitsTest.dir
+  POST_BUILD = :
+  PRE_LINK = :
+  TARGET_FILE = CppGooseTraitsTest
+  TARGET_PDB = CppGooseTraitsTest.dbg
+  TARGET_SUPPORT_DIR = CMakeFiles/CppGooseTraitsTest.dir
 
 
 #############################################
@@ -779,7 +835,7 @@ build wlr-virtual-pointer-unstable-v1-client-protocol.h | ${cmake_ninja_workdir}
 #############################################
 # Folder: /home/dill/Downloads/desktop-goose-linux-port/build-release
 
-build all: phony CppGoose CppGooseCosmeticsTest
+build all: phony CppGoose CppGooseCosmeticsTest CppGooseTraitsTest
 
 # =============================================================================
 # Built-in targets

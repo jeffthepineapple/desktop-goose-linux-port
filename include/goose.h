@@ -4,6 +4,7 @@
 #ifndef GOOSE_H
 #define GOOSE_H
 
+#include <cstdint>
 #include <string>
 #include <gtk/gtk.h>
 #include "goose_math.h"
@@ -68,6 +69,7 @@ public:
     float snatchAngularSpeed = 2.5f;    // radians per second
 
     // Per-goose tendencies (0-100)
+    std::uint64_t traitSeed = 0;
     int attackMouseBias = 0; // added to global cursor chase chance
     int noteFetchBias = 0;   // increases chance to fetch notes
     int memeFetchBias = 0;   // increases chance to fetch memes
