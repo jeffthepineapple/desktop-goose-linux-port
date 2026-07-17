@@ -7,6 +7,8 @@
 #include <vector>
 #include <unistd.h>
 #include "app_actions.h"
+#include "cli_registry.h"
+#include "cli_shell.h"
 #include "cli_visuals.h"
 #include "command_socket.h"
 #include "ui.h"
@@ -41,17 +43,18 @@ static void on_activate(GtkApplication* app) {
     initialized = true;
 }
 
-static bool IsControlCommand(const std::string& command) {
-    return command == "start" ||
-           command == "spawn" ||
-           command == "clear" ||
-           command == "ram" ||
-           command == "settings" ||
-           command == "skins" ||
-           command == "status" ||
-           command == "freeze" ||
-           command == "rules" ||
-           command == "quit";
+static int HandleHelpCommand(const std::string& topic) {
+    if (topic.empty()) {
+        Cli_PrintHelp();
+        return 0;
+    }
+    if (topic == "all") {
+        Cli_PrintHelpAll();
+        return 0;
+    }
+    if (Cli_PrintHelpTopic(topic)) return 0;
+    Cli_PrintNotice(false, "No help for '" + topic + "'. Run CppGoose help.");
+    return 1;
 }
 
 static bool IsRunning() {
@@ -96,8 +99,7 @@ static int DaemonizeProcess() {
 static int HandleCliCommand(int argc, char** argv, int* appArgc) {
     if (argc <= 1) {
         if (IsRunning()) {
-            Cli_PrintNotice(true, "Desktop Goose is already running");
-            return 0;
+            return Cli_RunShell();
         }
         return DaemonizeProcess();
     }
@@ -109,12 +111,18 @@ static int HandleCliCommand(int argc, char** argv, int* appArgc) {
     }
 
     if (command == "--help" || command == "-h" || command == "help") {
-        Cli_PrintHelp();
-        return 0;
+        return HandleHelpCommand(argc > 2 ? argv[2] : "");
     }
 
-    if (!IsControlCommand(command)) {
-        Cli_PrintNotice(false, "Unknown command '" + command + "'. Run CppGoose help.");
+    if (command == "shell") {
+        return Cli_RunShell();
+    }
+
+    if (!Cli_IsControlCommand(command)) {
+        const std::string suggestion = Cli_Suggest(command);
+        Cli_PrintNotice(false, "Unknown command '" + command + "'." +
+                        (suggestion.empty() ? " Run CppGoose help."
+                                            : " Did you mean '" + suggestion + "'?"));
         return 1;
     }
 
@@ -162,26 +170,15 @@ static int HandleCliCommand(int argc, char** argv, int* appArgc) {
     std::vector<std::string> args;
     for (int i = 1; i < argc; ++i) args.emplace_back(argv[i]);
 
-    if (command == "settings" && !IsRunning()) {
-        Config_InitRegistry();
-        std::string response = AppActions_HandleCommand(args);
-        return Cli_PrintResponse(args, response);
-    }
-
-    if (command == "skins" && !IsRunning()) {
-        const bool worksOffline =
-            args.size() == 1 || args[1] == "list" || args[1] == "delete";
-        if (!worksOffline) {
-            Cli_PrintNotice(
-                false,
-                "Desktop Goose is not running. Start it before changing a goose outfit."
-            );
+    if (!IsRunning()) {
+        if (!Cli_WorksOffline(args)) {
+            Cli_PrintNotice(false,
+                            "Desktop Goose is not running. Start it with 'CppGoose start'.");
             return 1;
         }
         Config_InitRegistry();
-        Cosmetics_Initialize();
-        std::string response = AppActions_HandleCommand(args);
-        return Cli_PrintResponse(args, response);
+        if (command == "skins") Cosmetics_Initialize();
+        return Cli_PrintResponse(args, AppActions_HandleCommand(args));
     }
 
     std::string response;

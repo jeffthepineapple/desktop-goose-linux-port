@@ -42,7 +42,8 @@ set(GENERATED_SOURCES
 
 file(GLOB_RECURSE SRC_SOURCES CONFIGURE_DEPENDS "src/*.cpp")
 file(GLOB MAIN_SOURCES "main.cpp")
-set(SOURCES ${SRC_SOURCES} ${MAIN_SOURCES} ${GENERATED_SOURCES})
+set(LINENOISE_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/third_party/linenoise/linenoise.c")
+set(SOURCES ${SRC_SOURCES} ${MAIN_SOURCES} ${LINENOISE_SOURCES} ${GENERATED_SOURCES})
 
 
 
@@ -85,6 +86,7 @@ target_include_directories(CppGoose PUBLIC
     ${GDKPIXBUF_INCLUDE_DIRS}
     ${WAYLAND_CLIENT_INCLUDE_DIRS}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/linenoise
     ${CMAKE_CURRENT_BINARY_DIR}
 )
 
@@ -112,7 +114,11 @@ if(BUILD_TESTING)
     target_link_libraries(CppGooseCosmeticsTest ${GTK4_LIBRARIES} m)
     add_test(NAME cosmetics_contracts COMMAND CppGooseCosmeticsTest)
     add_test(NAME cli_help COMMAND CppGoose help)
-    set_tests_properties(cli_help PROPERTIES PASS_REGULAR_EXPRESSION "SKIN LOCKER")
+    set_tests_properties(cli_help PROPERTIES PASS_REGULAR_EXPRESSION "help <page")
+    add_test(NAME cli_help_page COMMAND CppGoose help skins)
+    set_tests_properties(cli_help_page PROPERTIES PASS_REGULAR_EXPRESSION "Equip a preset or saved look")
+    add_test(NAME cli_help_all COMMAND CppGoose help all)
+    set_tests_properties(cli_help_all PROPERTIES PASS_REGULAR_EXPRESSION "GOOSE CONTROL")
     add_test(NAME cli_skin_catalog COMMAND CppGoose skins)
     set_tests_properties(cli_skin_catalog PROPERTIES PASS_REGULAR_EXPRESSION "preset.party=Party Bird")
 endif()

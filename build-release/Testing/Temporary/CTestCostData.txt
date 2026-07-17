@@ -1,0 +1,6 @@
+cosmetics_contracts 3 0.0148756
+cli_help 3 0.0171208
+cli_help_page 3 0.0163155
+cli_help_all 3 0.0171825
+cli_skin_catalog 3 0.0167847
+---

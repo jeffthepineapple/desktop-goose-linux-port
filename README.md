@@ -142,7 +142,7 @@ The repository ships with some pre-generated Wayland protocol binding files. CMa
 
 Run the binary from the repository root so that the `Assets/` directory is resolved correctly.
 
-The default command starts Desktop Goose in the background so you can close your terminal afterward:
+The default command starts Desktop Goose in the background so you can close your terminal afterward. If it is already running, the same command drops you into the interactive goose shell instead:
 
 ```bash
 ./build/CppGoose
@@ -166,7 +166,35 @@ Or keep it attached to the current terminal for debugging:
 ./build/CppGoose start "Pip" --foreground
 ```
 
-Run `./build/CppGoose help` for the full command list. Common commands:
+### Interactive shell
+
+With the daemon running, `./build/CppGoose` (or `./build/CppGoose shell`) opens a
+goose shell with line editing, persistent history (`~/.local/state/cppgoose/history`),
+and TAB completion for commands, subcommands, setting keys, goose ids, looks, and
+items. After a command name, an inline grey hint shows the expected arguments.
+
+```
+goose> skins equip 1 pa<TAB>      # completes to: skins equip 1 party
+goose> help skins                 # one help page, not the whole reference
+goose> exit                       # leave the shell; the geese keep running
+```
+
+`quit` inside the shell stops the daemon (after confirmation); `cls` clears the
+screen.
+
+### Help pages
+
+`./build/CppGoose help` prints a compact index of every command grouped into
+pages. Drill into one page or one command, or dump everything:
+
+```bash
+./build/CppGoose help            # compact index of all commands
+./build/CppGoose help skins      # one page
+./build/CppGoose help freeze     # one command
+./build/CppGoose help all        # the full reference
+```
+
+Common commands:
 
 ```bash
 ./build/CppGoose start "Pip"

@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <charconv>
+#include <map>
 #include <fstream>
 #include <iomanip>
 #include <sstream>
@@ -508,49 +509,52 @@ std::string AppActions_GetStatus() {
     return out.str();
 }
 
+// Command handler table. Adding a daemon command = one CliCommandSpec row in
+// cli_registry.cpp plus one entry here.
+using CommandHandlerFn = std::string (*)(const std::vector<std::string>&);
+
+static std::string HandleSpawnCommand(const std::vector<std::string>& args) {
+    Goose* goose = AppActions_SpawnGoose(args.size() > 1 ? args[1] : "");
+    return "ok id=" + std::to_string(goose ? goose->id : -1) + "\n";
+}
+
+static std::string HandleClearCommand(const std::vector<std::string>&) {
+    AppActions_ClearGeese();
+    return "ok\n";
+}
+
+static std::string HandleStatusCommand(const std::vector<std::string>&) {
+    return AppActions_GetStatus();
+}
+
+static std::string HandleRamCommand(const std::vector<std::string>&) {
+    return GetRamUsageReport();
+}
+
+static std::string HandleQuitCommand(const std::vector<std::string>&) {
+    AppActions_ClearGeese();
+    AppActions_Quit();
+    return "ok cleared and quitting\n";
+}
+
 std::string AppActions_HandleCommand(const std::vector<std::string>& args) {
+    static const std::map<std::string, CommandHandlerFn> handlers = {
+        {"spawn",    HandleSpawnCommand},
+        {"clear",    HandleClearCommand},
+        {"status",   HandleStatusCommand},
+        {"settings", HandleSettingsCommand},
+        {"skins",    HandleSkinsCommand},
+        {"ram",      HandleRamCommand},
+        {"freeze",   HandleFreezeCommand},
+        {"rules",    HandleRulesCommand},
+        {"quit",     HandleQuitCommand},
+    };
+
     if (args.empty()) return "error missing command\n";
 
-    const std::string& command = args.front();
-    if (command == "spawn") {
-        Goose* goose = AppActions_SpawnGoose(args.size() > 1 ? args[1] : "");
-        return "ok id=" + std::to_string(goose ? goose->id : -1) + "\n";
+    const auto handler = handlers.find(args.front());
+    if (handler == handlers.end()) {
+        return "error unknown command: " + args.front() + "\n";
     }
-
-    if (command == "clear") {
-        AppActions_ClearGeese();
-        return "ok\n";
-    }
-
-    if (command == "status") {
-        return AppActions_GetStatus();
-    }
-
-    if (command == "settings") {
-        return HandleSettingsCommand(args);
-    }
-
-    if (command == "skins") {
-        return HandleSkinsCommand(args);
-    }
-
-    if (command == "ram") {
-        return GetRamUsageReport();
-    }
-
-    if (command == "freeze") {
-        return HandleFreezeCommand(args);
-    }
-
-    if (command == "rules") {
-        return HandleRulesCommand(args);
-    }
-
-    if (command == "quit") {
-        AppActions_ClearGeese();
-        AppActions_Quit();
-        return "ok cleared and quitting\n";
-    }
-
-    return "error unknown command: " + command + "\n";
+    return handler->second(args);
 }

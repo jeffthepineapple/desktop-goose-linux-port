@@ -1,5 +1,8 @@
 #include "cli_visuals.h"
+#include "cli_registry.h"
 
+#include <algorithm>
+#include <cctype>
 #include <cstdlib>
 #include <iostream>
 #include <map>
@@ -242,9 +245,78 @@ void PrintSuccess(const std::string& response) {
     }
 }
 
+std::string UpperCopy(std::string value) {
+    for (char& c : value) c = (char)std::toupper((unsigned char)c);
+    return value;
+}
+
+// Longest usage string so summaries align across every page.
+size_t HelpUsageWidth() {
+    size_t width = 0;
+    for (const CliCommandSpec& spec : Cli_Registry()) {
+        width = std::max(width, Cli_Usage(spec).size());
+    }
+    return width + 2;
+}
+
+void PrintHelpPageBody(const std::string& page) {
+    const size_t width = HelpUsageWidth();
+    for (const CliCommandSpec& spec : Cli_Registry()) {
+        if (page != spec.page) continue;
+        std::cout << "  " << Paint(CREAM, Pad(Cli_Usage(spec), width), true)
+                  << Paint(STEEL, spec.summary) << '\n';
+    }
+    for (const CliCommandSpec& spec : Cli_Registry()) {
+        if (page != spec.page || !spec.example) continue;
+        std::cout << Paint(STEEL, "  e.g. CppGoose " + std::string(spec.example)) << '\n';
+    }
+}
+
 } // namespace
 
 void Cli_PrintHelp() {
+    PrintHeader("HELP");
+    for (const std::string& page : Cli_Pages()) {
+        std::string commands;
+        for (const CliCommandSpec& spec : Cli_Registry()) {
+            if (page != spec.page) continue;
+            if (!commands.empty()) commands += Paint(STEEL, " · ");
+            commands += spec.sub ? spec.sub : spec.name;
+        }
+        std::cout << "  " << Paint(ORANGE, Pad(page, 10), true) << commands << '\n';
+    }
+    PrintRule();
+    std::cout << "  " << Paint(CREAM, Pad("help <page|command>", 21), true)
+              << Paint(STEEL, "details, e.g. CppGoose help skins") << '\n'
+              << "  " << Paint(CREAM, Pad("help all", 21), true)
+              << Paint(STEEL, "the full reference") << '\n';
+}
+
+bool Cli_PrintHelpTopic(const std::string& topic) {
+    const std::vector<std::string> pages = Cli_Pages();
+    if (std::find(pages.begin(), pages.end(), topic) != pages.end()) {
+        PrintHeader("HELP " + UpperCopy(topic));
+        PrintHelpPageBody(topic);
+        return true;
+    }
+    if (Cli_IsControlCommand(topic)) {
+        PrintHeader("HELP " + UpperCopy(topic));
+        const size_t width = HelpUsageWidth();
+        for (const CliCommandSpec& spec : Cli_Registry()) {
+            if (topic != spec.name) continue;
+            std::cout << "  " << Paint(CREAM, Pad(Cli_Usage(spec), width), true)
+                      << Paint(STEEL, spec.summary) << '\n';
+        }
+        for (const CliCommandSpec& spec : Cli_Registry()) {
+            if (topic != spec.name || !spec.example) continue;
+            std::cout << Paint(STEEL, "  e.g. CppGoose " + std::string(spec.example)) << '\n';
+        }
+        return true;
+    }
+    return false;
+}
+
+void Cli_PrintHelpAll() {
     static const char* logo[] = {
         "       _.-.",
         " __.-' ,  \\",
@@ -267,37 +339,12 @@ void Cli_PrintHelp() {
         std::cout << '\n';
     }
     PrintRule();
-    std::cout
-        << Paint(CYAN, "DAEMON", true) << '\n'
-        << "  CppGoose start [name] [--foreground]  Launch the flock\n"
-        << "  CppGoose status                       Inspect runtime state\n"
-        << "  CppGoose quit                         Clear and stop\n\n"
-        << Paint(CYAN, "FLOCK", true) << '\n'
-        << "  CppGoose spawn [name]                 Add a goose\n"
-        << "  CppGoose clear                        Remove every goose\n"
-        << "  CppGoose ram                          Show memory telemetry\n\n"
-        << Paint(CYAN, "SKIN LOCKER", true) << '\n'
-        << "  CppGoose skins                        List items and saved looks\n"
-        << "  CppGoose skins show <id>              Inspect one outfit\n"
-        << "  CppGoose skins equip <id> <look>      Equip a preset or saved look\n"
-        << "  CppGoose skins set <id> <slot> <item> Mix hat and glasses\n"
-        << "  CppGoose skins save <id> <look>       Save the current outfit\n"
-        << "  CppGoose skins delete <look>          Delete a saved look\n\n"
-        << Paint(CYAN, "SETTINGS", true) << '\n'
-        << "  CppGoose settings                     List settings\n"
-        << "  CppGoose settings get <key>           Read one value\n"
-        << "  CppGoose settings set <key> <value>   Change one value\n\n"
-        << Paint(CYAN, "BEHAVIOR", true) << '\n'
-        << "  CppGoose freeze [on|off|toggle]       Freeze/unfreeze every goose\n"
-        << "  CppGoose rules                        List active rules\n"
-        << "  CppGoose rules add <id|all> <action> [interval] [text]\n"
-        << "                                        wander|meme|note|chase|text\n"
-        << "  CppGoose rules remove <rule-id>       Delete one rule\n"
-        << "  CppGoose rules clear                  Delete every rule\n\n"
-        << Paint(STEEL, "Examples") << '\n'
-        << "  CppGoose spawn \"Pip\"\n"
-        << "  CppGoose skins equip 0 party\n"
-        << "  CppGoose skins set 0 glasses shades\n";
+    for (const std::string& page : Cli_Pages()) {
+        std::cout << Paint(CYAN, UpperCopy(page), true) << '\n';
+        PrintHelpPageBody(page);
+        std::cout << '\n';
+    }
+    std::cout << Paint(STEEL, "  Compact view: CppGoose help") << '\n';
 }
 
 void Cli_PrintNotice(bool success, const std::string& message) {

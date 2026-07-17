@@ -1,0 +1,173 @@
+Start testing: Jul 16 23:59 PDT
+----------------------------------------------------------
+1/5 Testing: cosmetics_contracts
+1/5 Test: cosmetics_contracts
+Command: "/home/dill/Downloads/desktop-goose-linux-port/build-release/CppGooseCosmeticsTest"
+Directory: /home/dill/Downloads/desktop-goose-linux-port/build-release
+"cosmetics_contracts" start time: Jul 16 23:59 PDT
+Output:
+----------------------------------------------------------
+cosmetics contracts passed
+<end of output>
+Test time =   0.04 sec
+----------------------------------------------------------
+Test Passed.
+"cosmetics_contracts" end time: Jul 16 23:59 PDT
+"cosmetics_contracts" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/5 Testing: cli_help
+2/5 Test: cli_help
+Command: "/home/dill/Downloads/desktop-goose-linux-port/build-release/CppGoose" "help"
+Directory: /home/dill/Downloads/desktop-goose-linux-port/build-release
+"cli_help" start time: Jul 16 23:59 PDT
+Output:
+----------------------------------------------------------
+GOOSE CONTROL // HELP
+--------------------------------------------------------------------
+  daemon    start · shell · status · help · quit
+  flock     spawn · clear · freeze · ram
+  skins     list · show · equip · set · save · delete
+  settings  list · get · set
+  rules     list · add · remove · clear
+--------------------------------------------------------------------
+  help <page|command>  details, e.g. CppGoose help skins
+  help all             the full reference
+<end of output>
+Test time =   0.05 sec
+----------------------------------------------------------
+Test Pass Reason:
+Required regular expression found. Regex=[help <page]
+"cli_help" end time: Jul 16 23:59 PDT
+"cli_help" time elapsed: 00:00:00
+----------------------------------------------------------
+
+3/5 Testing: cli_help_page
+3/5 Test: cli_help_page
+Command: "/home/dill/Downloads/desktop-goose-linux-port/build-release/CppGoose" "help" "skins"
+Directory: /home/dill/Downloads/desktop-goose-linux-port/build-release
+"cli_help_page" start time: Jul 16 23:59 PDT
+Output:
+----------------------------------------------------------
+GOOSE CONTROL // HELP SKINS
+--------------------------------------------------------------------
+  skins list                                     List items and saved looks
+  skins show <id>                                Inspect one goose's outfit
+  skins equip <id> <look>                        Equip a preset or saved look
+  skins set <id> <hat|glasses> <item|none>       Mix hat and glasses
+  skins save <id> <look>                         Save the current outfit as a look
+  skins delete <look>                            Delete a saved look
+  e.g. CppGoose skins equip 0 party
+  e.g. CppGoose skins set 0 glasses shades
+<end of output>
+Test time =   0.05 sec
+----------------------------------------------------------
+Test Pass Reason:
+Required regular expression found. Regex=[Equip a preset or saved look]
+"cli_help_page" end time: Jul 16 23:59 PDT
+"cli_help_page" time elapsed: 00:00:00
+----------------------------------------------------------
+
+4/5 Testing: cli_help_all
+4/5 Test: cli_help_all
+Command: "/home/dill/Downloads/desktop-goose-linux-port/build-release/CppGoose" "help" "all"
+Directory: /home/dill/Downloads/desktop-goose-linux-port/build-release
+"cli_help_all" start time: Jul 16 23:59 PDT
+Output:
+----------------------------------------------------------
+       _.-.                     
+ __.-' ,  \                     GOOSE CONTROL
+'--'-'._   \                    desktop companion
+        '.  \                   
+         )-- \ __.--._          
+        /   .'        '--.      
+       .               _/-._    
+       :       ____._/   _-'    
+        '._          _.'-'      
+           '-._    _.'          
+               \_|/             
+              __|||             
+ snd          >__/              
+--------------------------------------------------------------------
+DAEMON
+  start [name] [--foreground]                    Launch the flock
+  shell                                          Open the interactive goose shell
+  status                                         Inspect runtime state
+  help [page|command|all]                        Show this help
+  quit                                           Clear every goose and stop
+  e.g. CppGoose start "Pip"
+  e.g. CppGoose help skins
+
+FLOCK
+  spawn [name]                                   Add a goose
+  clear                                          Remove every goose
+  freeze [on|off|toggle]                         Freeze or unfreeze every goose
+  ram                                            Show memory telemetry
+  e.g. CppGoose spawn "Pip"
+
+SKINS
+  skins list                                     List items and saved looks
+  skins show <id>                                Inspect one goose's outfit
+  skins equip <id> <look>                        Equip a preset or saved look
+  skins set <id> <hat|glasses> <item|none>       Mix hat and glasses
+  skins save <id> <look>                         Save the current outfit as a look
+  skins delete <look>                            Delete a saved look
+  e.g. CppGoose skins equip 0 party
+  e.g. CppGoose skins set 0 glasses shades
+
+SETTINGS
+  settings list                                  List every setting
+  settings get <key>                             Read one value
+  settings set <key> <value>                     Change one value
+  e.g. CppGoose settings get walk_speed
+  e.g. CppGoose settings set mud_chance 30
+
+RULES
+  rules list                                     List active rules
+  rules add <id|all> <action> [interval] [text]  Schedule wander|meme|note|chase|text
+  rules remove <rule-id>                         Delete one rule
+  rules clear                                    Delete every rule
+  e.g. CppGoose rules add all meme 30
+
+  Compact view: CppGoose help
+<end of output>
+Test time =   0.05 sec
+----------------------------------------------------------
+Test Pass Reason:
+Required regular expression found. Regex=[GOOSE CONTROL]
+"cli_help_all" end time: Jul 16 23:59 PDT
+"cli_help_all" time elapsed: 00:00:00
+----------------------------------------------------------
+
+5/5 Testing: cli_skin_catalog
+5/5 Test: cli_skin_catalog
+Command: "/home/dill/Downloads/desktop-goose-linux-port/build-release/CppGoose" "skins"
+Directory: /home/dill/Downloads/desktop-goose-linux-port/build-release
+"cli_skin_catalog" start time: Jul 16 23:59 PDT
+Output:
+----------------------------------------------------------
+skins_config=/home/dill/.config/desktop-goose/skins.ini
+hat.red-cap=Red field cap
+hat.blue-cap=Blue flight cap
+hat.top-hat=Midnight top hat
+hat.party-hat=Confetti party hat
+hat.crown=Golden crown
+glasses.round=Round spectacles
+glasses.shades=Black shades
+glasses.aviators=Sky aviators
+preset.classic=Classic goose|none|none
+preset.scholar=The Scholar|top-hat|round
+preset.party=Party Bird|party-hat|shades
+preset.pilot=The Pilot|blue-cap|aviators
+preset.royal=Royal Goose|crown|round
+preset.incognito=Incognito|red-cap|shades
+<end of output>
+Test time =   0.05 sec
+----------------------------------------------------------
+Test Pass Reason:
+Required regular expression found. Regex=[preset.party=Party Bird]
+"cli_skin_catalog" end time: Jul 16 23:59 PDT
+"cli_skin_catalog" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Jul 16 23:59 PDT
