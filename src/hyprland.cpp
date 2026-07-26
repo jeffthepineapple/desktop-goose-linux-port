@@ -7,6 +7,7 @@
 #include <cerrno>
 #include <cstring>
 #include <cstdlib>
+#include <iostream>
 #include <string>
 #include <filesystem>
 
@@ -170,16 +171,27 @@ std::vector<HyprlandBackend::Monitor> HyprlandBackend::GetMonitors() {
     std::vector<Monitor> monitors;
     std::string resp;
     if (!SendCommand("j/monitors", &resp)) {
+        std::cerr << "[hyprland] GetMonitors: SendCommand failed\n";
         return monitors;
     }
 
-    // Very basic JSON array parsing
+    // Robust JSON object extraction: find matching braces with nesting
     size_t pos = 0;
-    while ((pos = resp.find("{", pos)) != std::string::npos) {
-        size_t end_pos = resp.find("}", pos);
-        if (end_pos == std::string::npos) break;
+    while (true) {
+        size_t obj_start = resp.find('{', pos);
+        if (obj_start == std::string::npos) break;
 
-        std::string monitor_json = resp.substr(pos, end_pos - pos + 1);
+        // Find matching closing brace
+        int depth = 1;
+        size_t obj_end = obj_start + 1;
+        while (depth > 0 && obj_end < resp.size()) {
+            if (resp[obj_end] == '{') depth++;
+            else if (resp[obj_end] == '}') depth--;
+            if (depth > 0) obj_end++;
+        }
+        if (depth != 0) break;
+
+        std::string monitor_json = resp.substr(obj_start, obj_end - obj_start + 1);
         Monitor m;
         if (ExtractJsonInteger(monitor_json, "id", &m.id) &&
             ExtractJsonString(monitor_json, "name", &m.name) &&
@@ -190,8 +202,9 @@ std::vector<HyprlandBackend::Monitor> HyprlandBackend::GetMonitors() {
             ExtractJsonNumber(monitor_json, "scale", &m.scale)) {
             monitors.push_back(m);
         }
-        pos = end_pos + 1;
+        pos = obj_end + 1;
     }
+    std::cerr << "[hyprland] GetMonitors: parsed " << monitors.size() << " monitors\n";
     return monitors;
 }
 
@@ -199,23 +212,33 @@ std::vector<HyprlandBackend::Window> HyprlandBackend::GetWindows() {
     std::vector<Window> windows;
     std::string resp;
     if (!SendCommand("j/clients", &resp)) {
+        std::cerr << "[hyprland] GetWindows: SendCommand failed\n";
         return windows;
     }
 
-    // Very basic JSON array parsing
+    // Robust JSON object extraction: find matching braces with nesting
     size_t pos = 0;
-    while ((pos = resp.find("{", pos)) != std::string::npos) {
-        size_t end_pos = resp.find("}", pos);
-        if (end_pos == std::string::npos) break;
+    while (true) {
+        size_t obj_start = resp.find('{', pos);
+        if (obj_start == std::string::npos) break;
 
-        std::string window_json = resp.substr(pos, end_pos - pos + 1);
+        int depth = 1;
+        size_t obj_end = obj_start + 1;
+        while (depth > 0 && obj_end < resp.size()) {
+            if (resp[obj_end] == '{') depth++;
+            else if (resp[obj_end] == '}') depth--;
+            if (depth > 0) obj_end++;
+        }
+        if (depth != 0) break;
+
+        std::string window_json = resp.substr(obj_start, obj_end - obj_start + 1);
         Window w;
         if (ExtractJsonString(window_json, "address", &w.address) &&
             ExtractJsonInteger(window_json, "monitor", &w.monitorId) &&
             ExtractJsonString(window_json, "title", &w.title) &&
             ExtractJsonString(window_json, "class", &w.cls)) {
             // Extract 'at' array [x, y]
-            size_t at_start = window_json.find("\"at\"", pos);
+            size_t at_start = window_json.find("\"at\"");
             if (at_start != std::string::npos) {
                 at_start = window_json.find('[', at_start);
                 if (at_start != std::string::npos) {
@@ -231,7 +254,7 @@ std::vector<HyprlandBackend::Window> HyprlandBackend::GetWindows() {
                 }
             }
             // Extract 'size' array [width, height]
-            size_t size_start = window_json.find("\"size\"", pos);
+            size_t size_start = window_json.find("\"size\"");
             if (size_start != std::string::npos) {
                 size_start = window_json.find('[', size_start);
                 if (size_start != std::string::npos) {
@@ -248,8 +271,9 @@ std::vector<HyprlandBackend::Window> HyprlandBackend::GetWindows() {
             }
             windows.push_back(w);
         }
-        pos = end_pos + 1;
+        pos = obj_end + 1;
     }
+    std::cerr << "[hyprland] GetWindows: parsed " << windows.size() << " windows\n";
     return windows;
 }
 
