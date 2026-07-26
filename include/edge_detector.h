@@ -21,21 +21,20 @@ struct EdgeWindow {
 
 class EdgeDetector {
 public:
-    void Tick(double currentTime, HyprlandBackend* backend,
-              const std::vector<HyprlandMonitor>& monitors);
+    void Tick(HyprlandBackend* backend);
 
     bool IsEnabled() const { return m_enabled; }
     void SetEnabled(bool enabled);
 
+    const std::vector<HyprlandMonitor>& Monitors() const { return m_monitors; }
     const std::vector<EdgeWindow>& EdgeWindows() const { return m_edgeWindows; }
 
 private:
     static bool IsWindowAtEdge(int wx, int wy, int ww, int wh,
-                               const HyprlandMonitor& m, int threshold = 5);
+                               const HyprlandMonitor& m, int threshold = 15);
 
     bool m_enabled = false;
-    double m_lastTickTime = -1.0;
-    double m_tickInterval = 0.5;
+    std::vector<HyprlandMonitor> m_monitors;
     std::vector<EdgeWindow> m_edgeWindows;
 };
 
