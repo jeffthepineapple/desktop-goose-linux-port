@@ -12,6 +12,28 @@ public:
     Vector2 GetCursorPos() override;
     void MoveCursorAbs(int x, int y) override;
 
+    struct Monitor {
+        int id;
+        std::string name;
+        int x, y, width, height;
+        double scale;
+    };
+
+    struct Window {
+        std::string address;
+        int x, y, width, height;
+        int monitorId;
+        std::string title;
+        std::string cls;
+    };
+
+    // New methods for getting Hyprland info
+    std::vector<Monitor> GetMonitors();
+    std::vector<Window> GetWindows();
+    bool SetWindowBorderColor(const std::string& windowAddress, const std::string& color);
+    bool ResetWindowBorder(const std::string& windowAddress);
+
+
 private:
     bool SendCommand(const std::string& command, std::string* response);
     std::string m_socketPath;
