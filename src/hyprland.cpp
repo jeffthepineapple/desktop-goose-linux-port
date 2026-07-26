@@ -169,7 +169,7 @@ static bool ExtractJsonString(const std::string& s, const char* key, std::string
 std::vector<HyprlandBackend::Monitor> HyprlandBackend::GetMonitors() {
     std::vector<Monitor> monitors;
     std::string resp;
-    if (!SendCommand("monitors -j", &resp)) {
+    if (!SendCommand("j/monitors", &resp)) {
         return monitors;
     }
 
@@ -198,7 +198,7 @@ std::vector<HyprlandBackend::Monitor> HyprlandBackend::GetMonitors() {
 std::vector<HyprlandBackend::Window> HyprlandBackend::GetWindows() {
     std::vector<Window> windows;
     std::string resp;
-    if (!SendCommand("clients -j", &resp)) {
+    if (!SendCommand("j/clients", &resp)) {
         return windows;
     }
 
@@ -215,28 +215,34 @@ std::vector<HyprlandBackend::Window> HyprlandBackend::GetWindows() {
             ExtractJsonString(window_json, "title", &w.title) &&
             ExtractJsonString(window_json, "class", &w.cls)) {
             // Extract 'at' array [x, y]
-            size_t at_start = window_json.find("\"at\":[", pos);
+            size_t at_start = window_json.find("\"at\"", pos);
             if (at_start != std::string::npos) {
-                at_start += std::string("\"at\":[").length();
-                size_t at_comma = window_json.find(",", at_start);
-                if (at_comma != std::string::npos) {
-                    w.x = std::stoi(window_json.substr(at_start, at_comma - at_start));
-                    size_t at_end = window_json.find("]", at_comma);
-                    if (at_end != std::string::npos) {
-                        w.y = std::stoi(window_json.substr(at_comma + 1, at_end - at_comma - 1));
+                at_start = window_json.find('[', at_start);
+                if (at_start != std::string::npos) {
+                    at_start++;
+                    size_t at_comma = window_json.find(',', at_start);
+                    if (at_comma != std::string::npos) {
+                        w.x = std::stoi(window_json.substr(at_start, at_comma - at_start));
+                        size_t at_end = window_json.find(']', at_comma);
+                        if (at_end != std::string::npos) {
+                            w.y = std::stoi(window_json.substr(at_comma + 1, at_end - at_comma - 1));
+                        }
                     }
                 }
             }
             // Extract 'size' array [width, height]
-            size_t size_start = window_json.find("\"size\":[", pos);
+            size_t size_start = window_json.find("\"size\"", pos);
             if (size_start != std::string::npos) {
-                size_start += std::string("\"size\":[").length();
-                size_t size_comma = window_json.find(",", size_start);
-                if (size_comma != std::string::npos) {
-                    w.width = std::stoi(window_json.substr(size_start, size_comma - size_start));
-                    size_t size_end = window_json.find("]", size_comma);
-                    if (size_end != std::string::npos) {
-                        w.height = std::stoi(window_json.substr(size_comma + 1, size_end - size_comma - 1));
+                size_start = window_json.find('[', size_start);
+                if (size_start != std::string::npos) {
+                    size_start++;
+                    size_t size_comma = window_json.find(',', size_start);
+                    if (size_comma != std::string::npos) {
+                        w.width = std::stoi(window_json.substr(size_start, size_comma - size_start));
+                        size_t size_end = window_json.find(']', size_comma);
+                        if (size_end != std::string::npos) {
+                            w.height = std::stoi(window_json.substr(size_comma + 1, size_end - size_comma - 1));
+                        }
                     }
                 }
             }

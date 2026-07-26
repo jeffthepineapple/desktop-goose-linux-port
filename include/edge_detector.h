@@ -1,6 +1,5 @@
 #pragma once
 
-#include <set>
 #include <string>
 #include <vector>
 
@@ -13,10 +12,9 @@ struct HyprlandMonitor {
     double scale;
 };
 
-struct HyprlandWindow {
+struct EdgeWindow {
     std::string address;
     int x, y, width, height;
-    int monitorId;
     std::string title;
     std::string cls;
 };
@@ -28,22 +26,17 @@ public:
 
     bool IsEnabled() const { return m_enabled; }
     void SetEnabled(bool enabled);
-    void Toggle();
 
-    const std::string& HighlightColor() const { return m_highlightColor; }
-    void SetHighlightColor(const std::string& color) { m_highlightColor = color; }
-
-    int HighlightedCount() const { return (int)m_highlightedAddresses.size(); }
+    const std::vector<EdgeWindow>& EdgeWindows() const { return m_edgeWindows; }
 
 private:
-    static bool IsWindowAtEdge(const HyprlandWindow& w, const HyprlandMonitor& m,
-                               int threshold = 5);
+    static bool IsWindowAtEdge(int wx, int wy, int ww, int wh,
+                               const HyprlandMonitor& m, int threshold = 5);
 
     bool m_enabled = false;
     double m_lastTickTime = -1.0;
     double m_tickInterval = 0.5;
-    std::string m_highlightColor = "FF0000FF";
-    std::set<std::string> m_highlightedAddresses;
+    std::vector<EdgeWindow> m_edgeWindows;
 };
 
 extern EdgeDetector g_edgeDetector;

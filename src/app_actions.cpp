@@ -12,7 +12,6 @@
 #include "config.h"
 #include "cosmetics.h"
 #include "world.h"
-#include "edge_detector.h"
 
 static GtkApplication* g_appActionsApp = nullptr;
 
@@ -553,47 +552,6 @@ static std::string HandleQuitCommand(const std::vector<std::string>&) {
     return "ok cleared and quitting\n";
 }
 
-static std::string HandleEdgeCommand(const std::vector<std::string>& args) {
-    if (args.size() == 1 || args[1] == "status") {
-        if (args.size() > 2) return "error usage: edge [status]\n";
-        std::ostringstream out;
-        out << "ok enabled=" << (g_edgeDetector.IsEnabled() ? "1" : "0")
-            << " highlighted=" << g_edgeDetector.HighlightedCount()
-            << " color=" << g_edgeDetector.HighlightColor()
-            << " config_value=" << (g_config.highlightEdgeWindows ? "1" : "0") << "\n";
-        return out.str();
-    }
-
-    if (args[1] == "toggle") {
-        if (args.size() > 3) return "error usage: edge toggle [on|off|toggle]\n";
-
-        if (args.size() == 3) {
-            const std::string& mode = args[2];
-            if (mode == "on") {
-                g_config.highlightEdgeWindows = true;
-                g_edgeDetector.SetEnabled(true);
-            } else if (mode == "off") {
-                g_config.highlightEdgeWindows = false;
-                g_edgeDetector.SetEnabled(false);
-            } else if (mode == "toggle") {
-                g_config.highlightEdgeWindows = !g_config.highlightEdgeWindows;
-                g_edgeDetector.Toggle();
-            } else {
-                return "error usage: edge toggle [on|off|toggle]\n";
-            }
-        } else {
-            g_config.highlightEdgeWindows = !g_config.highlightEdgeWindows;
-            g_edgeDetector.Toggle();
-        }
-
-        UiLogPush(g_config.highlightEdgeWindows ? "Enabled edge highlighting" : "Disabled edge highlighting");
-        Config_SaveNow(nullptr);
-        return std::string("ok enabled=") + (g_config.highlightEdgeWindows ? "1" : "0") + "\n";
-    }
-
-    return "error usage: edge [toggle|status]\n";
-}
-
 static constexpr const char* FORCE_USAGE =
     "force set <goose-id> <wander|chase|meme [path]|note [path]|note text <text>>";
 
@@ -716,7 +674,6 @@ std::string AppActions_HandleCommand(const std::vector<std::string>& args) {
         {"rules",    HandleRulesCommand},
         {"force",    HandleForceCommand},
         {"quit",     HandleQuitCommand},
-        {"edge",     HandleEdgeCommand},
     };
 
     if (args.empty()) return "error missing command\n";

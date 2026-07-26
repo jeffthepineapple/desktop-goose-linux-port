@@ -245,7 +245,6 @@ void Config_InitRegistry() {
     g_configRegistry.push_back({"Debug", "debug_visuals", "Show Overlays", CFG_BOOL, &g_config.debugVisuals, 0, 1, 1, "", OnConfigChange});
     g_configRegistry.push_back({"Debug", "debug_terminal", "Log to Terminal", CFG_BOOL, &g_config.debugToTerminal, 0, 1, 1, "", OnConfigChange});
     g_configRegistry.push_back({"Debug", "highlight_edge_windows", "Highlight Edge Windows", CFG_BOOL, &g_config.highlightEdgeWindows, 0, 1, 1, "", OnConfigChange});
-    g_configRegistry.push_back({"Debug", "edge_highlight_color", "Edge Highlight Color", CFG_STRING, &g_config.edgeHighlightColor, 0, 0, 0, "", OnConfigChange});
 
     Config_Load();
     Config_SaveNow(nullptr);

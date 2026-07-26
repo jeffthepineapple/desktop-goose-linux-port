@@ -816,6 +816,35 @@ void draw_overlay(GtkDrawingArea* area, cairo_t* cr, int width, int height, gpoi
             cairo_restore(cr);
         }
     }
+
+    // Draw edge window highlights
+    if (g_config.highlightEdgeWindows && g_edgeDetector.IsEnabled()) {
+        for (const auto& ew : g_edgeDetector.EdgeWindows()) {
+            if (cullToMonitor) {
+                if (ew.x + ew.width < m->x || ew.x > m->x + m->width) continue;
+                if (ew.y + ew.height < m->y || ew.y > m->y + m->height) continue;
+            }
+            cairo_save(cr);
+            // Red semi-transparent border
+            cairo_set_source_rgba(cr, 1.0, 0.15, 0.15, 0.35);
+            cairo_rectangle(cr, ew.x, ew.y, ew.width, ew.height);
+            cairo_fill(cr);
+            // Bright red outline
+            cairo_set_source_rgba(cr, 1.0, 0.2, 0.2, 0.85);
+            cairo_set_line_width(cr, 3.0);
+            cairo_rectangle(cr, ew.x, ew.y, ew.width, ew.height);
+            cairo_stroke(cr);
+            // Label
+            if (debugLayout) {
+                cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 0.9);
+                cairo_move_to(cr, ew.x + 6, ew.y + 18);
+                pango_layout_set_text(debugLayout, "EDGE", -1);
+                pango_cairo_show_layout(cr, debugLayout);
+            }
+            cairo_restore(cr);
+        }
+    }
+
     if (nameLayout) g_object_unref(nameLayout);
     if (debugLayout) g_object_unref(debugLayout);
 
@@ -841,10 +870,13 @@ gboolean on_tick(gpointer) {
 
     // Sync edge detector with config and tick it
     g_edgeDetector.SetEnabled(g_config.highlightEdgeWindows);
-    g_edgeDetector.SetHighlightColor(g_config.edgeHighlightColor);
     {
         HyprlandBackend* hyprBackend = dynamic_cast<HyprlandBackend*>(
             g_backendManager.GetActiveBackend());
+        static int edgeTick = 0;
+        if (!hyprBackend && (edgeTick++ % 300 == 0)) {
+            UiLogPush("edge: active backend is " + g_backendManager.GetActiveBackend()->Name() + " (not Hyprland)");
+        }
         if (hyprBackend) {
             std::vector<HyprlandBackend::Monitor> rawMonitors = hyprBackend->GetMonitors();
             std::vector<HyprlandMonitor> monitors;
@@ -861,6 +893,16 @@ gboolean on_tick(gpointer) {
                 monitors.push_back(m);
             }
             g_edgeDetector.Tick(g_time, hyprBackend, monitors);
+            if ((edgeTick++ % 300) == 0) {
+                std::string msg = "edge: monitors=" + std::to_string(monitors.size())
+                    + " windows=" + std::to_string(g_edgeDetector.EdgeWindows().size())
+                    + " enabled=" + std::to_string(g_edgeDetector.IsEnabled());
+                if (!monitors.empty()) {
+                    msg += " mon0=[" + std::to_string(monitors[0].x) + "," + std::to_string(monitors[0].y)
+                        + " " + std::to_string(monitors[0].width) + "x" + std::to_string(monitors[0].height) + "]";
+                }
+                UiLogPush(msg);
+            }
         }
     }
 
