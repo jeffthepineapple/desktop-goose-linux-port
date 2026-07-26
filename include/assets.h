@@ -25,6 +25,7 @@ public:
     void Init();
     ~AssetManager();
     ItemData* GetRandomMeme();
+    ItemData* CreateMemeItem(const std::string& path, std::string* errorOut = nullptr);
     ItemData* GetRandomText();
     ItemData* CreateTextItem(const std::string& text);
     void Honk();

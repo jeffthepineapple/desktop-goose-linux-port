@@ -6,11 +6,13 @@
 #include <fstream>
 #include <iomanip>
 #include <sstream>
+#include <utility>
 #include "glib.h"
 #include "assets.h"
 #include "config.h"
 #include "cosmetics.h"
 #include "world.h"
+#include "edge_detector.h"
 
 static GtkApplication* g_appActionsApp = nullptr;
 
@@ -551,9 +553,97 @@ static std::string HandleQuitCommand(const std::vector<std::string>&) {
     return "ok cleared and quitting\n";
 }
 
+static std::string HandleEdgeCommand(const std::vector<std::string>& args) {
+    if (args.size() == 1 || args[1] == "status") {
+        if (args.size() > 2) return "error usage: edge [status]\n";
+        std::ostringstream out;
+        out << "ok enabled=" << (g_edgeDetector.IsEnabled() ? "1" : "0")
+            << " highlighted=" << g_edgeDetector.HighlightedCount()
+            << " color=" << g_edgeDetector.HighlightColor()
+            << " config_value=" << (g_config.highlightEdgeWindows ? "1" : "0") << "\n";
+        return out.str();
+    }
+
+    if (args[1] == "toggle") {
+        if (args.size() > 3) return "error usage: edge toggle [on|off|toggle]\n";
+
+        if (args.size() == 3) {
+            const std::string& mode = args[2];
+            if (mode == "on") {
+                g_config.highlightEdgeWindows = true;
+                g_edgeDetector.SetEnabled(true);
+            } else if (mode == "off") {
+                g_config.highlightEdgeWindows = false;
+                g_edgeDetector.SetEnabled(false);
+            } else if (mode == "toggle") {
+                g_config.highlightEdgeWindows = !g_config.highlightEdgeWindows;
+                g_edgeDetector.Toggle();
+            } else {
+                return "error usage: edge toggle [on|off|toggle]\n";
+            }
+        } else {
+            g_config.highlightEdgeWindows = !g_config.highlightEdgeWindows;
+            g_edgeDetector.Toggle();
+        }
+
+        UiLogPush(g_config.highlightEdgeWindows ? "Enabled edge highlighting" : "Disabled edge highlighting");
+        Config_SaveNow(nullptr);
+        return std::string("ok enabled=") + (g_config.highlightEdgeWindows ? "1" : "0") + "\n";
+    }
+
+    return "error usage: edge [toggle|status]\n";
+}
+
+static constexpr const char* FORCE_USAGE =
+    "force set <goose-id> <wander|chase|meme [path]|note [path]|note text <text>>";
+
+static std::string DecodeNoteText(const std::string& input) {
+    std::string decoded;
+    decoded.reserve(input.size());
+    for (size_t i = 0; i < input.size(); ++i) {
+        if (input[i] != '\\' || i + 1 >= input.size()) {
+            decoded.push_back(input[i]);
+            continue;
+        }
+
+        const char escaped = input[++i];
+        if (escaped == 'n') decoded.push_back('\n');
+        else if (escaped == '\\') decoded.push_back('\\');
+        else {
+            decoded.push_back('\\');
+            decoded.push_back(escaped);
+        }
+    }
+    return decoded;
+}
+
+static bool ReadNoteFile(const std::string& path, std::string* textOut,
+                         std::string* errorOut) {
+    std::ifstream file(path, std::ios::binary);
+    if (!file) {
+        *errorOut = "could not open note file: " + path;
+        return false;
+    }
+
+    std::ostringstream contents;
+    contents << file.rdbuf();
+    if (file.bad()) {
+        *errorOut = "could not read note file: " + path;
+        return false;
+    }
+    std::string text = contents.str();
+    if (text.empty()) {
+        *errorOut = "note file is empty: " + path;
+        return false;
+    }
+
+    *textOut = std::move(text);
+    return true;
+}
+
 static std::string HandleForceCommand(const std::vector<std::string>& args) {
-    if (args.size() != 4 || args[1] != "set") {
-        return "error usage: force set <goose-id> <wander|meme|note|chase>\n";
+    if (args.size() < 4 || args.size() > 6 || args[1] != "set") {
+        return "error usage: " + std::string(FORCE_USAGE) + "\n";
     }
 
     std::string error;
@@ -561,17 +651,57 @@ static std::string HandleForceCommand(const std::vector<std::string>& args) {
     if (!goose) return "error " + error + "\n";
 
     const std::string& behavior = args[3];
-    if (behavior == "wander") goose->ForceWander(g_screenWidth, g_screenHeight);
-    else if (behavior == "meme") goose->ForceFetch(0, g_screenWidth, g_screenHeight);
-    else if (behavior == "note") goose->ForceFetch(1, g_screenWidth, g_screenHeight);
-    else if (behavior == "chase") {
+    std::string source = "random";
+    if (behavior == "wander") {
+        if (args.size() != 4) return "error usage: " + std::string(FORCE_USAGE) + "\n";
+        goose->ForceWander(g_screenWidth, g_screenHeight);
+    } else if (behavior == "chase") {
+        if (args.size() != 4) return "error usage: " + std::string(FORCE_USAGE) + "\n";
         if (!goose->ForceChase(g_screenWidth, g_screenHeight)) {
             return "error cursor chase is unavailable\n";
         }
+    } else if (behavior == "meme") {
+        if (args.size() == 4) {
+            goose->ForceFetch(0, g_screenWidth, g_screenHeight);
+        } else {
+            const bool namedFile = args.size() == 6 && args[4] == "file";
+            if (args.size() != 5 && !namedFile) {
+                return "error usage: " + std::string(FORCE_USAGE) + "\n";
+            }
+            const std::string& path = args[namedFile ? 5 : 4];
+            ItemData* validation = g_assets.CreateMemeItem(path, &error);
+            if (!validation) return "error could not load meme: " + error + "\n";
+            delete validation;
+            goose->ForceFetchMeme(path, g_screenWidth, g_screenHeight);
+            source = "file";
+        }
+    } else if (behavior == "note") {
+        if (args.size() == 4) {
+            goose->ForceFetch(1, g_screenWidth, g_screenHeight);
+        } else {
+            std::string text;
+            if (args.size() == 6 && args[4] == "text") {
+                text = DecodeNoteText(args[5]);
+                source = "text";
+            } else {
+                const bool namedFile = args.size() == 6 && args[4] == "file";
+                if (args.size() != 5 && !namedFile) {
+                    return "error usage: " + std::string(FORCE_USAGE) + "\n";
+                }
+                if (!ReadNoteFile(args[namedFile ? 5 : 4], &text, &error)) {
+                    return "error " + error + "\n";
+                }
+                source = "file";
+            }
+            if (text.empty()) return "error note text cannot be empty\n";
+            goose->ForceFetchText(text, g_screenWidth, g_screenHeight);
+        }
+    } else {
+        return "error usage: " + std::string(FORCE_USAGE) + "\n";
     }
-    else return "error usage: force set <goose-id> <wander|meme|note|chase>\n";
 
-    return "ok goose_id=" + std::to_string(goose->id) + " behavior=" + behavior + "\n";
+    return "ok goose_id=" + std::to_string(goose->id) +
+           " behavior=" + behavior + " source=" + source + "\n";
 }
 
 std::string AppActions_HandleCommand(const std::vector<std::string>& args) {
@@ -586,6 +716,7 @@ std::string AppActions_HandleCommand(const std::vector<std::string>& args) {
         {"rules",    HandleRulesCommand},
         {"force",    HandleForceCommand},
         {"quit",     HandleQuitCommand},
+        {"edge",     HandleEdgeCommand},
     };
 
     if (args.empty()) return "error missing command\n";

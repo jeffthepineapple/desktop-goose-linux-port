@@ -14,6 +14,8 @@
 #include <pango/pangocairo.h>
 #include "cursor_backend.h"
 #include "app_actions.h"
+#include "edge_detector.h"
+#include "hyprland.h"
 
 namespace fs = std::filesystem;
 
@@ -834,6 +836,31 @@ gboolean on_tick(gpointer) {
         Rules_Tick(g_time, g_screenWidth, g_screenHeight);
         for (auto& goose : g_geese) {
             goose.Update(1.0 / 60.0, g_time, g_screenWidth, g_screenHeight);
+        }
+    }
+
+    // Sync edge detector with config and tick it
+    g_edgeDetector.SetEnabled(g_config.highlightEdgeWindows);
+    g_edgeDetector.SetHighlightColor(g_config.edgeHighlightColor);
+    {
+        HyprlandBackend* hyprBackend = dynamic_cast<HyprlandBackend*>(
+            g_backendManager.GetActiveBackend());
+        if (hyprBackend) {
+            std::vector<HyprlandBackend::Monitor> rawMonitors = hyprBackend->GetMonitors();
+            std::vector<HyprlandMonitor> monitors;
+            monitors.reserve(rawMonitors.size());
+            for (const auto& rm : rawMonitors) {
+                HyprlandMonitor m;
+                m.id = rm.id;
+                m.name = rm.name;
+                m.x = rm.x;
+                m.y = rm.y;
+                m.width = rm.width;
+                m.height = rm.height;
+                m.scale = rm.scale;
+                monitors.push_back(m);
+            }
+            g_edgeDetector.Tick(g_time, hyprBackend, monitors);
         }
     }
 

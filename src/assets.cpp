@@ -81,29 +81,41 @@ void AssetManager::Init() {
 }
 
 ItemData* AssetManager::GetRandomMeme() {
-    if(memePaths.empty()) return nullptr;
-    std::string p = memePaths[rand() % memePaths.size()];
-    GdkPixbuf* pb = nullptr;
+    if (memePaths.empty()) return nullptr;
+    return CreateMemeItem(memePaths[rand() % memePaths.size()]);
+}
+ 
+ItemData* AssetManager::CreateMemeItem(const std::string& path, std::string* errorOut) {
+    if (errorOut) errorOut->clear();
 
-    auto cached = memeCache.find(p);
+    GdkPixbuf* pb = nullptr;
+    auto cached = memeCache.find(path);
     if (cached != memeCache.end()) {
         pb = cached->second;
     } else {
         GError* err = nullptr;
-        pb = gdk_pixbuf_new_from_file(p.c_str(), &err);
+        pb = gdk_pixbuf_new_from_file(path.c_str(), &err);
         if (!pb) {
+            if (errorOut) {
+                *errorOut = err && err->message ? err->message : "could not load image";
+            }
             if (err) g_error_free(err);
             return nullptr;
         }
 
         // Scale down huge images once and share the cached result.
-        int w = gdk_pixbuf_get_width(pb);
-        int h = gdk_pixbuf_get_height(pb);
-        if(w > 300) {
-            float ratio = 300.0f / w;
-            GdkPixbuf* scaled = gdk_pixbuf_scale_simple(pb, 300, h * ratio, GDK_INTERP_BILINEAR);
+        const int width = gdk_pixbuf_get_width(pb);
+        const int height = gdk_pixbuf_get_height(pb);
+        if (width > 300) {
+            const float ratio = 300.0f / width;
+            GdkPixbuf* scaled = gdk_pixbuf_scale_simple(
+                pb, 300, std::max(1, static_cast<int>(height * ratio)), GDK_INTERP_BILINEAR);
             g_object_unref(pb);
             pb = scaled;
+            if (!pb) {
+                if (errorOut) *errorOut = "could not scale image";
+                return nullptr;
+            }
         }
 
         // Ensure 4 bytes per pixel (RGBA) to satisfy Cairo's stride requirements.
@@ -111,14 +123,18 @@ ItemData* AssetManager::GetRandomMeme() {
             GdkPixbuf* withAlpha = gdk_pixbuf_add_alpha(pb, FALSE, 0, 0, 0);
             g_object_unref(pb);
             pb = withAlpha;
+            if (!pb) {
+                if (errorOut) *errorOut = "could not convert image";
+                return nullptr;
+            }
         }
 
-        memeCache[p] = pb;
+        memeCache[path] = pb;
     }
 
     ItemData* item = new ItemData();
     item->type = ItemData::MEME;
-    item->pixbuf = (GdkPixbuf*)g_object_ref(pb);
+    item->pixbuf = static_cast<GdkPixbuf*>(g_object_ref(pb));
     item->w = gdk_pixbuf_get_width(pb);
     item->h = gdk_pixbuf_get_height(pb);
     return item;

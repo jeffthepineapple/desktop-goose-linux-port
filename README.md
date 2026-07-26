@@ -178,7 +178,7 @@ Built-in looks are `classic`, `scholar`, `party`, `pilot`, `royal`, and
 | `CppGoose settings [list]` | List every configurable value |
 | `CppGoose settings get <key>` | Read one value |
 | `CppGoose settings set <key> <value>` | Change and persist one value |
-| `CppGoose force set <id> <wander\|meme\|note\|chase>` | Interrupt one goose and start a behavior immediately |
+| `CppGoose force set <id> <wander\|meme [path]\|note [path]\|chase>` | Interrupt one goose, optionally fetching an exact file |
 | `CppGoose rules [list]` | List active rules |
 | `CppGoose rules add <id\|all> <action> [interval] [text]` | Schedule a one-shot or repeating behavior |
 | `CppGoose rules remove <rule-id>` | Remove one rule |
@@ -188,11 +188,23 @@ Rule actions are `wander`, `meme`, `note`, `chase`, and `text`. An omitted
 interval creates a one-shot rule. For `text`, words after the optional interval
 become the note message.
 
+Force a specific goose to fetch an image, a note file, or inline note text:
+
+```bash
+CppGoose force set 0 meme /absolute/path/to/image.png
+CppGoose force set 0 note /absolute/path/to/note.txt
+CppGoose force set 0 note text 'First line\nSecond line'
+```
+
+Use an absolute path when the CLI and daemon were started from different
+directories. In inline text, `\n` starts a new line. Quote paths or text that
+contain spaces. `meme file <path>` and `note file <path>` are accepted aliases.
+
 ### Interactive shell
 
 The shell keeps up to 500 history entries in the standard XDG state directory.
 TAB completes commands, subcommands, setting keys, goose IDs, skin names,
-cosmetic items, rule IDs, and force behaviors.
+cosmetic items, rule IDs, force behaviors, and `file`/`text` force sources.
 Inline hints show the remaining arguments without filling the screen.
 
 ```text
