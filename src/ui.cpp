@@ -337,6 +337,13 @@ static void draw_debug_overlay(cairo_t* cr) {
              g_selectedGooseId);
     lines.emplace_back(buf);
 
+    if (g_config.highlightEdgeWindows) {
+        snprintf(buf, sizeof(buf), "Edge | %s  edgeWindows:%zu",
+                 g_edgeDetector.IsEnabled() ? "enabled" : "disabled",
+                 g_edgeDetector.EdgeWindows().size());
+        lines.emplace_back(buf);
+    }
+
     const bool selectedOnly = g_debugOverlaySelectedOnly && (GetGooseById(g_selectedGooseId) != nullptr);
 
     for (auto& goose : g_geese) {
@@ -533,6 +540,22 @@ void draw_overlay(GtkDrawingArea* area, cairo_t* cr, int width, int height, gpoi
         cairo_paint(cr);
         cairo_restore(cr);
         return;
+    }
+
+    // Visual Origin Debugger: draw the overlay window origin BEFORE the
+    // cairo_translate, so it's in device (overlay-window-local) coordinates.
+    // If this crosshair does NOT align with the monitor's top-left corner,
+    // the overlay window is offset from the monitor origin.
+    if (g_config.debugVisuals) {
+        cairo_save(cr);
+        cairo_set_source_rgba(cr, 1.0, 0.1, 0.1, 0.80);
+        cairo_set_line_width(cr, 2.0);
+        cairo_move_to(cr, -40, 0); cairo_line_to(cr, 40, 0);
+        cairo_move_to(cr, 0, -40); cairo_line_to(cr, 0, 40);
+        cairo_stroke(cr);
+        cairo_arc(cr, 0, 0, 6, 0, 2 * G_PI);
+        cairo_fill(cr);
+        cairo_restore(cr);
     }
 
     cairo_save(cr); 
@@ -817,41 +840,112 @@ void draw_overlay(GtkDrawingArea* area, cairo_t* cr, int width, int height, gpoi
         }
     }
 
-    // Draw edge zone and window highlights
+    // Highlight windows at screen edges
     if (g_config.highlightEdgeWindows && g_edgeDetector.IsEnabled()) {
-        constexpr int ZONE = 15;
-
-        // Draw edge zone strips for this monitor
-        cairo_save(cr);
-        cairo_set_source_rgba(cr, 1.0, 0.2, 0.2, 0.12);
-        // Top strip
-        cairo_rectangle(cr, m->x, m->y, m->width, ZONE);
-        cairo_fill(cr);
-        // Bottom strip
-        cairo_rectangle(cr, m->x, m->y + m->height - ZONE, m->width, ZONE);
-        cairo_fill(cr);
-        // Left strip
-        cairo_rectangle(cr, m->x, m->y, ZONE, m->height);
-        cairo_fill(cr);
-        // Right strip
-        cairo_rectangle(cr, m->x + m->width - ZONE, m->y, ZONE, m->height);
-        cairo_fill(cr);
-        cairo_restore(cr);
-
-        // Highlight windows at edges on this monitor
         for (const auto& ew : g_edgeDetector.EdgeWindows()) {
-            bool onThisMonitor = (ew.x + ew.width > m->x && ew.x < m->x + m->width) &&
-                                 (ew.y + ew.height > m->y && ew.y < m->y + m->height);
+            // Convert global Hyprland coordinates to monitor-local cairo coords.
+            // The overlay window covers the monitor (anchored to all 4 edges),
+            // so cairo (0,0) = monitor origin. The cairo_translate(cr, -m->x, -m->y)
+            // above already maps global -> local.
+            const bool onThisMonitor =
+                (ew.x + ew.width  > m->x && ew.x < m->x + m->width) &&
+                (ew.y + ew.height > m->y && ew.y < m->y + m->height);
             if (!onThisMonitor) continue;
 
             cairo_save(cr);
-            cairo_set_source_rgba(cr, 1.0, 0.15, 0.15, 0.30);
+            cairo_set_source_rgba(cr, 1.0, 0.1, 0.1, 0.30);
             cairo_rectangle(cr, ew.x, ew.y, ew.width, ew.height);
-            cairo_fill(cr);
-            cairo_set_source_rgba(cr, 1.0, 0.3, 0.3, 0.80);
-            cairo_set_line_width(cr, 2.5);
-            cairo_rectangle(cr, ew.x, ew.y, ew.width, ew.height);
+            cairo_fill_preserve(cr);
+            cairo_set_source_rgba(cr, 1.0, 0.4, 0.4, 0.85);
+            cairo_set_line_width(cr, 2.0);
             cairo_stroke(cr);
+            cairo_restore(cr);
+        }
+    }
+
+    // Visual Origin Debugger: coordinate grid, monitor boundary, cursor tracker
+    if (g_config.debugVisuals) {
+        // 1. Grid at 200px intervals (in user = global coordinate space)
+        cairo_save(cr);
+        cairo_set_source_rgba(cr, 0.3, 0.3, 0.3, 0.15);
+        cairo_set_line_width(cr, 0.5);
+        for (int gx = m->x; gx <= m->x + m->width; gx += 200) {
+            cairo_move_to(cr, gx, m->y);
+            cairo_line_to(cr, gx, m->y + m->height);
+            cairo_stroke(cr);
+        }
+        for (int gy = m->y; gy <= m->y + m->height; gy += 200) {
+            cairo_move_to(cr, m->x, gy);
+            cairo_line_to(cr, m->x + m->width, gy);
+            cairo_stroke(cr);
+        }
+        cairo_restore(cr);
+
+        // 2. Monitor boundary (green)
+        cairo_save(cr);
+        cairo_set_source_rgba(cr, 0.0, 1.0, 0.0, 0.40);
+        cairo_set_line_width(cr, 1.5);
+        cairo_rectangle(cr, m->x, m->y, m->width, m->height);
+        cairo_stroke(cr);
+        // Monitor origin marker (green crosshair)
+        cairo_set_source_rgba(cr, 0.0, 1.0, 0.0, 0.70);
+        cairo_set_line_width(cr, 1.5);
+        cairo_move_to(cr, m->x - 30, m->y); cairo_line_to(cr, m->x + 30, m->y);
+        cairo_move_to(cr, m->x, m->y - 30); cairo_line_to(cr, m->x, m->y + 30);
+        cairo_stroke(cr);
+        cairo_arc(cr, m->x, m->y, 5, 0, 2 * G_PI);
+        cairo_fill(cr);
+
+        // Label: monitor position
+        cairo_set_source_rgba(cr, 0.0, 1.0, 0.0, 0.85);
+        cairo_move_to(cr, m->x + 35, m->y + 5);
+        char monLabel[64];
+        snprintf(monLabel, sizeof(monLabel), "monitor (%d,%d) %dx%d", m->x, m->y, m->width, m->height);
+        pango_layout_set_text(debugLayout, monLabel, -1);
+        pango_cairo_show_layout(cr, debugLayout);
+        cairo_restore(cr);
+
+        // 3. Cursor position tracker (blue marker + coords)
+        CursorBackend* backend = g_backendManager.GetActiveBackend();
+        if (backend->Caps() & CAP_GET_POS) {
+            Vector2 cursor = backend->GetCursorPos();
+            if (cursor.x >= 0 && cursor.y >= 0) {
+                cairo_save(cr);
+                // Blue hollow circle at cursor
+                cairo_set_source_rgba(cr, 0.2, 0.6, 1.0, 0.50);
+                cairo_set_line_width(cr, 2.0);
+                cairo_arc(cr, cursor.x, cursor.y, 12, 0, 2 * G_PI);
+                cairo_fill_preserve(cr);
+                cairo_set_source_rgba(cr, 0.4, 0.8, 1.0, 0.85);
+                cairo_stroke(cr);
+                // Crosshair
+                cairo_move_to(cr, cursor.x - 18, cursor.y);
+                cairo_line_to(cr, cursor.x + 18, cursor.y);
+                cairo_move_to(cr, cursor.x, cursor.y - 18);
+                cairo_line_to(cr, cursor.x, cursor.y + 18);
+                cairo_stroke(cr);
+                // Label
+                char curLabel[64];
+                snprintf(curLabel, sizeof(curLabel), "cursor: (%.0f, %.0f)", cursor.x, cursor.y);
+                cairo_set_source_rgba(cr, 0.8, 0.8, 0.8, 0.90);
+                cairo_move_to(cr, cursor.x + 22, cursor.y - 5);
+                pango_layout_set_text(debugLayout, curLabel, -1);
+                pango_cairo_show_layout(cr, debugLayout);
+                cairo_restore(cr);
+            }
+        }
+
+        // 4. Coordinate info text (top-left of monitor)
+        if (debugLayout) {
+            cairo_save(cr);
+            cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 0.85);
+            char info[128];
+            snprintf(info, sizeof(info),
+                     "device: %dx%d  global (%d,%d)  overlay~(0,0)=global(?,?)",
+                     width, height, m->x, m->y);
+            cairo_move_to(cr, m->x + 10, m->y + 40);
+            pango_layout_set_text(debugLayout, info, -1);
+            pango_cairo_show_layout(cr, debugLayout);
             cairo_restore(cr);
         }
     }
