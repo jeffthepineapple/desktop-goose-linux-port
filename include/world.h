@@ -42,7 +42,7 @@ extern bool g_frozen; // when true, all goose updates and rules are paused
 
 // --- Custom rule engine ---
 // A rule forces matching geese to perform an action, either once or on a repeating interval.
-enum class RuleAction { Wander, FetchMeme, FetchNote, FetchText, Chase };
+enum class RuleAction { Wander, FetchMeme, FetchNote, FetchText, Chase, DragWindow };
 
 struct GooseRule {
     int id = 0;                          // stable rule identifier

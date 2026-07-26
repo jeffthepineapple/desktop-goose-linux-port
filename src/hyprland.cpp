@@ -260,6 +260,11 @@ std::vector<HyprlandBackend::Window> HyprlandBackend::GetWindows() {
             ExtractJsonInteger(window_json, "monitor", &w.monitorId) &&
             ExtractJsonString(window_json, "title", &w.title) &&
             ExtractJsonString(window_json, "class", &w.cls)) {
+            // Parse floating status
+            int floatingInt = 0;
+            if (ExtractJsonInteger(window_json, "floating", &floatingInt)) {
+                w.floating = (floatingInt != 0);
+            }
             // Extract 'at' array [x, y]
             size_t at_start = window_json.find("\"at\"");
             if (at_start != std::string::npos) {
@@ -308,14 +313,31 @@ bool HyprlandBackend::SetWindowBorderColor(const std::string& windowAddress, con
 }
 
 bool HyprlandBackend::ResetWindowBorder(const std::string& windowAddress) {
-    // To reset, we can set the border color to a default or remove the rule.
-    // Hyprland doesn't have a direct 'remove windowrule' command via 'keyword'.
-    // The easiest way is to set it back to the default Hyprland border color.
-    // Assuming default is black (000000FF) or using a known default from config.
-    // For now, let's assume setting it to 00000000 (transparent) effectively 'removes' it visually.
-    // Or set to the default border color of the system/theme.
-    // A better approach would be to read the original border color if possible.
-    // For simplicity, let's set it to transparent black, effectively hiding the custom border.
     std::string command = "keyword windowrule bordercolor 0x00000000,address:" + windowAddress;
     return SendCommand(command, nullptr);
+}
+
+bool HyprlandBackend::MoveWindowTo(const std::string& address, int x, int y) {
+    // Get current position, compute delta, then move relatively
+    std::vector<Window> wins = GetWindows();
+    for (const auto& w : wins) {
+        if (w.address == address) {
+            int dx = x - w.x;
+            int dy = y - w.y;
+            if (!FocusWindow(address)) return false;
+            std::string cmd = "dispatch movewindow pixel " + std::to_string(dx) + " " + std::to_string(dy);
+            return SendCommand(cmd, nullptr);
+        }
+    }
+    return false;
+}
+
+bool HyprlandBackend::FocusWindow(const std::string& address) {
+    std::string cmd = "dispatch focuswindow address:" + address;
+    return SendCommand(cmd, nullptr);
+}
+
+bool HyprlandBackend::SendDispatch(const std::string& dispatcher, const std::string& args) {
+    std::string cmd = "dispatch " + dispatcher + " " + args;
+    return SendCommand(cmd, nullptr);
 }

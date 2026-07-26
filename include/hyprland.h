@@ -26,6 +26,7 @@ public:
         int monitorId;
         std::string title;
         std::string cls;
+        bool floating = false;
     };
 
     // New methods for getting Hyprland info
@@ -33,6 +34,11 @@ public:
     std::vector<Window> GetWindows();
     bool SetWindowBorderColor(const std::string& windowAddress, const std::string& color);
     bool ResetWindowBorder(const std::string& windowAddress);
+
+    // Window manipulation (Hyprland-only)
+    bool MoveWindowTo(const std::string& address, int x, int y);
+    bool FocusWindow(const std::string& address);
+    bool SendDispatch(const std::string& dispatcher, const std::string& args);
 
 
 private:

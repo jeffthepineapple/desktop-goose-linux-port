@@ -246,6 +246,11 @@ void Config_InitRegistry() {
     g_configRegistry.push_back({"Debug", "debug_terminal", "Log to Terminal", CFG_BOOL, &g_config.debugToTerminal, 0, 1, 1, "", OnConfigChange});
     g_configRegistry.push_back({"Debug", "highlight_edge_windows", "Highlight Edge Windows", CFG_BOOL, &g_config.highlightEdgeWindows, 0, 1, 1, "", OnConfigChange});
 
+    // SECTION: Window Drag (Hyprland only)
+    g_configRegistry.push_back({"Window Drag", "window_drag_enabled", "Enable Window Drag", CFG_BOOL, &g_config.windowDragEnabled, 0, 1, 1, "", OnConfigChange});
+    g_configRegistry.push_back({"Window Drag", "window_drag_chance", "Window Drag Chance", CFG_INT, &g_config.windowDragChance, 0, 100, 1, "%", OnConfigChange});
+    g_configRegistry.push_back({"Window Drag", "window_drag_duration", "Drag Duration", CFG_FLOAT, &g_config.windowDragDuration, 0.5f, 5.0f, 0.5f, "s", OnConfigChange});
+
     Config_Load();
     Config_SaveNow(nullptr);
 }

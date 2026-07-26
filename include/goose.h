@@ -11,7 +11,7 @@
 #include "assets.h"
 #include "cosmetics.h"
 
-enum GooseState { WANDER, FETCHING, RETURNING, CHASE_CURSOR, SNATCH_CURSOR };
+enum GooseState { WANDER, FETCHING, RETURNING, CHASE_CURSOR, SNATCH_CURSOR, DRAG_WINDOW };
 
 struct FootState {
     Vector2 currentPos{};
@@ -83,6 +83,16 @@ public:
     int  mudChance = 15;
     float mudLifetime = 15.0f;
 
+    // Window drag state (Hyprland only)
+    bool windowDragEnabled = true;
+    int  windowDragChance = 3;
+    std::string dragWindowAddr;
+    bool dragWindowWasTiled = false;
+    int dragWindowOrigX = 0, dragWindowOrigY = 0;
+    int dragWindowOrigW = 0, dragWindowOrigH = 0;
+    int dragWindowDestX = 0, dragWindowDestY = 0;
+    double dragWindowStartTime = 0.0;
+
 
     Goose(int _id, const std::string& _name, int screenW, int screenH);
 
@@ -92,6 +102,7 @@ public:
     void ForceFetchMeme(const std::string& path, int w, int h);
     void ForceWander(int w, int h);
     bool ForceChase(int w, int h);
+    bool ForceWindowDrag(int w, int h);
     void Draw(cairo_t* cr);
 
     // Coordinate helpers
