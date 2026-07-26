@@ -41,7 +41,6 @@ struct Config {
 
     // Edge detection debug visuals (Hyprland only)
     bool highlightEdgeWindows = false;
-    std::string edgeHighlightColor = "FF0000FF"; // RRGGBBAA
 };
 
 extern Config g_config;
