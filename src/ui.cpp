@@ -817,30 +817,41 @@ void draw_overlay(GtkDrawingArea* area, cairo_t* cr, int width, int height, gpoi
         }
     }
 
-    // Draw edge window highlights
+    // Draw edge zone and window highlights
     if (g_config.highlightEdgeWindows && g_edgeDetector.IsEnabled()) {
+        constexpr int ZONE = 15;
+
+        // Draw edge zone strips for this monitor
+        cairo_save(cr);
+        cairo_set_source_rgba(cr, 1.0, 0.2, 0.2, 0.12);
+        // Top strip
+        cairo_rectangle(cr, m->x, m->y, m->width, ZONE);
+        cairo_fill(cr);
+        // Bottom strip
+        cairo_rectangle(cr, m->x, m->y + m->height - ZONE, m->width, ZONE);
+        cairo_fill(cr);
+        // Left strip
+        cairo_rectangle(cr, m->x, m->y, ZONE, m->height);
+        cairo_fill(cr);
+        // Right strip
+        cairo_rectangle(cr, m->x + m->width - ZONE, m->y, ZONE, m->height);
+        cairo_fill(cr);
+        cairo_restore(cr);
+
+        // Highlight windows at edges on this monitor
         for (const auto& ew : g_edgeDetector.EdgeWindows()) {
-            if (cullToMonitor) {
-                if (ew.x + ew.width < m->x || ew.x > m->x + m->width) continue;
-                if (ew.y + ew.height < m->y || ew.y > m->y + m->height) continue;
-            }
+            bool onThisMonitor = (ew.x + ew.width > m->x && ew.x < m->x + m->width) &&
+                                 (ew.y + ew.height > m->y && ew.y < m->y + m->height);
+            if (!onThisMonitor) continue;
+
             cairo_save(cr);
-            // Red semi-transparent border
-            cairo_set_source_rgba(cr, 1.0, 0.15, 0.15, 0.35);
+            cairo_set_source_rgba(cr, 1.0, 0.15, 0.15, 0.30);
             cairo_rectangle(cr, ew.x, ew.y, ew.width, ew.height);
             cairo_fill(cr);
-            // Bright red outline
-            cairo_set_source_rgba(cr, 1.0, 0.2, 0.2, 0.85);
-            cairo_set_line_width(cr, 3.0);
+            cairo_set_source_rgba(cr, 1.0, 0.3, 0.3, 0.80);
+            cairo_set_line_width(cr, 2.5);
             cairo_rectangle(cr, ew.x, ew.y, ew.width, ew.height);
             cairo_stroke(cr);
-            // Label
-            if (debugLayout) {
-                cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 0.9);
-                cairo_move_to(cr, ew.x + 6, ew.y + 18);
-                pango_layout_set_text(debugLayout, "EDGE", -1);
-                pango_cairo_show_layout(cr, debugLayout);
-            }
             cairo_restore(cr);
         }
     }
@@ -870,39 +881,11 @@ gboolean on_tick(gpointer) {
 
     // Sync edge detector with config and tick it
     g_edgeDetector.SetEnabled(g_config.highlightEdgeWindows);
-    {
+    if (g_config.highlightEdgeWindows) {
         HyprlandBackend* hyprBackend = dynamic_cast<HyprlandBackend*>(
             g_backendManager.GetActiveBackend());
-        static int edgeTick = 0;
-        if (!hyprBackend && (edgeTick++ % 300 == 0)) {
-            UiLogPush("edge: active backend is " + g_backendManager.GetActiveBackend()->Name() + " (not Hyprland)");
-        }
         if (hyprBackend) {
-            std::vector<HyprlandBackend::Monitor> rawMonitors = hyprBackend->GetMonitors();
-            std::vector<HyprlandMonitor> monitors;
-            monitors.reserve(rawMonitors.size());
-            for (const auto& rm : rawMonitors) {
-                HyprlandMonitor m;
-                m.id = rm.id;
-                m.name = rm.name;
-                m.x = rm.x;
-                m.y = rm.y;
-                m.width = rm.width;
-                m.height = rm.height;
-                m.scale = rm.scale;
-                monitors.push_back(m);
-            }
-            g_edgeDetector.Tick(g_time, hyprBackend, monitors);
-            if ((edgeTick++ % 300) == 0) {
-                std::string msg = "edge: monitors=" + std::to_string(monitors.size())
-                    + " windows=" + std::to_string(g_edgeDetector.EdgeWindows().size())
-                    + " enabled=" + std::to_string(g_edgeDetector.IsEnabled());
-                if (!monitors.empty()) {
-                    msg += " mon0=[" + std::to_string(monitors[0].x) + "," + std::to_string(monitors[0].y)
-                        + " " + std::to_string(monitors[0].width) + "x" + std::to_string(monitors[0].height) + "]";
-                }
-                UiLogPush(msg);
-            }
+            g_edgeDetector.Tick(hyprBackend);
         }
     }
 
