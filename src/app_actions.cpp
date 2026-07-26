@@ -313,6 +313,7 @@ static bool ParseRuleAction(const std::string& text, RuleAction* out) {
     else if (text == "note" || text == "fetch-note") *out = RuleAction::FetchNote;
     else if (text == "text" || text == "say") *out = RuleAction::FetchText;
     else if (text == "chase" || text == "chase-cursor") *out = RuleAction::Chase;
+    else if (text == "drag" || text == "drag-window") *out = RuleAction::DragWindow;
     else return false;
     return true;
 }
@@ -324,6 +325,7 @@ static const char* RuleActionName(RuleAction action) {
         case RuleAction::FetchNote: return "note";
         case RuleAction::FetchText: return "text";
         case RuleAction::Chase:     return "chase";
+        case RuleAction::DragWindow: return "drag";
     }
     return "?";
 }
@@ -334,6 +336,7 @@ static const char* GooseStateName(GooseState state) {
         case RETURNING:     return "returning";
         case CHASE_CURSOR:  return "chase";
         case SNATCH_CURSOR: return "snatch";
+        case DRAG_WINDOW:   return "drag-window";
     }
     return "?";
 }
@@ -345,6 +348,7 @@ static void ApplyRuleAction(Goose& goose, const GooseRule& rule, int w, int h) {
         case RuleAction::FetchNote: goose.ForceFetch(1, w, h); break;
         case RuleAction::FetchText: goose.ForceFetchText(rule.text, w, h); break;
         case RuleAction::Chase:     goose.ForceChase(w, h); break;
+        case RuleAction::DragWindow: goose.ForceWindowDrag(w, h); break;
     }
 }
 
@@ -434,7 +438,7 @@ static std::string HandleRulesCommand(const std::vector<std::string>& args) {
     if (args[1] == "add") {
         // rules add <goose-id|all> <action> [interval-seconds] [text...]
         if (args.size() < 4) {
-            return "error usage: rules add <goose-id|all> <wander|meme|note|chase|text> [interval] [text]\n";
+            return "error usage: rules add <goose-id|all> <wander|meme|note|chase|drag|text> [interval] [text]\n";
         }
 
         int target = -1;
@@ -553,7 +557,7 @@ static std::string HandleQuitCommand(const std::vector<std::string>&) {
 }
 
 static constexpr const char* FORCE_USAGE =
-    "force set <goose-id> <wander|chase|meme [path]|note [path]|note text <text>>";
+    "force set <goose-id> <wander|chase|drag|meme [path]|note [path]|note text <text>>";
 
 static std::string DecodeNoteText(const std::string& input) {
     std::string decoded;
@@ -617,6 +621,11 @@ static std::string HandleForceCommand(const std::vector<std::string>& args) {
         if (args.size() != 4) return "error usage: " + std::string(FORCE_USAGE) + "\n";
         if (!goose->ForceChase(g_screenWidth, g_screenHeight)) {
             return "error cursor chase is unavailable\n";
+        }
+    } else if (behavior == "drag") {
+        if (args.size() != 4) return "error usage: " + std::string(FORCE_USAGE) + "\n";
+        if (!goose->ForceWindowDrag(g_screenWidth, g_screenHeight)) {
+            return "error window drag is unavailable (requires Hyprland)\n";
         }
     } else if (behavior == "meme") {
         if (args.size() == 4) {

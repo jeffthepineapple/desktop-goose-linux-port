@@ -41,6 +41,11 @@ struct Config {
 
     // Edge detection debug visuals (Hyprland only)
     bool highlightEdgeWindows = false;
+
+    // Window drag (Hyprland only)
+    bool windowDragEnabled = true;
+    int windowDragChance = 3;       // 0..100 percentage per wander cycle
+    float windowDragDuration = 2.0f; // seconds to hold the drag
 };
 
 extern Config g_config;
