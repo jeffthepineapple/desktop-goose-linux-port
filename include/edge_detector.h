@@ -10,6 +10,10 @@ struct HyprlandMonitor {
     std::string name;
     int x, y, width, height;
     double scale;
+    int reservedTop = 0;
+    int reservedBottom = 0;
+    int reservedLeft = 0;
+    int reservedRight = 0;
 };
 
 struct EdgeWindow {

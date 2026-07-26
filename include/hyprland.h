@@ -17,6 +17,7 @@ public:
         std::string name;
         int x, y, width, height;
         double scale;
+        int reserved[4] = {0, 0, 0, 0}; // [top, bottom, left, right] from Hyprland IPC
     };
 
     struct Window {

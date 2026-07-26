@@ -338,9 +338,16 @@ static void draw_debug_overlay(cairo_t* cr) {
     lines.emplace_back(buf);
 
     if (g_config.highlightEdgeWindows) {
-        snprintf(buf, sizeof(buf), "Edge | %s  edgeWindows:%zu",
-                 g_edgeDetector.IsEnabled() ? "enabled" : "disabled",
-                 g_edgeDetector.EdgeWindows().size());
+        int rT = 0, rB = 0, rL = 0, rR = 0;
+        if (!g_edgeDetector.Monitors().empty()) {
+            const auto& hm = g_edgeDetector.Monitors().front();
+            rT = hm.reservedTop; rB = hm.reservedBottom;
+            rL = hm.reservedLeft; rR = hm.reservedRight;
+        }
+        snprintf(buf, sizeof(buf), "Edge | %s  wins:%zu  reserved(T:%d B:%d L:%d R:%d)",
+                 g_edgeDetector.IsEnabled() ? "on" : "off",
+                 g_edgeDetector.EdgeWindows().size(),
+                 rT, rB, rL, rR);
         lines.emplace_back(buf);
     }
 
@@ -842,29 +849,57 @@ void draw_overlay(GtkDrawingArea* area, cairo_t* cr, int width, int height, gpoi
 
     // Highlight windows at screen edges
     if (g_config.highlightEdgeWindows && g_edgeDetector.IsEnabled()) {
+        // Look up reserved area for this monitor and apply it as a coordinate
+        // shift. The compositor may offset the overlay window by the reserved
+        // area, so we compensate by shifting the edge-highlight draw in the
+        // opposite direction.
+        int rTop = 0, rBot = 0, rL = 0, rR = 0;
+        for (const auto& hm : g_edgeDetector.Monitors()) {
+            if (hm.x == m->x && hm.y == m->y) {
+                rTop = hm.reservedTop;
+                rBot = hm.reservedBottom;
+                rL   = hm.reservedLeft;
+                rR   = hm.reservedRight;
+                break;
+            }
+        }
+
+        // Additional translate inside the edge section so only edge highlights
+        // are affected (geese / items keep the main cairo_translate).
+        cairo_save(cr);
+        cairo_translate(cr, -rL - rR, -rTop - rBot);
+
         for (const auto& ew : g_edgeDetector.EdgeWindows()) {
-            // Convert global Hyprland coordinates to monitor-local cairo coords.
-            // The overlay window covers the monitor (anchored to all 4 edges),
-            // so cairo (0,0) = monitor origin. The cairo_translate(cr, -m->x, -m->y)
-            // above already maps global -> local.
+            // cairo_translate(cr, -m->x, -m->y) from above maps global -> device.
             const bool onThisMonitor =
                 (ew.x + ew.width  > m->x && ew.x < m->x + m->width) &&
                 (ew.y + ew.height > m->y && ew.y < m->y + m->height);
             if (!onThisMonitor) continue;
 
-            cairo_save(cr);
-            cairo_set_source_rgba(cr, 1.0, 0.1, 0.1, 0.30);
             cairo_rectangle(cr, ew.x, ew.y, ew.width, ew.height);
+            cairo_set_source_rgba(cr, 1.0, 0.1, 0.1, 0.30);
             cairo_fill_preserve(cr);
             cairo_set_source_rgba(cr, 1.0, 0.4, 0.4, 0.85);
             cairo_set_line_width(cr, 2.0);
             cairo_stroke(cr);
-            cairo_restore(cr);
         }
+        cairo_restore(cr);
     }
 
     // Visual Origin Debugger: coordinate grid, monitor boundary, cursor tracker
     if (g_config.debugVisuals) {
+        // Look up reserved area for this monitor from edge detector
+        int rTop = 0, rBottom = 0, rLeft = 0, rRight = 0;
+        for (const auto& hm : g_edgeDetector.Monitors()) {
+            if (hm.x == m->x && hm.y == m->y) {
+                rTop    = hm.reservedTop;
+                rBottom = hm.reservedBottom;
+                rLeft   = hm.reservedLeft;
+                rRight  = hm.reservedRight;
+                break;
+            }
+        }
+
         // 1. Grid at 200px intervals (in user = global coordinate space)
         cairo_save(cr);
         cairo_set_source_rgba(cr, 0.3, 0.3, 0.3, 0.15);
@@ -905,6 +940,32 @@ void draw_overlay(GtkDrawingArea* area, cairo_t* cr, int width, int height, gpoi
         pango_cairo_show_layout(cr, debugLayout);
         cairo_restore(cr);
 
+        // 2b. Effective visible area (cyan) — monitor minus reserved zones
+        if (rTop || rBottom || rLeft || rRight) {
+            cairo_save(cr);
+            cairo_set_source_rgba(cr, 0.0, 1.0, 1.0, 0.35);
+            cairo_set_line_width(cr, 1.5);
+            double dashes[] = {6, 3};
+            cairo_set_dash(cr, dashes, 2, 0);
+            cairo_rectangle(cr,
+                m->x + rLeft, m->y + rTop,
+                m->width - rLeft - rRight,
+                m->height - rTop - rBottom);
+            cairo_stroke(cr);
+            cairo_set_dash(cr, nullptr, 0, 0);
+            cairo_restore(cr);
+
+            // Label: reserved area
+            cairo_save(cr);
+            cairo_set_source_rgba(cr, 0.0, 1.0, 1.0, 0.80);
+            cairo_move_to(cr, m->x + rLeft + 5, m->y + rTop + 16);
+            char resLabel[64];
+            snprintf(resLabel, sizeof(resLabel), "reserved T:%d B:%d L:%d R:%d", rTop, rBottom, rLeft, rRight);
+            pango_layout_set_text(debugLayout, resLabel, -1);
+            pango_cairo_show_layout(cr, debugLayout);
+            cairo_restore(cr);
+        }
+
         // 3. Cursor position tracker (blue marker + coords)
         CursorBackend* backend = g_backendManager.GetActiveBackend();
         if (backend->Caps() & CAP_GET_POS) {
@@ -941,8 +1002,8 @@ void draw_overlay(GtkDrawingArea* area, cairo_t* cr, int width, int height, gpoi
             cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 0.85);
             char info[128];
             snprintf(info, sizeof(info),
-                     "device: %dx%d  global (%d,%d)  overlay~(0,0)=global(?,?)",
-                     width, height, m->x, m->y);
+                     "device: %dx%d  global (%d,%d)  reserved T:%d",
+                     width, height, m->x, m->y, rTop);
             cairo_move_to(cr, m->x + 10, m->y + 40);
             pango_layout_set_text(debugLayout, info, -1);
             pango_cairo_show_layout(cr, debugLayout);
