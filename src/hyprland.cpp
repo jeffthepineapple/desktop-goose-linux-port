@@ -200,7 +200,30 @@ std::vector<HyprlandBackend::Monitor> HyprlandBackend::GetMonitors() {
             ExtractJsonInteger(monitor_json, "width", &m.width) &&
             ExtractJsonInteger(monitor_json, "height", &m.height) &&
             ExtractJsonNumber(monitor_json, "scale", &m.scale)) {
+            // Parse reserved array: [top, bottom, left, right]
+            size_t rp = monitor_json.find("\"reserved\"");
+            if (rp != std::string::npos) {
+                rp = monitor_json.find('[', rp);
+                if (rp != std::string::npos) {
+                    ++rp;
+                    for (int ri = 0; ri < 4; ++ri) {
+                        while (rp < monitor_json.size() &&
+                               (monitor_json[rp] == ' ' || monitor_json[rp] == ',' ||
+                                monitor_json[rp] == '[' || monitor_json[rp] == '\t'))
+                            ++rp;
+                        if (rp >= monitor_json.size()) break;
+                        char* end = nullptr;
+                        long v = std::strtol(monitor_json.c_str() + rp, &end, 10);
+                        if (end == monitor_json.c_str() + rp) break;
+                        m.reserved[ri] = static_cast<int>(v);
+                        rp = end - monitor_json.c_str();
+                    }
+                }
+            }
             monitors.push_back(m);
+            std::cerr << "[hyprland] monitor " << m.id << " " << m.name
+                      << " reserved=[" << m.reserved[0] << "," << m.reserved[1]
+                      << "," << m.reserved[2] << "," << m.reserved[3] << "]\n";
         }
         pos = obj_end + 1;
     }
