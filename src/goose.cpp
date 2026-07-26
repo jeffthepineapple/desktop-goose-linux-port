@@ -351,6 +351,8 @@ void Goose::Update(double dt, double time, int w, int h) {
 
             if (!forcedText.empty()) {
                 heldItem = g_assets.CreateTextItem(forcedText);
+            } else if (!forcedMemePath.empty()) {
+                heldItem = g_assets.CreateMemeItem(forcedMemePath);
             } else {
                 if (forceItemFetch == 0) {
                     heldItem = g_assets.GetRandomMeme();
@@ -363,6 +365,7 @@ void Goose::Update(double dt, double time, int w, int h) {
 
             forceItemFetch = -1;
             forcedText.clear();
+            forcedMemePath.clear();
 
             if (heldItem) {
                 state = RETURNING;
@@ -1017,6 +1020,7 @@ void Goose::CancelCurrentBehavior() {
     dragInit = false;
     forceItemFetch = -1;
     forcedText.clear();
+    forcedMemePath.clear();
 }
 
 void Goose::ForceFetch(int type, int w, int h) {
@@ -1029,6 +1033,13 @@ void Goose::ForceFetchText(const std::string& text, int w, int h) {
     CancelCurrentBehavior();
     forceItemFetch = 1;
     forcedText = text;
+    StartFetch(w, h);
+}
+
+void Goose::ForceFetchMeme(const std::string& path, int w, int h) {
+    CancelCurrentBehavior();
+    forceItemFetch = 0;
+    forcedMemePath = path;
     StartFetch(w, h);
 }
 

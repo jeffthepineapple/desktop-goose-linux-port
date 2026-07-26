@@ -38,6 +38,10 @@ struct Config {
     bool mudEnabled = true;
     int mudChance = 15;        // 0..100
     float mudLifetime = 15.0f; // seconds
+
+    // Edge detection debug visuals (Hyprland only)
+    bool highlightEdgeWindows = false;
+    std::string edgeHighlightColor = "FF0000FF"; // RRGGBBAA
 };
 
 extern Config g_config;

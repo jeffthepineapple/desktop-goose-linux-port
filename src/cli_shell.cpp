@@ -159,6 +159,11 @@ std::vector<std::string> KindCandidates(CliComplete kind,
         case CliComplete::Slot:        return {"hat", "glasses"};
         case CliComplete::RuleAction:  return {"wander", "meme", "note", "chase", "text"};
         case CliComplete::ForceBehavior: return {"wander", "meme", "note", "chase"};
+        case CliComplete::ForceSource: {
+            if (tokens.size() > 3 && tokens[3] == "note") return {"file", "text"};
+            if (tokens.size() > 3 && tokens[3] == "meme") return {"file"};
+            return {};
+        }
         case CliComplete::SettingKey:  return SettingKeys();
         case CliComplete::Look:        return Looks();
         case CliComplete::RuleId:      return RuleIds();
@@ -208,7 +213,7 @@ std::vector<std::string> CandidatesFor(const std::vector<std::string>& tokens,
         Cli_FindSpec(name, subs.empty() ? "" : (tokens.size() > 1 ? tokens[1] : ""));
     if (!spec) return {};
     const size_t argIndex = index - (spec->sub ? 2 : 1);
-    if (argIndex >= 3) return {};
+    if (argIndex >= 4) return {};
     return KindCandidates(spec->argComplete[argIndex], tokens, index);
 }
 

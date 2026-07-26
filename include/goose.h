@@ -45,6 +45,7 @@ public:
     ItemData* heldItem = nullptr;
     int forceItemFetch = -1; // -1: Random, 0: Meme, 1: Text
     std::string forcedText;
+    std::string forcedMemePath;
 
     float currentSpeed = 0;
     float stepTime = 0.2f;
@@ -88,6 +89,7 @@ public:
     void Update(double dt, double time, int scrW, int scrH);
     void ForceFetch(int type, int w, int h);
     void ForceFetchText(const std::string& text, int w, int h);
+    void ForceFetchMeme(const std::string& path, int w, int h);
     void ForceWander(int w, int h);
     bool ForceChase(int w, int h);
     void Draw(cairo_t* cr);

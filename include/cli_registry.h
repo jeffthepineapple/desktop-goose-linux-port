@@ -14,6 +14,7 @@ enum class CliComplete {
     Item,        // item ids from `skins list` (+ none)
     RuleAction,     // wander | meme | note | chase | text
     ForceBehavior,  // wander | meme | note | chase
+    ForceSource,    // file for memes; file | text for notes
     RuleId,         // rule ids from `rules list`
 };
 
@@ -29,7 +30,7 @@ struct CliCommandSpec {
     const char* example; // full example invocation, or nullptr
     bool offline;        // usable without a running daemon
     bool local;          // handled entirely by the CLI process (never sent)
-    CliComplete argComplete[3]; // completion kind per argument slot
+    CliComplete argComplete[4]; // completion kind per argument slot
 };
 
 const std::vector<CliCommandSpec>& Cli_Registry();
