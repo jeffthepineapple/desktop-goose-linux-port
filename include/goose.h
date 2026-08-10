@@ -21,8 +21,7 @@ enum DragPhase {
     DRAG_CARRY,
     DRAG_RESTORE_WORKSPACE,
     DRAG_RESTORE_GEOMETRY,
-    DRAG_RETILE,
-    DRAG_TELEPORT
+    DRAG_RETILE
 };
 
 struct FootState {
@@ -106,7 +105,6 @@ public:
     double dragWindowStartTime = 0.0;
     DragPhase dragPhase = DRAG_APPROACH;
     int dragPhaseAttempt = 0;
-    std::string dragTeleportWs;
     std::string dragOriginalFocusAddr;
     std::string dragWindowOrigWorkspace;
     std::string dragWindowHiddenWorkspace;

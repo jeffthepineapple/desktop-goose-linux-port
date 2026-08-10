@@ -244,20 +244,6 @@ void Goose::Update(double dt, double time, int w, int h) {
         if (!hBackend || dragWindowAddr.empty()) {
             abortWindowDrag("Hyprland window is unavailable");
         } else switch (dragPhase) {
-        case DRAG_TELEPORT: {
-            if (!hBackend->GetWindowByAddress(dragWindowAddr).address.empty() &&
-                !dragTeleportWs.empty()) {
-                hBackend->MoveWindowToWorkspace(dragWindowAddr, dragTeleportWs);
-            }
-            if (!dragOriginalFocusAddr.empty() &&
-                !hBackend->GetWindowByAddress(dragOriginalFocusAddr).address.empty()) {
-                hBackend->FocusWindow(dragOriginalFocusAddr);
-            }
-            ResetWindowDragState();
-            state = WANDER;
-            PickNewTarget(w, h);
-            break;
-        }
 
         case DRAG_APPROACH: {
             if (hBackend->GetWindowByAddress(dragWindowAddr).address.empty()) {
@@ -1375,7 +1361,6 @@ void Goose::ResetWindowDragState() {
     dragWindowStartTime = 0.0;
     dragPhase = DRAG_APPROACH;
     dragPhaseAttempt = 0;
-    dragTeleportWs.clear();
     dragOriginalFocusAddr.clear();
     dragWindowOrigWorkspace.clear();
     dragWindowHiddenWorkspace.clear();
@@ -1522,27 +1507,6 @@ bool Goose::ForceWindowDrag(int w, int h) {
         : usableTop + rand() % (maxY - usableTop + 1);
 
     g_windowDragGooseId = id;
-
-    // Preserve the existing workspace-teleport alternate before local capture.
-    if ((rand() % 100) < g_config.windowDragWorkspaceChance) {
-        std::vector<HyprlandBackend::Workspace> otherWorkspaces;
-        for (const auto& workspace : hBackend->GetWorkspaces()) {
-            if (workspace.id != dragWindowOrigWorkspaceId &&
-                workspace.id > 0 && !workspace.special) {
-                otherWorkspaces.push_back(workspace);
-            }
-        }
-        if (!otherWorkspaces.empty()) {
-            const auto& destination =
-                otherWorkspaces[rand() % otherWorkspaces.size()];
-            dragTeleportWs = destination.name;
-            dragPhase = DRAG_TELEPORT;
-            state = DRAG_WINDOW;
-            UiLogPush("Goose " + std::to_string(id) +
-                      " teleporting window to workspace " + destination.name);
-            return true;
-        }
-    }
 
     Vector2 windowCenter = {
         (float)(pick.x + pick.width / 2),
