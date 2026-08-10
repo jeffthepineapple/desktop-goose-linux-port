@@ -8,13 +8,12 @@ constexpr CliComplete N = CliComplete::None;
 
 const std::vector<CliCommandSpec> kRegistry = {
     // name       sub       page        args                              summary                                  example                        offline local  argComplete
-    {"start",    nullptr,  "daemon",   "[name] [--foreground]",          "Launch the flock",                       "start \"Pip\"",              true,  true,  {N, N, N}},
     {"shell",    nullptr,  "daemon",   "",                               "Open the interactive goose shell",       nullptr,                      false, true,  {N, N, N}},
     {"status",   nullptr,  "daemon",   "",                               "Inspect runtime state",                  nullptr,                      false, false, {N, N, N}},
     {"help",     nullptr,  "daemon",   "[page|command|all]",             "Show this help",                         "help skins",                 true,  true,  {N, N, N}},
     {"quit",     nullptr,  "daemon",   "",                               "Clear every goose and stop",             nullptr,                      false, false, {N, N, N}},
 
-    {"spawn",    nullptr,  "flock",    "[name]",                         "Add a goose",                            "spawn \"Pip\"",              false, false, {N, N, N}},
+    {"spawn",    nullptr,  "flock",    "[name] [--foreground]",          "Start the daemon or add a goose",        "spawn \"Pip\"",              false, false, {N, N, N}},
     {"clear",    nullptr,  "flock",    "",                               "Remove every goose",                     nullptr,                      false, false, {N, N, N}},
     {"freeze",   nullptr,  "flock",    "[on|off|toggle]",                "Freeze or unfreeze every goose",         nullptr,                      false, false, {CliComplete::OnOffToggle, N, N}},
     {"ram",      nullptr,  "flock",    "",                               "Show memory telemetry",                  nullptr,                      false, false, {N, N, N}},

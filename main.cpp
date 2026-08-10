@@ -126,7 +126,7 @@ static int HandleCliCommand(int argc, char** argv, int* appArgc) {
         return 1;
     }
 
-    if (command == "start") {
+    if (command == "spawn") {
         bool foreground = false;
         std::string requestedName;
 
@@ -137,33 +137,32 @@ static int HandleCliCommand(int argc, char** argv, int* appArgc) {
             } else if (requestedName.empty()) {
                 requestedName = arg;
             } else {
-                Cli_PrintNotice(false, "Usage: CppGoose start [name] [--foreground]");
+                Cli_PrintNotice(false, "Usage: CppGoose spawn [name] [--foreground]");
                 return 1;
             }
         }
 
         g_initialGooseName = requestedName;
 
+        if (IsRunning()) {
+            // Daemon is already up: add another goose, regardless of --foreground.
+            std::vector<std::string> args = {"spawn"};
+            if (!requestedName.empty()) args.push_back(requestedName);
+            std::string response;
+            std::string error;
+            if (!CommandSocket_Send(args, &response, &error)) {
+                Cli_PrintNotice(false, error);
+                return 1;
+            }
+            return Cli_PrintResponse(args, response);
+        }
+
         if (foreground) {
             *appArgc = 1;
             return -1;
         }
 
-        if (IsRunning()) {
-            if (!requestedName.empty()) {
-                std::string response;
-                std::string error;
-                if (!CommandSocket_Send({"spawn", requestedName}, &response, &error)) {
-                    Cli_PrintNotice(false, error);
-                    return 1;
-                }
-                return Cli_PrintResponse({"spawn", requestedName}, response);
-            }
-
-            Cli_PrintNotice(true, "Desktop Goose is already running");
-            return 0;
-        }
-
+        // First goose: start the daemon, which spawns the requested goose.
         return DaemonizeProcess();
     }
 
@@ -173,7 +172,7 @@ static int HandleCliCommand(int argc, char** argv, int* appArgc) {
     if (!IsRunning()) {
         if (!Cli_WorksOffline(args)) {
             Cli_PrintNotice(false,
-                            "Desktop Goose is not running. Start it with 'CppGoose start'.");
+                            "Desktop Goose is not running. Start it with 'CppGoose spawn'.");
             return 1;
         }
         Config_InitRegistry();
