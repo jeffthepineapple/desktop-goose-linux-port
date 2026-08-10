@@ -45,7 +45,8 @@ struct Config {
     // Window drag (Hyprland only)
     bool windowDragEnabled = true;
     int windowDragChance = 3;       // 0..100 percentage per wander cycle
-    float windowDragDuration = 2.0f; // seconds to hold the drag
+    int windowDragEdgePadding = 40;       // px edge padding for destination bounds
+    int windowDragWorkspaceChance = 8;    // % chance to teleport to another workspace
 };
 
 extern Config g_config;

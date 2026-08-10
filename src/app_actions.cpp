@@ -36,6 +36,9 @@ void AppActions_EnsureInitialGoose() {
 }
 
 void AppActions_ClearGeese() {
+    for (auto& goose : g_geese) {
+        goose.ForceWander(g_screenWidth, g_screenHeight);
+    }
     for (auto& item : g_droppedItems) {
         delete item.data;
     }
@@ -43,6 +46,8 @@ void AppActions_ClearGeese() {
     g_footprints.clear();
     g_geese.clear();
     g_cursorGrabberId = -1;
+    g_windowDragGooseId = -1;
+    g_suppressOverlayForCapture = false;
     g_selectedGooseId = 0;
     g_nextId = 0;
     for (const auto& monitor : g_monitors) {
@@ -625,7 +630,7 @@ static std::string HandleForceCommand(const std::vector<std::string>& args) {
     } else if (behavior == "drag") {
         if (args.size() != 4) return "error usage: " + std::string(FORCE_USAGE) + "\n";
         if (!goose->ForceWindowDrag(g_screenWidth, g_screenHeight)) {
-            return "error window drag is unavailable (requires Hyprland)\n";
+            return "error no draggable edge window is currently available\n";
         }
     } else if (behavior == "meme") {
         if (args.size() == 4) {

@@ -249,7 +249,8 @@ void Config_InitRegistry() {
     // SECTION: Window Drag (Hyprland only)
     g_configRegistry.push_back({"Window Drag", "window_drag_enabled", "Enable Window Drag", CFG_BOOL, &g_config.windowDragEnabled, 0, 1, 1, "", OnConfigChange});
     g_configRegistry.push_back({"Window Drag", "window_drag_chance", "Window Drag Chance", CFG_INT, &g_config.windowDragChance, 0, 100, 1, "%", OnConfigChange});
-    g_configRegistry.push_back({"Window Drag", "window_drag_duration", "Drag Duration", CFG_FLOAT, &g_config.windowDragDuration, 0.5f, 5.0f, 0.5f, "s", OnConfigChange});
+    g_configRegistry.push_back({"Window Drag", "window_drag_edge_padding", "Edge Padding", CFG_INT, &g_config.windowDragEdgePadding, 0, 200, 5, "px", OnConfigChange});
+    g_configRegistry.push_back({"Window Drag", "window_drag_workspace_chance", "Workspace Teleport Chance", CFG_INT, &g_config.windowDragWorkspaceChance, 0, 100, 1, "%", OnConfigChange});
 
     Config_Load();
     Config_SaveNow(nullptr);

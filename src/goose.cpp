@@ -5,10 +5,13 @@
 #include "world.h"      // g_droppedItems
 #include "cursor_backend.h" // g_backendManager
 #include "hyprland.h"        // HyprlandBackend (window drag)
+#include "edge_detector.h"
+#include "window_capture.h"
 #include <cmath>
 #include <cstdlib>
 #include <algorithm>
 #include <iostream>
+#include <unistd.h>
 
 // =========================================================
 // CONSTANTS
@@ -223,43 +226,266 @@ void Goose::Update(double dt, double time, int w, int h) {
         }
     }
 
-    // --- DRAG_WINDOW: grab a window edge, drag it, drop it ---
+    // --- DRAG_WINDOW: capture, hide, carry, and restore a real window ---
     if (state == DRAG_WINDOW) {
         CursorBackend* rawBackend = g_backendManager.GetActiveBackend();
         HyprlandBackend* hBackend = dynamic_cast<HyprlandBackend*>(rawBackend);
 
-        if (!hBackend || dragWindowAddr.empty()) {
+        auto abortWindowDrag = [&](const std::string& reason) {
+            if (!reason.empty()) {
+                std::cerr << "[Goose] Window drag aborted: " << reason << '\n';
+                UiLogPush("Goose " + std::to_string(id) + " window drag aborted: " + reason);
+            }
+            RestoreDraggedWindowNow(false);
             state = WANDER;
             PickNewTarget(w, h);
-        } else {
-            double elapsed = time - dragWindowStartTime;
+        };
 
-            if (elapsed < 0.5) {
-                // PHASE 1: Approach - goose walks toward the window edge
-                // target was already set when entering DRAG_WINDOW
-            } else if (elapsed < 1.0) {
-                // PHASE 2: Untile - goose is at the edge, untile the window
-                if (dragWindowWasTiled) {
-                    hBackend->FocusWindow(dragWindowAddr);
-                    hBackend->SendDispatch("togglefloating", "address:" + dragWindowAddr);
-                }
-            } else if (elapsed < 1.0 + g_config.windowDragDuration) {
-                // PHASE 3: Drag - move window to destination
-                hBackend->MoveWindowTo(dragWindowAddr, dragWindowDestX, dragWindowDestY);
-                // Keep the goose moving toward the drop point
-                target = { (float)dragWindowDestX, (float)dragWindowDestY };
-            } else {
-                // PHASE 4: Drop - retile if it was tiled, then return to wander
-                if (dragWindowWasTiled) {
-                    hBackend->FocusWindow(dragWindowAddr);
-                    hBackend->SendDispatch("togglefloating", "address:" + dragWindowAddr);
-                }
-                dragWindowAddr.clear();
-                state = WANDER;
-                PickNewTarget(w, h);
-                TryHonk(HONK_GENERIC_CD, hs.lastGeneric);
-                UiLogPush("Goose " + std::to_string(id) + " finished dragging a window");
+        if (!hBackend || dragWindowAddr.empty()) {
+            abortWindowDrag("Hyprland window is unavailable");
+        } else switch (dragPhase) {
+        case DRAG_TELEPORT: {
+            if (!hBackend->GetWindowByAddress(dragWindowAddr).address.empty() &&
+                !dragTeleportWs.empty()) {
+                hBackend->MoveWindowToWorkspace(dragWindowAddr, dragTeleportWs);
             }
+            if (!dragOriginalFocusAddr.empty() &&
+                !hBackend->GetWindowByAddress(dragOriginalFocusAddr).address.empty()) {
+                hBackend->FocusWindow(dragOriginalFocusAddr);
+            }
+            ResetWindowDragState();
+            state = WANDER;
+            PickNewTarget(w, h);
+            break;
+        }
+
+        case DRAG_APPROACH: {
+            if (hBackend->GetWindowByAddress(dragWindowAddr).address.empty()) {
+                abortWindowDrag("target window disappeared");
+                break;
+            }
+            float dist = Vector2::Distance(pos, target);
+            if (dist < 30.0f || (time - dragWindowStartTime) > 2.0) {
+                g_suppressOverlayForCapture = true;
+                for (const auto& monitor : g_monitors) {
+                    if (monitor.canvas) gtk_widget_queue_draw(monitor.canvas);
+                }
+                dragWindowStartTime = time;
+                dragCaptureReadyTime = time + 0.05;
+                dragPhase = DRAG_CAPTURE_WAIT;
+            }
+            break;
+        }
+
+        case DRAG_CAPTURE_WAIT: {
+            if (time < dragCaptureReadyTime) break;
+
+            HyprlandBackend::Window window =
+                hBackend->GetWindowByAddress(dragWindowAddr);
+            if (window.address.empty()) {
+                abortWindowDrag("target window disappeared before capture");
+                break;
+            }
+
+            HyprlandBackend::Monitor captureMonitor{};
+            bool foundMonitor = false;
+            for (const auto& monitor : hBackend->GetMonitors()) {
+                if (monitor.id == dragWindowMonitorId) {
+                    captureMonitor = monitor;
+                    foundMonitor = true;
+                    break;
+                }
+            }
+            if (!foundMonitor) {
+                abortWindowDrag("capture monitor disappeared");
+                break;
+            }
+
+            WindowCaptureRegion region{
+                captureMonitor.name,
+                captureMonitor.x,
+                captureMonitor.y,
+                window.x - captureMonitor.x,
+                window.y - captureMonitor.y,
+                window.width,
+                window.height
+            };
+            std::string captureError;
+            GdkPixbuf* capture = CaptureWaylandRegion(region, &captureError);
+            if (!capture) {
+                abortWindowDrag(captureError.empty() ? "window capture failed"
+                                                      : captureError);
+                break;
+            }
+
+            std::string itemError;
+            ItemData* capturedItem =
+                g_assets.CreateTransientMemeItem(capture, &itemError);
+            g_object_unref(capture);
+            if (!capturedItem) {
+                abortWindowDrag(itemError.empty() ? "captured image normalization failed"
+                                                   : itemError);
+                break;
+            }
+
+            heldItem = capturedItem;
+            dragPhaseAttempt = 0;
+            dragPhase = DRAG_PREPARE_WINDOW;
+            break;
+        }
+
+        case DRAG_PREPARE_WINDOW: {
+            HyprlandBackend::Window window =
+                hBackend->GetWindowByAddress(dragWindowAddr);
+            if (window.address.empty()) {
+                abortWindowDrag("target window disappeared while preparing");
+                break;
+            }
+
+            if (!dragWindowWasTiled) {
+                dragPhaseAttempt = 0;
+                dragPhase = DRAG_HIDE_WINDOW;
+                break;
+            }
+
+            if (dragPhaseAttempt == 0) {
+                hBackend->ToggleFloating(dragWindowAddr);
+                dragPhaseAttempt = 1;
+                break;
+            }
+
+            if (window.floating &&
+                window.width == dragWindowOrigW &&
+                window.height == dragWindowOrigH) {
+                dragPhaseAttempt = 0;
+                dragPhase = DRAG_HIDE_WINDOW;
+                break;
+            }
+            if (window.floating) {
+                hBackend->ResizeWindowToExact(
+                    dragWindowAddr, dragWindowOrigW, dragWindowOrigH);
+            }
+
+            if (++dragPhaseAttempt > 15) {
+                abortWindowDrag("timed out preparing tiled window");
+            }
+            break;
+        }
+
+        case DRAG_HIDE_WINDOW: {
+            HyprlandBackend::Window window =
+                hBackend->GetWindowByAddress(dragWindowAddr);
+            if (window.address.empty()) {
+                abortWindowDrag("target window disappeared while hiding");
+                break;
+            }
+
+            if (dragPhaseAttempt > 0 &&
+                window.workspaceId != dragWindowOrigWorkspaceId) {
+                dragWindowWasHidden = true;
+                g_suppressOverlayForCapture = false;
+                for (const auto& monitor : g_monitors) {
+                    if (monitor.canvas) gtk_widget_queue_draw(monitor.canvas);
+                }
+                dragInit = false;
+                dragPos = GetBeakTipWorld();
+                target = {
+                    (float)(dragWindowDestX + dragWindowOrigW / 2),
+                    (float)(dragWindowDestY + dragWindowOrigH / 2)
+                };
+                dragPhaseAttempt = 0;
+                dragPhase = DRAG_CARRY;
+                break;
+            }
+
+            hBackend->MoveWindowToWorkspace(
+                dragWindowAddr, dragWindowHiddenWorkspace);
+            if (++dragPhaseAttempt > 15) {
+                abortWindowDrag("timed out hiding target window");
+            }
+            break;
+        }
+
+        case DRAG_CARRY:
+            if (hBackend->GetWindowByAddress(dragWindowAddr).address.empty()) {
+                abortWindowDrag("target window closed during carry");
+            }
+            break;
+
+        case DRAG_RESTORE_WORKSPACE: {
+            if (hBackend->GetWindowByAddress(dragWindowAddr).address.empty()) {
+                abortWindowDrag("target window closed during restore");
+                break;
+            }
+
+            std::string workspaceTarget =
+                std::to_string(dragWindowOrigWorkspaceId);
+            for (const auto& workspace : hBackend->GetWorkspaces()) {
+                if (workspace.name == dragWindowOrigWorkspace) {
+                    workspaceTarget = dragWindowOrigWorkspace;
+                    break;
+                }
+            }
+            hBackend->MoveWindowToWorkspace(dragWindowAddr, workspaceTarget);
+            dragPhaseAttempt = 0;
+            dragPhase = DRAG_RESTORE_GEOMETRY;
+            break;
+        }
+
+        case DRAG_RESTORE_GEOMETRY: {
+            HyprlandBackend::Window window =
+                hBackend->GetWindowByAddress(dragWindowAddr);
+            if (window.address.empty()) {
+                abortWindowDrag("target window closed during geometry restore");
+                break;
+            }
+
+            if (window.workspaceId == dragWindowOrigWorkspaceId) {
+                if (window.x == dragWindowDestX &&
+                    window.y == dragWindowDestY &&
+                    window.width == dragWindowOrigW &&
+                    window.height == dragWindowOrigH) {
+                    dragPhaseAttempt = 0;
+                    dragPhase = DRAG_RETILE;
+                    break;
+                }
+                hBackend->ResizeWindowToExact(
+                    dragWindowAddr, dragWindowOrigW, dragWindowOrigH);
+                hBackend->MoveWindowToExact(
+                    dragWindowAddr, dragWindowDestX, dragWindowDestY);
+            }
+
+            if (++dragPhaseAttempt > 15) {
+                abortWindowDrag("timed out restoring window geometry");
+            }
+            break;
+        }
+
+        case DRAG_RETILE: {
+            if (hBackend->GetWindowByAddress(dragWindowAddr).address.empty()) {
+                abortWindowDrag("target window closed before retiling");
+                break;
+            }
+            if (dragWindowWasTiled && dragPhaseAttempt == 0) {
+                hBackend->ToggleFloating(dragWindowAddr);
+                dragPhaseAttempt = 1;
+            }
+
+            std::string focusAddress = dragWindowWasFocused
+                ? dragWindowAddr
+                : dragOriginalFocusAddr;
+            if (!focusAddress.empty() &&
+                !hBackend->GetWindowByAddress(focusAddress).address.empty()) {
+                hBackend->FocusWindow(focusAddress);
+            }
+            ResetWindowDragState();
+            state = WANDER;
+            PickNewTarget(w, h);
+            TryHonk(HONK_GENERIC_CD, hs.lastGeneric);
+            UiLogPush("Goose " + std::to_string(id) +
+                      " finished dragging a window");
+            break;
+        }
         }
     }
 
@@ -307,11 +533,13 @@ void Goose::Update(double dt, double time, int w, int h) {
         reached = Vector2::Distance(btPoint, target) < beakThreshold ||
                   Vector2::Distance(pos, target) < 90.0f ||
                   reachedPickupEdge;
-    } else {
-        // RETURNING uses visual contact point and a larger threshold so items
-        // get dropped cleanly when the dragged meme reaches the destination.
+    } else if (state == RETURNING ||
+               (state == DRAG_WINDOW && dragPhase == DRAG_CARRY)) {
+        // Carried items use visual contact and a larger drop threshold.
         float threshold = std::max(60.0f * g_config.globalScale, 50.0f);
         reached = (Vector2::Distance(btPoint, target) < threshold);
+    } else {
+        reached = false;
     }
 
     if (reached) {
@@ -335,55 +563,11 @@ void Goose::Update(double dt, double time, int w, int h) {
                 }
             }
 
-            // Window drag chance (Hyprland only, only if not chasing)
-            if (!chased && windowDragEnabled && g_config.windowDragEnabled) {
-                CursorBackend* rawBackend = g_backendManager.GetActiveBackend();
-                HyprlandBackend* hBackend = dynamic_cast<HyprlandBackend*>(rawBackend);
-                if (hBackend && (rand() % 100) < windowDragChance) {
-                    std::vector<HyprlandBackend::Window> windows = hBackend->GetWindows();
-                    // Filter to tiled windows only
-                    std::vector<HyprlandBackend::Window> tiled;
-                    for (auto& win : windows) {
-                        if (!win.floating) tiled.push_back(win);
-                    }
-                    if (!tiled.empty()) {
-                        // Pick a random tiled window
-                        HyprlandBackend::Window pick = tiled[rand() % tiled.size()];
-                        dragWindowAddr = pick.address;
-                        dragWindowWasTiled = true;
-                        dragWindowOrigX = pick.x;
-                        dragWindowOrigY = pick.y;
-                        dragWindowOrigW = pick.width;
-                        dragWindowOrigH = pick.height;
-
-                        // Target: edge of the window closest to the goose
-                        Vector2 winCenter = { (float)(pick.x + pick.width / 2),
-                                              (float)(pick.y + pick.height / 2) };
-                        Vector2 toWin = Vector2::Normalize(winCenter - pos);
-                        // Approach from the edge the goose is closest to
-                        Vector2 edgePt;
-                        if (std::abs(toWin.x) > std::abs(toWin.y)) {
-                            edgePt = { (toWin.x > 0) ? (float)pick.x : (float)(pick.x + pick.width),
-                                       winCenter.y };
-                        } else {
-                            edgePt = { winCenter.x,
-                                       (toWin.y > 0) ? (float)pick.y : (float)(pick.y + pick.height) };
-                        }
-                        target = edgePt;
-
-                        // Random destination somewhere else on screen
-                        dragWindowDestX = rand() % std::max(1, w - pick.width - 50) + 25;
-                        dragWindowDestY = rand() % std::max(1, h - pick.height - 50) + 25;
-
-                        dragWindowStartTime = time;
-                        state = DRAG_WINDOW;
-                        currentSpeed = g_config.baseRunSpeed * 1.1f;
-
-                        TryHonk(HONK_CHASE_CD, hs.lastChase);
-                        UiLogPush("Goose " + std::to_string(id) + " is dragging window " + pick.title);
-                        chased = true;
-                    }
-                }
+            // Window drag chance (Hyprland only, only if not chasing).
+            // ForceWindowDrag owns candidate refresh, filtering, and reservation.
+            if (!chased && windowDragEnabled && g_config.windowDragEnabled &&
+                (rand() % 100) < windowDragChance) {
+                chased = ForceWindowDrag(w, h);
             }
 
             if (!chased) {
@@ -474,6 +658,11 @@ void Goose::Update(double dt, double time, int w, int h) {
                 state = WANDER;
                 PickNewTarget(w, h);
             }
+        }
+        else if (state == DRAG_WINDOW && dragPhase == DRAG_CARRY) {
+            dragRestoreToDestination = true;
+            dragPhaseAttempt = 0;
+            dragPhase = DRAG_RESTORE_WORKSPACE;
         }
         else if (state == RETURNING) {
             if (heldItem) {
@@ -653,24 +842,32 @@ void Goose::Update(double dt, double time, int w, int h) {
     // We also include FETCHING here to prevent geese from wandering too far off-screen.
     if (pos.x < minX) {
         pos.x = minX + 1.0f;
-        if ((state == SNATCH_CURSOR || state == RETURNING || state == FETCHING) && vel.x < 0) {
+        if ((state == SNATCH_CURSOR || state == RETURNING ||
+             (state == DRAG_WINDOW && dragPhase == DRAG_CARRY) ||
+             state == FETCHING) && vel.x < 0) {
             vel.x = std::abs(vel.x) + 50.0f; // force bounce away
         }
     } else if (pos.x > maxX) {
         pos.x = maxX - 1.0f;
-        if ((state == SNATCH_CURSOR || state == RETURNING || state == FETCHING) && vel.x > 0) {
+        if ((state == SNATCH_CURSOR || state == RETURNING ||
+             (state == DRAG_WINDOW && dragPhase == DRAG_CARRY) ||
+             state == FETCHING) && vel.x > 0) {
             vel.x = -std::abs(vel.x) - 50.0f;
         }
     }
 
     if (pos.y < minY) {
         pos.y = minY + 1.0f;
-        if ((state == SNATCH_CURSOR || state == RETURNING || state == FETCHING) && vel.y < 0) {
+        if ((state == SNATCH_CURSOR || state == RETURNING ||
+             (state == DRAG_WINDOW && dragPhase == DRAG_CARRY) ||
+             state == FETCHING) && vel.y < 0) {
             vel.y = std::abs(vel.y) + 50.0f;
         }
     } else if (pos.y > maxY) {
         pos.y = maxY - 1.0f;
-        if ((state == SNATCH_CURSOR || state == RETURNING || state == FETCHING) && vel.y > 0) {
+        if ((state == SNATCH_CURSOR || state == RETURNING ||
+             (state == DRAG_WINDOW && dragPhase == DRAG_CARRY) ||
+             state == FETCHING) && vel.y > 0) {
             vel.y = -std::abs(vel.y) - 50.0f;
         }
     }
@@ -685,7 +882,8 @@ void Goose::Update(double dt, double time, int w, int h) {
         Vector2 targetDirVec = Vector2::Normalize(vel);
 
         // Pulling look: face the dragged item or the current cursor anchor.
-        if (state == RETURNING) {
+        if (state == RETURNING ||
+            (state == DRAG_WINDOW && dragPhase == DRAG_CARRY)) {
             targetDirVec = targetDirVec * -1.0f;
         } else if (state == SNATCH_CURSOR) {
             Vector2 toCursor = s_predictedCursor - pos;
@@ -748,7 +946,13 @@ void Goose::Update(double dt, double time, int w, int h) {
         std::cerr << "[Goose] NaN/Inf detected for ID " << id << "! Emergency total physics reset." << std::endl;
         std::cerr << "       pos:(" << pos.x << "," << pos.y << ") vel:(" << vel.x << "," << vel.y << ") dir:" << dir << std::endl;
         std::cerr << "       drag:(" << dragPos.x << "," << dragPos.y << ") rot:" << dragRot << std::endl;
-        
+
+        if (state == DRAG_WINDOW || !dragWindowAddr.empty()) {
+            RestoreDraggedWindowNow(false);
+        } else if (heldItem) {
+            delete heldItem;
+            heldItem = nullptr;
+        }
         pos.x = (float)w / 2.0f;
         pos.y = (float)h / 2.0f;
         vel = {0, 0};
@@ -759,7 +963,6 @@ void Goose::Update(double dt, double time, int w, int h) {
         dragRot = 0.0f;
         dragRotVel = 0.0f;
         dragInit = false;
-        heldItem = nullptr;
         state = WANDER;
         
         UiLogPush("Emergency Physics Reset: Goose " + std::to_string(id));
@@ -1106,7 +1309,10 @@ Vector2 Goose::GetBeakTipWorld() {
 // =========================================================
 
 void Goose::CancelCurrentBehavior() {
-    if (heldItem) {
+    if (state == DRAG_WINDOW || !dragWindowAddr.empty() ||
+        g_windowDragGooseId == id) {
+        RestoreDraggedWindowNow(false);
+    } else if (heldItem) {
         delete heldItem;
         heldItem = nullptr;
     }
@@ -1115,7 +1321,70 @@ void Goose::CancelCurrentBehavior() {
     forceItemFetch = -1;
     forcedText.clear();
     forcedMemePath.clear();
+}
+
+void Goose::RestoreDraggedWindowNow(bool placeAtDestination) {
+    HyprlandBackend* backend = dynamic_cast<HyprlandBackend*>(
+        g_backendManager.GetActiveBackend());
+    if (backend && !dragWindowAddr.empty()) {
+        HyprlandBackend::Window window =
+            backend->GetWindowByAddress(dragWindowAddr);
+        if (!window.address.empty()) {
+            std::string workspaceTarget =
+                std::to_string(dragWindowOrigWorkspaceId);
+            for (const auto& workspace : backend->GetWorkspaces()) {
+                if (workspace.name == dragWindowOrigWorkspace) {
+                    workspaceTarget = dragWindowOrigWorkspace;
+                    break;
+                }
+            }
+            backend->MoveWindowToWorkspace(dragWindowAddr, workspaceTarget);
+            backend->MoveWindowToExact(
+                dragWindowAddr,
+                placeAtDestination ? dragWindowDestX : dragWindowOrigX,
+                placeAtDestination ? dragWindowDestY : dragWindowOrigY);
+            backend->ResizeWindowToExact(
+                dragWindowAddr, dragWindowOrigW, dragWindowOrigH);
+            if (dragWindowWasTiled && window.floating) {
+                backend->ToggleFloating(dragWindowAddr);
+            }
+            if (!dragOriginalFocusAddr.empty() &&
+                !backend->GetWindowByAddress(dragOriginalFocusAddr).address.empty()) {
+                backend->FocusWindow(dragOriginalFocusAddr);
+            }
+        }
+    }
+    ResetWindowDragState();
+}
+
+void Goose::ResetWindowDragState() {
+    if (heldItem) {
+        delete heldItem;
+        heldItem = nullptr;
+    }
+    if (g_windowDragGooseId == id) {
+        g_windowDragGooseId = -1;
+        g_suppressOverlayForCapture = false;
+    }
+    dragInit = false;
     dragWindowAddr.clear();
+    dragWindowWasTiled = false;
+    dragWindowOrigX = dragWindowOrigY = 0;
+    dragWindowOrigW = dragWindowOrigH = 0;
+    dragWindowDestX = dragWindowDestY = 0;
+    dragWindowStartTime = 0.0;
+    dragPhase = DRAG_APPROACH;
+    dragPhaseAttempt = 0;
+    dragTeleportWs.clear();
+    dragOriginalFocusAddr.clear();
+    dragWindowOrigWorkspace.clear();
+    dragWindowHiddenWorkspace.clear();
+    dragWindowOrigWorkspaceId = -1;
+    dragWindowMonitorId = -1;
+    dragWindowWasFocused = false;
+    dragWindowWasHidden = false;
+    dragRestoreToDestination = false;
+    dragCaptureReadyTime = 0.0;
 }
 
 void Goose::ForceFetch(int type, int w, int h) {
@@ -1162,54 +1431,142 @@ bool Goose::ForceWindowDrag(int w, int h) {
     CancelCurrentBehavior();
     CursorBackend* rawBackend = g_backendManager.GetActiveBackend();
     HyprlandBackend* hBackend = dynamic_cast<HyprlandBackend*>(rawBackend);
-    if (!hBackend) {
+    if (!hBackend || (g_windowDragGooseId != -1 &&
+                      g_windowDragGooseId != id)) {
         state = WANDER;
         PickNewTarget(w, h);
         return false;
     }
 
-    std::vector<HyprlandBackend::Window> windows = hBackend->GetWindows();
-    // Prefer tiled windows, but fall back to any window
-    std::vector<HyprlandBackend::Window> tiled;
-    for (auto& win : windows) {
-        if (!win.floating) tiled.push_back(win);
+    g_edgeDetector.SetEnabled(true);
+    g_edgeDetector.Tick(hBackend);
+
+    std::vector<HyprlandBackend::Window> candidates;
+    for (const auto& edgeWindow : g_edgeDetector.EdgeWindows()) {
+        bool reservedAddress = false;
+        for (const auto& goose : g_geese) {
+            if (goose.id != id &&
+                goose.dragWindowAddr == edgeWindow.address) {
+                reservedAddress = true;
+                break;
+            }
+        }
+        if (reservedAddress) continue;
+
+        HyprlandBackend::Window window =
+            hBackend->GetWindowByAddress(edgeWindow.address);
+        if (!window.address.empty()) {
+            candidates.push_back(window);
+        }
     }
-    std::vector<HyprlandBackend::Window>& pool = tiled.empty() ? windows : tiled;
-    if (pool.empty()) {
+
+    if (candidates.empty()) {
+        if (g_windowDragGooseId == id) g_windowDragGooseId = -1;
         state = WANDER;
         PickNewTarget(w, h);
         return false;
     }
 
-    HyprlandBackend::Window pick = pool[rand() % pool.size()];
+    HyprlandBackend::Window pick =
+        candidates[rand() % candidates.size()];
+    HyprlandBackend::Monitor sourceMonitor{};
+    bool foundMonitor = false;
+    for (const auto& monitor : hBackend->GetMonitors()) {
+        if (monitor.id == pick.monitorId) {
+            sourceMonitor = monitor;
+            foundMonitor = true;
+            break;
+        }
+    }
+    if (!foundMonitor) {
+        state = WANDER;
+        PickNewTarget(w, h);
+        return false;
+    }
+
     dragWindowAddr = pick.address;
     dragWindowWasTiled = !pick.floating;
     dragWindowOrigX = pick.x;
     dragWindowOrigY = pick.y;
     dragWindowOrigW = pick.width;
     dragWindowOrigH = pick.height;
-
-    // Target: edge of the window closest to the goose
-    Vector2 winCenter = { (float)(pick.x + pick.width / 2),
-                          (float)(pick.y + pick.height / 2) };
-    Vector2 toWin = Vector2::Normalize(winCenter - pos);
-    Vector2 edgePt;
-    if (std::abs(toWin.x) > std::abs(toWin.y)) {
-        edgePt = { (toWin.x > 0) ? (float)pick.x : (float)(pick.x + pick.width),
-                   winCenter.y };
-    } else {
-        edgePt = { winCenter.x,
-                   (toWin.y > 0) ? (float)pick.y : (float)(pick.y + pick.height) };
+    dragWindowOrigWorkspaceId = pick.workspaceId;
+    dragWindowMonitorId = pick.monitorId;
+    dragWindowOrigWorkspace = std::to_string(pick.workspaceId);
+    for (const auto& workspace : hBackend->GetWorkspaces()) {
+        if (workspace.id == pick.workspaceId) {
+            dragWindowOrigWorkspace = workspace.name;
+            break;
+        }
     }
-    target = edgePt;
+    dragOriginalFocusAddr = hBackend->GetActiveWindowAddress();
+    dragWindowWasFocused = dragOriginalFocusAddr == dragWindowAddr;
+    dragWindowHiddenWorkspace =
+        "special:cppgoose-hidden-" + std::to_string(getpid()) +
+        "-" + std::to_string(id);
 
-    dragWindowDestX = rand() % std::max(1, w - pick.width - 50) + 25;
-    dragWindowDestY = rand() % std::max(1, h - pick.height - 50) + 25;
+    int pad = g_config.windowDragEdgePadding;
+    int usableLeft = sourceMonitor.x + sourceMonitor.reserved[2] + pad;
+    int usableTop = sourceMonitor.y + sourceMonitor.reserved[0] + pad;
+    int usableRight =
+        sourceMonitor.x + sourceMonitor.width - sourceMonitor.reserved[3] - pad;
+    int usableBottom =
+        sourceMonitor.y + sourceMonitor.height - sourceMonitor.reserved[1] - pad;
+    int maxX = usableRight - pick.width;
+    int maxY = usableBottom - pick.height;
+    dragWindowDestX = maxX <= usableLeft
+        ? usableLeft
+        : usableLeft + rand() % (maxX - usableLeft + 1);
+    dragWindowDestY = maxY <= usableTop
+        ? usableTop
+        : usableTop + rand() % (maxY - usableTop + 1);
+
+    g_windowDragGooseId = id;
+
+    // Preserve the existing workspace-teleport alternate before local capture.
+    if ((rand() % 100) < g_config.windowDragWorkspaceChance) {
+        std::vector<HyprlandBackend::Workspace> otherWorkspaces;
+        for (const auto& workspace : hBackend->GetWorkspaces()) {
+            if (workspace.id != dragWindowOrigWorkspaceId &&
+                workspace.id > 0 && !workspace.special) {
+                otherWorkspaces.push_back(workspace);
+            }
+        }
+        if (!otherWorkspaces.empty()) {
+            const auto& destination =
+                otherWorkspaces[rand() % otherWorkspaces.size()];
+            dragTeleportWs = destination.name;
+            dragPhase = DRAG_TELEPORT;
+            state = DRAG_WINDOW;
+            UiLogPush("Goose " + std::to_string(id) +
+                      " teleporting window to workspace " + destination.name);
+            return true;
+        }
+    }
+
+    Vector2 windowCenter = {
+        (float)(pick.x + pick.width / 2),
+        (float)(pick.y + pick.height / 2)
+    };
+    Vector2 toWindow = Vector2::Normalize(windowCenter - pos);
+    if (std::abs(toWindow.x) > std::abs(toWindow.y)) {
+        target = {
+            toWindow.x > 0 ? (float)pick.x : (float)(pick.x + pick.width),
+            windowCenter.y
+        };
+    } else {
+        target = {
+            windowCenter.x,
+            toWindow.y > 0 ? (float)pick.y : (float)(pick.y + pick.height)
+        };
+    }
 
     dragWindowStartTime = g_time;
+    dragPhase = DRAG_APPROACH;
+    dragPhaseAttempt = 0;
     state = DRAG_WINDOW;
     currentSpeed = g_config.baseRunSpeed * 1.1f;
-
-    UiLogPush("Goose " + std::to_string(id) + " forced to drag window " + pick.title);
+    UiLogPush("Goose " + std::to_string(id) +
+              " dragging window " + pick.title);
     return true;
 }
