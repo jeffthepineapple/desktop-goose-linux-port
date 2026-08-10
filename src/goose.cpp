@@ -11,6 +11,9 @@
 #include <cstdlib>
 #include <algorithm>
 #include <iostream>
+#include <cstdint>
+#include <climits>
+#include <stdexcept>
 #include <unistd.h>
 
 // =========================================================
@@ -273,31 +276,22 @@ void Goose::Update(double dt, double time, int w, int h) {
                 break;
             }
 
-            HyprlandBackend::Monitor captureMonitor{};
-            bool foundMonitor = false;
-            for (const auto& monitor : hBackend->GetMonitors()) {
-                if (monitor.id == dragWindowMonitorId) {
-                    captureMonitor = monitor;
-                    foundMonitor = true;
-                    break;
+            uint32_t toplevelHandle = 0;
+            try {
+                const unsigned long long parsed =
+                    std::stoull(dragWindowAddr, nullptr, 0);
+                if (parsed == 0 || parsed > UINT32_MAX) {
+                    throw std::out_of_range("handle");
                 }
-            }
-            if (!foundMonitor) {
-                abortWindowDrag("capture monitor disappeared");
+                toplevelHandle = static_cast<uint32_t>(parsed);
+            } catch (const std::exception&) {
+                abortWindowDrag("invalid Hyprland window handle");
                 break;
             }
 
-            WindowCaptureRegion region{
-                captureMonitor.name,
-                captureMonitor.x,
-                captureMonitor.y,
-                window.x - captureMonitor.x,
-                window.y - captureMonitor.y,
-                window.width,
-                window.height
-            };
             std::string captureError;
-            GdkPixbuf* capture = CaptureWaylandRegion(region, &captureError);
+            GdkPixbuf* capture =
+                CaptureHyprlandToplevel(toplevelHandle, &captureError);
             if (!capture) {
                 abortWindowDrag(captureError.empty() ? "window capture failed"
                                                       : captureError);

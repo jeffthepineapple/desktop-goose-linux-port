@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<protocol name="hyprland_toplevel_export_v1">
+  <copyright>
+    Copyright © 2022 Vaxry
+    All rights reserved.
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are met:
+
+    1. Redistributions of source code must retain the above copyright notice, this
+       list of conditions and the following disclaimer.
+
+    2. Redistributions in binary form must reproduce the above copyright notice,
+       this list of conditions and the following disclaimer in the documentation
+       and/or other materials provided with the distribution.
+
+    3. Neither the name of the copyright holder nor the names of its
+       contributors may be used to endorse or promote products derived from
+       this software without specific prior written permission.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+    ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+    LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+    CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+    SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+    INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+    CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+    ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+    POSSIBILITY OF SUCH DAMAGE.
+  </copyright>
+  <interface name="hyprland_toplevel_export_manager_v1" version="2">
+    <request name="capture_toplevel">
+      <arg name="frame" type="new_id" interface="hyprland_toplevel_export_frame_v1"/>
+      <arg name="overlay_cursor" type="int"/>
+      <arg name="handle" type="uint"/>
+    </request>
+    <request name="destroy" type="destructor"/>
+  </interface>
+  <interface name="hyprland_toplevel_export_frame_v1" version="2">
+    <event name="buffer">
+      <arg name="format" type="uint" enum="wl_shm.format"/>
+      <arg name="width" type="uint"/>
+      <arg name="height" type="uint"/>
+      <arg name="stride" type="uint"/>
+    </event>
+    <request name="copy">
+      <arg name="buffer" type="object" interface="wl_buffer"/>
+      <arg name="ignore_damage" type="int"/>
+    </request>
+    <event name="damage"><arg name="x" type="uint"/><arg name="y" type="uint"/><arg name="width" type="uint"/><arg name="height" type="uint"/></event>
+    <event name="flags"><arg name="flags" type="uint" enum="flags"/></event>
+    <enum name="flags" bitfield="true"><entry name="y_invert" value="1"/></enum>
+    <event name="ready"><arg name="tv_sec_hi" type="uint"/><arg name="tv_sec_lo" type="uint"/><arg name="tv_nsec" type="uint"/></event>
+    <event name="failed"/>
+    <request name="destroy" type="destructor"/>
+    <event name="linux_dmabuf"><arg name="format" type="uint"/><arg name="width" type="uint"/><arg name="height" type="uint"/></event>
+    <event name="buffer_done"/>
+  </interface>
+</protocol>
