@@ -39,6 +39,10 @@ set(SCREENCOPY_PROTOCOL "${CMAKE_CURRENT_SOURCE_DIR}/protocols/wlr-screencopy-un
 wayland_generate(${SCREENCOPY_PROTOCOL}
     "${CMAKE_CURRENT_BINARY_DIR}/wlr-screencopy-unstable-v1-client-protocol.h"
     "${CMAKE_CURRENT_BINARY_DIR}/wlr-screencopy-unstable-v1-protocol.c")
+set(TOPLEVEL_EXPORT_PROTOCOL "${CMAKE_CURRENT_SOURCE_DIR}/protocols/hyprland-toplevel-export-v1.xml")
+wayland_generate(${TOPLEVEL_EXPORT_PROTOCOL}
+    "${CMAKE_CURRENT_BINARY_DIR}/hyprland-toplevel-export-v1-client-protocol.h"
+    "${CMAKE_CURRENT_BINARY_DIR}/hyprland-toplevel-export-v1-protocol.c")
 
 
 set(GENERATED_SOURCES
@@ -46,6 +50,8 @@ set(GENERATED_SOURCES
     "${CMAKE_CURRENT_BINARY_DIR}/wlr-virtual-pointer-unstable-v1-client-protocol.h"
     "${CMAKE_CURRENT_BINARY_DIR}/wlr-screencopy-unstable-v1-protocol.c"
     "${CMAKE_CURRENT_BINARY_DIR}/wlr-screencopy-unstable-v1-client-protocol.h"
+    "${CMAKE_CURRENT_BINARY_DIR}/hyprland-toplevel-export-v1-protocol.c"
+    "${CMAKE_CURRENT_BINARY_DIR}/hyprland-toplevel-export-v1-client-protocol.h"
 )
 
 file(GLOB_RECURSE SRC_SOURCES CONFIGURE_DEPENDS "src/*.cpp")
