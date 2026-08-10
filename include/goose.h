@@ -104,12 +104,14 @@ public:
     int dragWindowOrigX = 0, dragWindowOrigY = 0;
     int dragWindowOrigW = 0, dragWindowOrigH = 0;
     int dragWindowDestX = 0, dragWindowDestY = 0;
+    int dragImageDestX = 0, dragImageDestY = 0;
     double dragWindowStartTime = 0.0;
     DragPhase dragPhase = DRAG_APPROACH;
     int dragPhaseAttempt = 0;
     std::string dragOriginalFocusAddr;
     std::string dragWindowOrigWorkspace;
     std::string dragWindowHiddenWorkspace;
+    std::string dragRetileTargetAddr;
     int dragWindowOrigWorkspaceId = -1;
     int dragWindowMonitorId = -1;
     bool dragWindowWasFocused = false;
@@ -165,6 +167,7 @@ private:
     void UpdateDrag(double dt);
     bool UpdateYeetFlight(double dt, int w, int h);
     bool BeginWindowInteraction(int w, int h, bool yeet);
+    void SetWindowDestinationFromImageCenter(Vector2 centerDevice);
     void CancelCurrentBehavior();
     void RestoreDraggedWindowNow(bool placeAtDestination);
     void ResetWindowDragState();
