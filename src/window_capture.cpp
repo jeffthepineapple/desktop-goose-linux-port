@@ -361,6 +361,7 @@ GdkPixbuf* CaptureWaylandRegion(const WindowCaptureRegion& region, std::string* 
             const int destinationStride = gdk_pixbuf_get_rowstride(pixbuf);
             auto* destination = gdk_pixbuf_get_pixels(pixbuf);
             const auto* source = static_cast<const uint8_t*>(state.mapped);
+            const bool hasAlpha = state.format == WL_SHM_FORMAT_ARGB8888;
             for (uint32_t y = 0; y < state.height; ++y) {
                 const uint32_t sourceY = (state.flags & ZWLR_SCREENCOPY_FRAME_V1_FLAGS_Y_INVERT)
                                              ? state.height - 1 - y
@@ -368,10 +369,11 @@ GdkPixbuf* CaptureWaylandRegion(const WindowCaptureRegion& region, std::string* 
                 const auto* sourceRow = source + static_cast<size_t>(sourceY) * state.stride;
                 auto* destinationRow = destination + static_cast<size_t>(y) * destinationStride;
                 for (uint32_t x = 0; x < state.width; ++x) {
+                    // Source is little-endian BGR(A/X): byte0=B, byte1=G, byte2=R, byte3=A/X.
                     destinationRow[x * 4] = sourceRow[x * 4 + 2];
                     destinationRow[x * 4 + 1] = sourceRow[x * 4 + 1];
                     destinationRow[x * 4 + 2] = sourceRow[x * 4];
-                    destinationRow[x * 4 + 3] = 255;
+                    destinationRow[x * 4 + 3] = hasAlpha ? sourceRow[x * 4 + 3] : 255;
                 }
             }
         }
