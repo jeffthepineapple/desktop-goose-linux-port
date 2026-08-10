@@ -89,6 +89,8 @@ Goose::Goose(int _id, const std::string& _name, int screenW, int screenH) : id(_
 
 void Goose::UpdateDrag(double dt) {
     if (!heldItem) return;
+    // A yeeted window is a free projectile; it must not snap back to the beak.
+    if (dragIsYeet && dragPhase == DRAG_YEET_FLIGHT) return;
 
     // Attach RIGIDLY to BEAK TIP (like original Desktop Goose)
     Vector2 beakTip = GetBeakTipWorld();
@@ -132,6 +134,73 @@ void Goose::UpdateDrag(double dt) {
         dragRotVel = 0.0f;
         dragInit = false;
     }
+}
+
+// =========================================================
+// PHYSICS: YEETED WINDOW PROJECTILE
+// =========================================================
+
+// Integrates the launched window screenshot in device space: gravity, air drag,
+// erratic spin, and lossy bounces off the screen edges. Returns true once the
+// projectile has settled and the real window should reappear where it landed.
+bool Goose::UpdateYeetFlight(double dt, int w, int h) {
+    if (!heldItem) return true;
+
+    const float step = (float)std::clamp(dt, 0.0, 0.05);
+    const float gravity = 2600.0f;
+    const float airDrag = 0.6f;
+    const float restitution = 0.45f;
+    const float groundFriction = 0.7f;
+
+    const float halfW = heldItem->w * 0.5f * g_config.globalScale;
+    const float halfH = heldItem->h * 0.5f * g_config.globalScale;
+    const float minX = halfW;
+    const float maxX = std::max(minX, (float)w - halfW);
+    const float minY = halfH;
+    const float maxY = std::max(minY, (float)h - halfH);
+
+    yeetVel.y += gravity * step;
+    yeetVel = yeetVel - yeetVel * (airDrag * step);
+    yeetPos = yeetPos + yeetVel * step;
+    dragRot += dragRotVel * step;
+    dragRotVel -= dragRotVel * (0.9f * step);
+
+    bool onGround = false;
+    if (yeetPos.x < minX || yeetPos.x > maxX) {
+        yeetPos.x = std::clamp(yeetPos.x, minX, maxX);
+        yeetVel.x = -yeetVel.x * restitution;
+        dragRotVel = -dragRotVel * 0.8f;
+        ++yeetBounces;
+    }
+    if (yeetPos.y < minY) {
+        yeetPos.y = minY;
+        yeetVel.y = -yeetVel.y * restitution;
+        ++yeetBounces;
+    } else if (yeetPos.y >= maxY) {
+        yeetPos.y = maxY;
+        onGround = true;
+        if (yeetVel.y > 0.0f) {
+            yeetVel.y = -yeetVel.y * restitution;
+            yeetVel.x *= groundFriction;
+            dragRotVel *= 0.55f;
+            ++yeetBounces;
+        }
+    }
+
+    if (!std::isfinite(yeetPos.x) || !std::isfinite(yeetPos.y) ||
+        !std::isfinite(dragRot)) {
+        yeetPos = { std::clamp(pos.x, minX, maxX), maxY };
+        yeetVel = {0, 0};
+        dragRot = 0.0f;
+        dragRotVel = 0.0f;
+        return true;
+    }
+
+    // Render position tracks the projectile; DrawHeldItem works in world space.
+    dragPos = DeviceToWorld(yeetPos);
+
+    const bool settled = onGround && Vector2::Length(yeetVel) < 90.0f;
+    return settled || yeetBounces >= 6;
 }
 
 
@@ -370,11 +439,19 @@ void Goose::Update(double dt, double time, int w, int h) {
                 }
                 dragInit = false;
                 dragPos = GetBeakTipWorld();
+                dragPhaseAttempt = 0;
+                if (dragIsYeet) {
+                    // Plant the feet: the goose throws from where it stands.
+                    target = pos;
+                    yeetWindupStart = time;
+                    yeetBounces = 0;
+                    dragPhase = DRAG_YEET_WINDUP;
+                    break;
+                }
                 target = {
                     (float)(dragWindowDestX + dragWindowOrigW / 2),
                     (float)(dragWindowDestY + dragWindowOrigH / 2)
                 };
-                dragPhaseAttempt = 0;
                 dragPhase = DRAG_CARRY;
                 break;
             }
@@ -392,6 +469,90 @@ void Goose::Update(double dt, double time, int w, int h) {
                 abortWindowDrag("target window closed during carry");
             }
             break;
+
+        case DRAG_YEET_WINDUP: {
+            if (hBackend->GetWindowByAddress(dragWindowAddr).address.empty()) {
+                abortWindowDrag("target window closed before the yeet");
+                break;
+            }
+
+            // Stand still and aim across the window the goose walked up to.
+            target = pos;
+            Vector2 launchDir = Vector2::Normalize(Vector2{
+                (float)(dragWindowOrigX + dragWindowOrigW / 2) - pos.x,
+                (float)(dragWindowOrigY + dragWindowOrigH / 2) - pos.y});
+            if (!std::isfinite(launchDir.x) || !std::isfinite(launchDir.y) ||
+                Vector2::Length(launchDir) < 0.5f) {
+                launchDir = Vector2::FromAngleDegrees(dir);
+            }
+            dir = std::atan2(launchDir.y, launchDir.x) * RAD_TO_DEG;
+
+            const double windup = time - yeetWindupStart;
+            const double pullBack = 0.33;
+            const double snap = 0.55;
+            if (windup < pullBack) {
+                yeetHeadDrive = Lerp(0.35f, 0.0f, (float)(windup / pullBack));
+                break;
+            }
+            if (windup < snap) {
+                yeetHeadDrive =
+                    Lerp(0.0f, 1.0f, (float)((windup - pullBack) / (snap - pullBack)));
+                break;
+            }
+
+            // Headbutt connects: launch the screenshot off the beak.
+            yeetPos = WorldToDevice(GetBeakTipWorld());
+            const float launchSpeed = 1100.0f + (float)(rand() % 500);
+            const float lift = 650.0f + (float)(rand() % 350);
+            yeetVel = { launchDir.x * launchSpeed,
+                        launchDir.y * launchSpeed * 0.35f - lift };
+            dragRotVel = ((rand() % 2) ? 1.0f : -1.0f) *
+                         (7.0f + (float)(rand() % 700) / 100.0f);
+            yeetHeadDrive = 1.0f;
+            yeetBounces = 0;
+            dragPhaseAttempt = 0;
+            dragPhase = DRAG_YEET_FLIGHT;
+            TryHonk(HONK_GENERIC_CD, hs.lastGeneric);
+            UiLogPush("Goose " + std::to_string(id) + " yeeted a window");
+            break;
+        }
+
+        case DRAG_YEET_FLIGHT: {
+            if (hBackend->GetWindowByAddress(dragWindowAddr).address.empty()) {
+                abortWindowDrag("target window closed mid-flight");
+                break;
+            }
+
+            target = pos;
+            if (time - yeetWindupStart > 0.75) yeetHeadDrive = -1.0f;
+            if (!UpdateYeetFlight(dt, w, h)) break;
+
+            int destX = (int)std::lround(yeetPos.x) - dragWindowOrigW / 2;
+            int destY = (int)std::lround(yeetPos.y) - dragWindowOrigH / 2;
+            for (const auto& monitor : hBackend->GetMonitors()) {
+                if (monitor.id != dragWindowMonitorId) continue;
+                const int pad = g_config.windowDragEdgePadding;
+                const int usableLeft = monitor.x + monitor.reserved[2] + pad;
+                const int usableTop = monitor.y + monitor.reserved[0] + pad;
+                const int usableRight =
+                    monitor.x + monitor.width - monitor.reserved[3] - pad;
+                const int usableBottom =
+                    monitor.y + monitor.height - monitor.reserved[1] - pad;
+                destX = std::clamp(destX, usableLeft,
+                                   std::max(usableLeft, usableRight - dragWindowOrigW));
+                destY = std::clamp(destY, usableTop,
+                                   std::max(usableTop, usableBottom - dragWindowOrigH));
+                break;
+            }
+
+            dragWindowDestX = destX;
+            dragWindowDestY = destY;
+            dragRestoreToDestination = true;
+            yeetHeadDrive = -1.0f;
+            dragPhaseAttempt = 0;
+            dragPhase = DRAG_RESTORE_WORKSPACE;
+            break;
+        }
 
         case DRAG_RESTORE_WORKSPACE: {
             if (hBackend->GetWindowByAddress(dragWindowAddr).address.empty()) {
@@ -459,12 +620,14 @@ void Goose::Update(double dt, double time, int w, int h) {
                 !hBackend->GetWindowByAddress(focusAddress).address.empty()) {
                 hBackend->FocusWindow(focusAddress);
             }
+            const bool wasYeet = dragIsYeet;
             ResetWindowDragState();
             state = WANDER;
             PickNewTarget(w, h);
             TryHonk(HONK_GENERIC_CD, hs.lastGeneric);
             UiLogPush("Goose " + std::to_string(id) +
-                      " finished dragging a window");
+                      (wasYeet ? " finished yeeting a window"
+                               : " finished dragging a window"));
             break;
         }
         }
@@ -544,11 +707,13 @@ void Goose::Update(double dt, double time, int w, int h) {
                 }
             }
 
-            // Window drag chance (Hyprland only, only if not chasing).
-            // ForceWindowDrag owns candidate refresh, filtering, and reservation.
+            // Window interaction chance (Hyprland only, only if not chasing).
+            // Both entry points own candidate refresh, filtering, and reservation.
             if (!chased && windowDragEnabled && g_config.windowDragEnabled &&
                 (rand() % 100) < windowDragChance) {
-                chased = ForceWindowDrag(w, h);
+                chased = ((rand() % 100) < g_config.windowYeetChance)
+                             ? ForceWindowYeet(w, h)
+                             : ForceWindowDrag(w, h);
             }
 
             if (!chased) {
@@ -969,8 +1134,13 @@ void Goose::UpdateRig() {
     rig.underbody = pos + up * 9.0f;
     rig.body      = pos + up * 14.0f;
 
-    int targetState = (currentSpeed >= 150.0f) ? 1 : 0;
-    rig.neckLerp = Lerp(rig.neckLerp, (float)targetState, 0.1f);
+    if (yeetHeadDrive >= 0.0f) {
+        // The yeet windup drives the neck directly: coil back, then whip forward.
+        rig.neckLerp = std::clamp(yeetHeadDrive, 0.0f, 1.0f);
+    } else {
+        int targetState = (currentSpeed >= 150.0f) ? 1 : 0;
+        rig.neckLerp = Lerp(rig.neckLerp, (float)targetState, 0.1f);
+    }
 
     float neckH   = Lerp(20, 10, rig.neckLerp);
     float neckExt = Lerp(3, 16, rig.neckLerp);
@@ -1112,7 +1282,9 @@ void Goose::DrawHeldItem(cairo_t* cr) {
     cairo_translate(cr, dragPos.x, dragPos.y);
 
     cairo_rotate(cr, dragRot);
-    cairo_translate(cr, -heldItem->w / 2, 0);
+    // A tumbling window spins about its middle; a carried one hangs off the beak.
+    const bool tumbling = dragIsYeet && dragPhase == DRAG_YEET_FLIGHT;
+    cairo_translate(cr, -heldItem->w / 2, tumbling ? -heldItem->h / 2 : 0);
 
     if (heldItem->type == ItemData::MEME) {
         if (cairo_surface_t* surface = heldItem->Surface()) {
@@ -1365,6 +1537,13 @@ void Goose::ResetWindowDragState() {
     dragWindowWasHidden = false;
     dragRestoreToDestination = false;
     dragCaptureReadyTime = 0.0;
+    dragIsYeet = false;
+    yeetPos = {0, 0};
+    yeetVel = {0, 0};
+    yeetWindupStart = 0.0;
+    yeetBounces = 0;
+    yeetHeadDrive = -1.0f;
+    dragRotVel = 0.0f;
 }
 
 void Goose::ForceFetch(int type, int w, int h) {
@@ -1408,6 +1587,17 @@ bool Goose::ForceChase(int w, int h) {
 }
 
 bool Goose::ForceWindowDrag(int w, int h) {
+    return BeginWindowInteraction(w, h, false);
+}
+
+bool Goose::ForceWindowYeet(int w, int h) {
+    return BeginWindowInteraction(w, h, true);
+}
+
+// Shared setup for both window behaviors: pick a visible edge window, snapshot
+// its state, reserve it, and walk to its near edge. `yeet` only changes what
+// happens once the real window has been hidden behind the screenshot.
+bool Goose::BeginWindowInteraction(int w, int h, bool yeet) {
     CancelCurrentBehavior();
     CursorBackend* rawBackend = g_backendManager.GetActiveBackend();
     HyprlandBackend* hBackend = dynamic_cast<HyprlandBackend*>(rawBackend);
@@ -1523,9 +1713,11 @@ bool Goose::ForceWindowDrag(int w, int h) {
     dragWindowStartTime = g_time;
     dragPhase = DRAG_APPROACH;
     dragPhaseAttempt = 0;
+    dragIsYeet = yeet;
     state = DRAG_WINDOW;
     currentSpeed = g_config.baseRunSpeed * 1.1f;
     UiLogPush("Goose " + std::to_string(id) +
-              " dragging window " + pick.title);
+              (yeet ? " lining up a yeet on window " : " dragging window ") +
+              pick.title);
     return true;
 }

@@ -19,6 +19,8 @@ enum DragPhase {
     DRAG_PREPARE_WINDOW,
     DRAG_HIDE_WINDOW,
     DRAG_CARRY,
+    DRAG_YEET_WINDUP,
+    DRAG_YEET_FLIGHT,
     DRAG_RESTORE_WORKSPACE,
     DRAG_RESTORE_GEOMETRY,
     DRAG_RETILE
@@ -115,6 +117,15 @@ public:
     bool dragRestoreToDestination = false;
     double dragCaptureReadyTime = 0.0;
 
+    // Window yeet: the window screenshot is launched off the goose's head and
+    // tumbles ballistically until it settles; the real window reappears there.
+    bool dragIsYeet = false;
+    Vector2 yeetPos{};              // device-space projectile position
+    Vector2 yeetVel{};              // device-space velocity
+    double yeetWindupStart = 0.0;
+    int yeetBounces = 0;
+    float yeetHeadDrive = -1.0f;    // >= 0 overrides the rig's neck extension
+
 
     Goose(int _id, const std::string& _name, int screenW, int screenH);
 
@@ -125,6 +136,7 @@ public:
     void ForceWander(int w, int h);
     bool ForceChase(int w, int h);
     bool ForceWindowDrag(int w, int h);
+    bool ForceWindowYeet(int w, int h);
     void Draw(cairo_t* cr);
 
     // Coordinate helpers
@@ -151,6 +163,8 @@ private:
 
     HonkState m_honk;
     void UpdateDrag(double dt);
+    bool UpdateYeetFlight(double dt, int w, int h);
+    bool BeginWindowInteraction(int w, int h, bool yeet);
     void CancelCurrentBehavior();
     void RestoreDraggedWindowNow(bool placeAtDestination);
     void ResetWindowDragState();
