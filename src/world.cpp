@@ -21,6 +21,8 @@ int g_screenHeight = 1080;
 int g_selectedGooseId = 0;
 GtkWidget* g_entryNote = nullptr;
 int g_cursorGrabberId = -1;
+int g_windowDragGooseId = -1;
+bool g_suppressOverlayForCapture = false;
 bool g_frozen = false;
 std::vector<GooseRule> g_rules;
 int g_nextRuleId = 0;

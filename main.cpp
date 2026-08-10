@@ -203,6 +203,7 @@ int main(int argc, char** argv) {
 
     auto quit_cb = [](gpointer data) -> gboolean {
         GtkApplication* a = GTK_APPLICATION(data);
+        AppActions_ClearGeese();
         GList* wins = g_list_copy(gtk_application_get_windows(a));
         for (GList* l = wins; l; l = l->next)
             gtk_window_destroy(GTK_WINDOW(l->data));

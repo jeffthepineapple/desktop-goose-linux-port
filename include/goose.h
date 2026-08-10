@@ -13,6 +13,18 @@
 
 enum GooseState { WANDER, FETCHING, RETURNING, CHASE_CURSOR, SNATCH_CURSOR, DRAG_WINDOW };
 
+enum DragPhase {
+    DRAG_APPROACH,
+    DRAG_CAPTURE_WAIT,
+    DRAG_PREPARE_WINDOW,
+    DRAG_HIDE_WINDOW,
+    DRAG_CARRY,
+    DRAG_RESTORE_WORKSPACE,
+    DRAG_RESTORE_GEOMETRY,
+    DRAG_RETILE,
+    DRAG_TELEPORT
+};
+
 struct FootState {
     Vector2 currentPos{};
     Vector2 moveOrigin{};
@@ -92,6 +104,18 @@ public:
     int dragWindowOrigW = 0, dragWindowOrigH = 0;
     int dragWindowDestX = 0, dragWindowDestY = 0;
     double dragWindowStartTime = 0.0;
+    DragPhase dragPhase = DRAG_APPROACH;
+    int dragPhaseAttempt = 0;
+    std::string dragTeleportWs;
+    std::string dragOriginalFocusAddr;
+    std::string dragWindowOrigWorkspace;
+    std::string dragWindowHiddenWorkspace;
+    int dragWindowOrigWorkspaceId = -1;
+    int dragWindowMonitorId = -1;
+    bool dragWindowWasFocused = false;
+    bool dragWindowWasHidden = false;
+    bool dragRestoreToDestination = false;
+    double dragCaptureReadyTime = 0.0;
 
 
     Goose(int _id, const std::string& _name, int screenW, int screenH);
@@ -130,6 +154,8 @@ private:
     HonkState m_honk;
     void UpdateDrag(double dt);
     void CancelCurrentBehavior();
+    void RestoreDraggedWindowNow(bool placeAtDestination);
+    void ResetWindowDragState();
     void StartFetch(int w, int h);
     void DrawHeldItem(cairo_t* cr);
     void DrawEyes(cairo_t* cr, Vector2 fwd, float back);

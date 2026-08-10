@@ -181,15 +181,7 @@ static void UpdateEscapeHoldHud() {
 }
 
 static void ClearAllGooseState() {
-    for (auto& item : g_droppedItems) {
-        delete item.data;
-    }
-    g_droppedItems.clear();
-    g_footprints.clear();
-    g_geese.clear();
-    g_cursorGrabberId = -1;
-    g_selectedGooseId = 0;
-    g_nextId = 0;
+    AppActions_ClearGeese();
     RefreshSelectedGooseUi();
 }
 
@@ -538,6 +530,14 @@ static bool GooseIntersectsMonitor(const Goose& goose, const MonitorInfo& monito
 void draw_overlay(GtkDrawingArea* area, cairo_t* cr, int width, int height, gpointer data) {
     MonitorInfo* m = (MonitorInfo*)data;
     if (!m || cairo_status(cr) != CAIRO_STATUS_SUCCESS) return;
+
+    if (g_suppressOverlayForCapture) {
+        cairo_save(cr);
+        cairo_set_operator(cr, CAIRO_OPERATOR_CLEAR);
+        cairo_paint(cr);
+        cairo_restore(cr);
+        return;
+    }
 
     // Respect multi-monitor toggle: if disabled, only draw on the primary monitor (0,0)
     if (!g_config.multiMonitorEnabled && (m->x != 0 || m->y != 0)) {
@@ -1027,20 +1027,22 @@ gboolean on_tick(gpointer) {
     MaybeTriggerEscapeKill();
     UpdateEscapeHoldHud();
 
-    if (!g_frozen) {
-        Rules_Tick(g_time, g_screenWidth, g_screenHeight);
-        for (auto& goose : g_geese) {
-            goose.Update(1.0 / 60.0, g_time, g_screenWidth, g_screenHeight);
-        }
-    }
-
-    // Sync edge detector with config and tick it
-    g_edgeDetector.SetEnabled(g_config.highlightEdgeWindows);
-    if (g_config.highlightEdgeWindows) {
+    // Refresh visible edge candidates before rules or geese consume them.
+    const bool edgeDetectionEnabled =
+        g_config.highlightEdgeWindows || g_config.windowDragEnabled;
+    g_edgeDetector.SetEnabled(edgeDetectionEnabled);
+    if (edgeDetectionEnabled) {
         HyprlandBackend* hyprBackend = dynamic_cast<HyprlandBackend*>(
             g_backendManager.GetActiveBackend());
         if (hyprBackend) {
             g_edgeDetector.Tick(hyprBackend);
+        }
+    }
+
+    if (!g_frozen) {
+        Rules_Tick(g_time, g_screenWidth, g_screenHeight);
+        for (auto& goose : g_geese) {
+            goose.Update(1.0 / 60.0, g_time, g_screenWidth, g_screenHeight);
         }
     }
 
