@@ -56,6 +56,7 @@ void EdgeDetector::Tick(HyprlandBackend* backend) {
         m.reservedBottom = rm.reserved[1];
         m.reservedLeft   = rm.reserved[2];
         m.reservedRight  = rm.reserved[3];
+        m.activeWorkspaceId = rm.activeWorkspaceId;
         m_monitors.push_back(m);
     }
 
@@ -63,12 +64,19 @@ void EdgeDetector::Tick(HyprlandBackend* backend) {
     std::vector<HyprlandBackend::Window> rawWindows = backend->GetWindows();
     m_edgeWindows.clear();
     for (const auto& rw : rawWindows) {
+        const HyprlandMonitor* monitor = nullptr;
         for (const auto& mon : m_monitors) {
-            if (IsWindowAtEdge(rw.x, rw.y, rw.width, rw.height, mon)) {
-                m_edgeWindows.push_back({rw.address, rw.x, rw.y, rw.width, rw.height,
-                                         rw.title, rw.cls});
+            if (mon.id == rw.monitorId) {
+                monitor = &mon;
                 break;
             }
+        }
+
+        if (!monitor || rw.workspaceId != monitor->activeWorkspaceId) continue;
+        if (IsWindowAtEdge(rw.x, rw.y, rw.width, rw.height, *monitor)) {
+            m_edgeWindows.push_back({rw.address, rw.x, rw.y, rw.width, rw.height,
+                                     rw.title, rw.cls, rw.monitorId, rw.workspaceId,
+                                     rw.floating});
         }
     }
 }
