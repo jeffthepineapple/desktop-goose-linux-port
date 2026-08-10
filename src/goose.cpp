@@ -12,7 +12,6 @@
 #include <algorithm>
 #include <iostream>
 #include <cstdint>
-#include <climits>
 #include <stdexcept>
 #include <unistd.h>
 
@@ -280,10 +279,12 @@ void Goose::Update(double dt, double time, int w, int h) {
             try {
                 const unsigned long long parsed =
                     std::stoull(dragWindowAddr, nullptr, 0);
-                if (parsed == 0 || parsed > UINT32_MAX) {
-                    throw std::out_of_range("handle");
-                }
+                if (parsed == 0) throw std::out_of_range("handle");
+                // Version 1 of Hyprland's export protocol transports the
+                // compositor pointer as a uint32_t, so its public handle is
+                // the low 32 bits of the address reported by hyprctl.
                 toplevelHandle = static_cast<uint32_t>(parsed);
+                if (toplevelHandle == 0) throw std::out_of_range("handle");
             } catch (const std::exception&) {
                 abortWindowDrag("invalid Hyprland window handle");
                 break;
