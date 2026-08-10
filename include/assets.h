@@ -26,6 +26,7 @@ public:
     ~AssetManager();
     ItemData* GetRandomMeme();
     ItemData* CreateMemeItem(const std::string& path, std::string* errorOut = nullptr);
+    ItemData* CreateTransientMemeItem(GdkPixbuf* pixbuf, std::string* errorOut = nullptr);
     ItemData* GetRandomText();
     ItemData* CreateTextItem(const std::string& text);
     void Honk();
@@ -34,6 +35,7 @@ public:
 private:
     void LoadAudio(std::vector<Mix_Chunk*>& v, std::string p);
     void ScanFolder(std::string rel, std::vector<std::string>& out, std::vector<std::string> exts);
+    GdkPixbuf* NormalizeMemePixbuf(GdkPixbuf* pixbuf, std::string* errorOut);
 };
 
 extern AssetManager g_assets;
