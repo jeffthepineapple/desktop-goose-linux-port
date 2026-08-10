@@ -157,8 +157,8 @@ std::vector<std::string> KindCandidates(CliComplete kind,
     switch (kind) {
         case CliComplete::OnOffToggle: return {"on", "off", "toggle"};
         case CliComplete::Slot:        return {"hat", "glasses"};
-        case CliComplete::RuleAction:  return {"wander", "meme", "note", "chase", "text"};
-        case CliComplete::ForceBehavior: return {"wander", "meme", "note", "chase"};
+        case CliComplete::RuleAction:  return {"wander", "meme", "note", "chase", "text", "drag", "yeet"};
+        case CliComplete::ForceBehavior: return {"wander", "meme", "note", "chase", "drag", "yeet"};
         case CliComplete::ForceSource: {
             if (tokens.size() > 3 && tokens[3] == "note") return {"file", "text"};
             if (tokens.size() > 3 && tokens[3] == "meme") return {"file"};

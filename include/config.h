@@ -46,6 +46,7 @@ struct Config {
     bool windowDragEnabled = true;
     int windowDragChance = 3;       // 0..100 percentage per wander cycle
     int windowDragEdgePadding = 40;       // px edge padding for destination bounds
+    int windowYeetChance = 35;      // 0..100 share of window grabs that become yeets
 };
 
 extern Config g_config;

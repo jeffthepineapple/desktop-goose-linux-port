@@ -250,6 +250,7 @@ void Config_InitRegistry() {
     g_configRegistry.push_back({"Window Drag", "window_drag_enabled", "Enable Window Drag", CFG_BOOL, &g_config.windowDragEnabled, 0, 1, 1, "", OnConfigChange});
     g_configRegistry.push_back({"Window Drag", "window_drag_chance", "Window Drag Chance", CFG_INT, &g_config.windowDragChance, 0, 100, 1, "%", OnConfigChange});
     g_configRegistry.push_back({"Window Drag", "window_drag_edge_padding", "Edge Padding", CFG_INT, &g_config.windowDragEdgePadding, 0, 200, 5, "px", OnConfigChange});
+    g_configRegistry.push_back({"Window Drag", "window_yeet_chance", "Window Yeet Chance", CFG_INT, &g_config.windowYeetChance, 0, 100, 5, "%", OnConfigChange});
 
     Config_Load();
     Config_SaveNow(nullptr);

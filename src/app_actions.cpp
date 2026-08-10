@@ -319,6 +319,7 @@ static bool ParseRuleAction(const std::string& text, RuleAction* out) {
     else if (text == "text" || text == "say") *out = RuleAction::FetchText;
     else if (text == "chase" || text == "chase-cursor") *out = RuleAction::Chase;
     else if (text == "drag" || text == "drag-window") *out = RuleAction::DragWindow;
+    else if (text == "yeet" || text == "yeet-window") *out = RuleAction::YeetWindow;
     else return false;
     return true;
 }
@@ -331,6 +332,7 @@ static const char* RuleActionName(RuleAction action) {
         case RuleAction::FetchText: return "text";
         case RuleAction::Chase:     return "chase";
         case RuleAction::DragWindow: return "drag";
+        case RuleAction::YeetWindow: return "yeet";
     }
     return "?";
 }
@@ -354,6 +356,7 @@ static void ApplyRuleAction(Goose& goose, const GooseRule& rule, int w, int h) {
         case RuleAction::FetchText: goose.ForceFetchText(rule.text, w, h); break;
         case RuleAction::Chase:     goose.ForceChase(w, h); break;
         case RuleAction::DragWindow: goose.ForceWindowDrag(w, h); break;
+        case RuleAction::YeetWindow: goose.ForceWindowYeet(w, h); break;
     }
 }
 
@@ -562,7 +565,7 @@ static std::string HandleQuitCommand(const std::vector<std::string>&) {
 }
 
 static constexpr const char* FORCE_USAGE =
-    "force set <goose-id> <wander|chase|drag|meme [path]|note [path]|note text <text>>";
+    "force set <goose-id> <wander|chase|drag|yeet|meme [path]|note [path]|note text <text>>";
 
 static std::string DecodeNoteText(const std::string& input) {
     std::string decoded;
@@ -631,6 +634,11 @@ static std::string HandleForceCommand(const std::vector<std::string>& args) {
         if (args.size() != 4) return "error usage: " + std::string(FORCE_USAGE) + "\n";
         if (!goose->ForceWindowDrag(g_screenWidth, g_screenHeight)) {
             return "error no draggable edge window is currently available\n";
+        }
+    } else if (behavior == "yeet") {
+        if (args.size() != 4) return "error usage: " + std::string(FORCE_USAGE) + "\n";
+        if (!goose->ForceWindowYeet(g_screenWidth, g_screenHeight)) {
+            return "error no yeetable edge window is currently available\n";
         }
     } else if (behavior == "meme") {
         if (args.size() == 4) {
