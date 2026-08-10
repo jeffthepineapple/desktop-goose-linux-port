@@ -185,7 +185,7 @@ std::vector<std::string> CandidatesFor(const std::vector<std::string>& tokens,
     if (index == 0) {
         std::vector<std::string> names;
         for (const CliCommandSpec& spec : Cli_Registry()) {
-            if (spec.name == std::string("shell") || spec.name == std::string("start")) {
+            if (spec.name == std::string("shell")) {
                 continue; // meaningless inside the shell
             }
             if (names.empty() || names.back() != spec.name) names.push_back(spec.name);
@@ -315,10 +315,6 @@ bool ExecuteLine(const std::string& line) {
         Cli_PrintNotice(true, "Already in the goose shell.");
         return true;
     }
-    if (command == "start") {
-        Cli_PrintNotice(true, "Desktop Goose is already running. Use spawn to add a goose.");
-        return true;
-    }
     if (!Cli_IsControlCommand(command)) {
         const std::string suggestion = Cli_Suggest(command);
         Cli_PrintNotice(false, "Unknown command '" + command + "'." +
@@ -332,7 +328,7 @@ bool ExecuteLine(const std::string& line) {
     std::string error;
     if (!CommandSocket_Send(args, &response, &error)) {
         Cli_PrintNotice(false, error);
-        Cli_PrintNotice(false, "The daemon may have stopped. Leave with 'exit', restart with 'CppGoose start'.");
+        Cli_PrintNotice(false, "The daemon may have stopped. Leave with 'exit', restart with 'CppGoose spawn'.");
         return true;
     }
     Cli_PrintResponse(args, response);
@@ -350,7 +346,7 @@ int Cli_RunShell() {
     {
         std::string response;
         if (!CommandSocket_Send({"status"}, &response, nullptr)) {
-            Cli_PrintNotice(false, "Desktop Goose is not running. Start it with 'CppGoose start'.");
+            Cli_PrintNotice(false, "Desktop Goose is not running. Start it with 'CppGoose spawn'.");
             return 1;
         }
     }
