@@ -85,6 +85,52 @@ ItemData* AssetManager::GetRandomMeme() {
     return CreateMemeItem(memePaths[rand() % memePaths.size()]);
 }
  
+GdkPixbuf* AssetManager::NormalizeMemePixbuf(GdkPixbuf* pixbuf, std::string* errorOut) {
+    if (errorOut) errorOut->clear();
+    if (!pixbuf) {
+        if (errorOut) *errorOut = "image pixbuf is null";
+        return nullptr;
+    }
+
+    const int width = gdk_pixbuf_get_width(pixbuf);
+    const int height = gdk_pixbuf_get_height(pixbuf);
+    if (width <= 0 || height <= 0) {
+        if (errorOut) *errorOut = "image has invalid dimensions";
+        return nullptr;
+    }
+
+    GdkPixbuf* normalized = static_cast<GdkPixbuf*>(g_object_ref(pixbuf));
+    if (width > 300) {
+        const float ratio = 300.0f / width;
+        GdkPixbuf* scaled = gdk_pixbuf_scale_simple(
+            normalized, 300, std::max(1, static_cast<int>(height * ratio)), GDK_INTERP_BILINEAR);
+        g_object_unref(normalized);
+        normalized = scaled;
+        if (!normalized) {
+            if (errorOut) *errorOut = "could not scale image";
+            return nullptr;
+        }
+    }
+
+    if (!gdk_pixbuf_get_has_alpha(normalized)) {
+        GdkPixbuf* withAlpha = gdk_pixbuf_add_alpha(normalized, FALSE, 0, 0, 0);
+        g_object_unref(normalized);
+        normalized = withAlpha;
+        if (!normalized) {
+            if (errorOut) *errorOut = "could not convert image to RGBA";
+            return nullptr;
+        }
+    }
+
+    if (gdk_pixbuf_get_n_channels(normalized) != 4) {
+        if (errorOut) *errorOut = "image could not be normalized to four channels";
+        g_object_unref(normalized);
+        return nullptr;
+    }
+
+    return normalized;
+}
+
 ItemData* AssetManager::CreateMemeItem(const std::string& path, std::string* errorOut) {
     if (errorOut) errorOut->clear();
 
@@ -94,8 +140,8 @@ ItemData* AssetManager::CreateMemeItem(const std::string& path, std::string* err
         pb = cached->second;
     } else {
         GError* err = nullptr;
-        pb = gdk_pixbuf_new_from_file(path.c_str(), &err);
-        if (!pb) {
+        GdkPixbuf* loaded = gdk_pixbuf_new_from_file(path.c_str(), &err);
+        if (!loaded) {
             if (errorOut) {
                 *errorOut = err && err->message ? err->message : "could not load image";
             }
@@ -103,32 +149,9 @@ ItemData* AssetManager::CreateMemeItem(const std::string& path, std::string* err
             return nullptr;
         }
 
-        // Scale down huge images once and share the cached result.
-        const int width = gdk_pixbuf_get_width(pb);
-        const int height = gdk_pixbuf_get_height(pb);
-        if (width > 300) {
-            const float ratio = 300.0f / width;
-            GdkPixbuf* scaled = gdk_pixbuf_scale_simple(
-                pb, 300, std::max(1, static_cast<int>(height * ratio)), GDK_INTERP_BILINEAR);
-            g_object_unref(pb);
-            pb = scaled;
-            if (!pb) {
-                if (errorOut) *errorOut = "could not scale image";
-                return nullptr;
-            }
-        }
-
-        // Ensure 4 bytes per pixel (RGBA) to satisfy Cairo's stride requirements.
-        if (!gdk_pixbuf_get_has_alpha(pb)) {
-            GdkPixbuf* withAlpha = gdk_pixbuf_add_alpha(pb, FALSE, 0, 0, 0);
-            g_object_unref(pb);
-            pb = withAlpha;
-            if (!pb) {
-                if (errorOut) *errorOut = "could not convert image";
-                return nullptr;
-            }
-        }
-
+        pb = NormalizeMemePixbuf(loaded, errorOut);
+        g_object_unref(loaded);
+        if (!pb) return nullptr;
         memeCache[path] = pb;
     }
 
@@ -137,6 +160,18 @@ ItemData* AssetManager::CreateMemeItem(const std::string& path, std::string* err
     item->pixbuf = static_cast<GdkPixbuf*>(g_object_ref(pb));
     item->w = gdk_pixbuf_get_width(pb);
     item->h = gdk_pixbuf_get_height(pb);
+    return item;
+}
+
+ItemData* AssetManager::CreateTransientMemeItem(GdkPixbuf* pixbuf, std::string* errorOut) {
+    GdkPixbuf* normalized = NormalizeMemePixbuf(pixbuf, errorOut);
+    if (!normalized) return nullptr;
+
+    ItemData* item = new ItemData();
+    item->type = ItemData::MEME;
+    item->pixbuf = normalized;
+    item->w = gdk_pixbuf_get_width(normalized);
+    item->h = gdk_pixbuf_get_height(normalized);
     return item;
 }
 

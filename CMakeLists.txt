@@ -128,6 +128,32 @@ if(BUILD_TESTING)
     target_compile_options(CppGooseCosmeticsTest PRIVATE ${GTK4_CFLAGS_OTHER})
     target_link_libraries(CppGooseCosmeticsTest ${GTK4_LIBRARIES} m)
     add_test(NAME cosmetics_contracts COMMAND CppGooseCosmeticsTest)
+    add_executable(CppGooseAssetsTest
+        tests/assets_test.cpp
+        src/assets.cpp
+        src/config.cpp
+    )
+    target_include_directories(CppGooseAssetsTest PRIVATE
+        ${GTK4_INCLUDE_DIRS}
+        ${GDKPIXBUF_INCLUDE_DIRS}
+        ${SDL2_INCLUDE_DIRS}
+        ${SDL2MIXER_INCLUDE_DIRS}
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+    )
+    target_compile_options(CppGooseAssetsTest PRIVATE
+        ${GTK4_CFLAGS_OTHER}
+        ${GDKPIXBUF_CFLAGS_OTHER}
+        ${SDL2_CFLAGS_OTHER}
+        ${SDL2MIXER_CFLAGS_OTHER}
+    )
+    target_link_libraries(CppGooseAssetsTest
+        ${GTK4_LIBRARIES}
+        ${GDKPIXBUF_LIBRARIES}
+        ${SDL2_LIBRARIES}
+        ${SDL2MIXER_LIBRARIES}
+        m
+    )
+    add_test(NAME assets_transient_meme_contracts COMMAND CppGooseAssetsTest)
     add_executable(CppGooseTraitsTest
         tests/goose_traits_test.cpp
         src/goose_traits.cpp
