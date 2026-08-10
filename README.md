@@ -32,6 +32,7 @@ chasing, cosmetics, Perlin-generated personalities, and an interactive terminal.
 - Transparent, click-through desktop overlays on every detected monitor
 - Multiple independently animated geese with names, skins, and behavior cycles
 - Cursor chase and snatch support through Hyprland, wlroots, and X11 backends
+- Hyprland window dragging and yeeting with screenshot capture and tiled-window restoration
 - Meme fetching, notepad messages, honks, fading footprints, hats, and glasses
 - Unique Perlin-generated personality traits for every spawned goose
 - Interactive shell with history, inline hints, TAB completion, and compact help pages
@@ -114,16 +115,17 @@ Run the contracts with:
 ctest --test-dir build --output-on-failure
 ```
 
-CMake regenerates the Wayland virtual-pointer bindings with `wayland-scanner`.
-The protocol definition lives in `protocols/wlr-virtual-pointer-unstable-v1.xml`.
+CMake regenerates the Wayland protocol bindings with `wayland-scanner`: virtual
+pointer input, screencopy capture, and Hyprland toplevel export. The generated
+files stay in the build directory.
 
 ## Quick start
 
 The installed command works from any directory:
 
 ```bash
-CppGoose start "Pip"   # start the daemon with one named goose
-CppGoose spawn Sam     # add another goose
+CppGoose spawn "Pip"  # start the daemon with one named goose
+CppGoose spawn Sam     # add another goose when the daemon is running
 CppGoose status        # inspect the flock
 CppGoose shell         # open the interactive terminal
 CppGoose quit          # remove the geese and stop the daemon
@@ -135,7 +137,7 @@ running, the same command opens the shell.
 For foreground logs during development:
 
 ```bash
-CppGoose start "Pip" --foreground
+CppGoose spawn "Pip" --foreground
 ```
 
 ## Command reference
@@ -147,10 +149,9 @@ one section, while `CppGoose help all` prints the full reference.
 
 | Command | Purpose |
 |---|---|
-| `CppGoose start [name] [--foreground]` | Start the flock |
+| `CppGoose spawn [name] [--foreground]` | Start the daemon with the first goose, or add a goose |
 | `CppGoose shell` | Open the interactive shell |
 | `CppGoose status` | Show geese, state, traits, files, and runtime settings |
-| `CppGoose spawn [name]` | Add one goose |
 | `CppGoose clear` | Remove every goose without stopping the daemon |
 | `CppGoose freeze [on\|off\|toggle]` | Pause or resume all behavior updates |
 | `CppGoose ram` | Show current, peak, and virtual memory use |
@@ -178,15 +179,20 @@ Built-in looks are `classic`, `scholar`, `party`, `pilot`, `royal`, and
 | `CppGoose settings [list]` | List every configurable value |
 | `CppGoose settings get <key>` | Read one value |
 | `CppGoose settings set <key> <value>` | Change and persist one value |
-| `CppGoose force set <id> <wander\|meme [path]\|note [path]\|chase>` | Interrupt one goose, optionally fetching an exact file |
+| `CppGoose force set <id> <wander\|chase\|drag\|yeet\|meme [path]\|note [path]\|note text <text>>` | Interrupt one goose or start a window interaction |
 | `CppGoose rules [list]` | List active rules |
-| `CppGoose rules add <id\|all> <action> [interval] [text]` | Schedule a one-shot or repeating behavior |
+| `CppGoose rules add <id\|all> <action> [interval] [text]` | Schedule a behavior (`wander`, `meme`, `note`, `text`, `chase`, `drag`, or `yeet`) |
 | `CppGoose rules remove <rule-id>` | Remove one rule |
 | `CppGoose rules clear` | Remove every rule |
 
-Rule actions are `wander`, `meme`, `note`, `chase`, and `text`. An omitted
-interval creates a one-shot rule. For `text`, words after the optional interval
-become the note message.
+Rule actions are `wander`, `meme`, `note`, `text`, `chase`, `drag`, and `yeet`.
+An omitted interval creates a one-shot rule. For `text`, words after the
+optional interval become the note message.
+
+On Hyprland, `drag` carries a captured edge window behind the goose and
+restores it at the carried image's final position. `yeet` throws the captured
+window image with gravity and bounces before restoring the real window. Both
+behaviors preserve the original tiled or floating mode when possible.
 
 Force a specific goose to fetch an image, a note file, or inline note text:
 
@@ -350,7 +356,7 @@ Important files:
 | `RETURNING` | Carry an item back to a drop point |
 | `CHASE_CURSOR` | Follow the live cursor target |
 | `SNATCH_CURSOR` | Hold and move the cursor for a short period |
-
+| `DRAG_WINDOW` | Capture, carry or yeet a Hyprland edge window, then restore it |
 `force set` safely cancels the current held item or cursor grab before entering a
 new behavior. Rules use the same force helpers from the regular frame tick.
 
@@ -383,6 +389,8 @@ known image sources.
   appear.
 - Fractional scaling and mixed-DPI layouts can cause small position differences
   near monitor boundaries.
+- Window drag and yeet require Hyprland IPC plus the compositor's supported
+  screencopy and toplevel-export protocols.
 - The wlroots virtual-pointer protocol can inject movement but cannot always
   provide an absolute cursor position.
 - Geese draw over windows but do not inspect or understand window contents.
