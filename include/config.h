@@ -46,7 +46,6 @@ struct Config {
     bool windowDragEnabled = true;
     int windowDragChance = 3;       // 0..100 percentage per wander cycle
     int windowDragEdgePadding = 40;       // px edge padding for destination bounds
-    int windowDragWorkspaceChance = 8;    // % chance to teleport to another workspace
 };
 
 extern Config g_config;
