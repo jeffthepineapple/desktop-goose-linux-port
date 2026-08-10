@@ -203,6 +203,37 @@ bool Goose::UpdateYeetFlight(double dt, int w, int h) {
     return settled || yeetBounces >= 6;
 }
 
+void Goose::SetWindowDestinationFromImageCenter(Vector2 centerDevice) {
+    dragImageDestX = (int)std::lround(centerDevice.x);
+    dragImageDestY = (int)std::lround(centerDevice.y);
+    dragWindowDestX =
+        (int)std::lround(centerDevice.x) - dragWindowOrigW / 2;
+    dragWindowDestY =
+        (int)std::lround(centerDevice.y) - dragWindowOrigH / 2;
+
+    HyprlandBackend* backend = dynamic_cast<HyprlandBackend*>(
+        g_backendManager.GetActiveBackend());
+    if (!backend) return;
+
+    for (const auto& monitor : backend->GetMonitors()) {
+        if (monitor.id != dragWindowMonitorId) continue;
+        const int pad = g_config.windowDragEdgePadding;
+        const int usableLeft = monitor.x + monitor.reserved[2] + pad;
+        const int usableTop = monitor.y + monitor.reserved[0] + pad;
+        const int usableRight =
+            monitor.x + monitor.width - monitor.reserved[3] - pad;
+        const int usableBottom =
+            monitor.y + monitor.height - monitor.reserved[1] - pad;
+        dragWindowDestX = std::clamp(
+            dragWindowDestX, usableLeft,
+            std::max(usableLeft, usableRight - dragWindowOrigW));
+        dragWindowDestY = std::clamp(
+            dragWindowDestY, usableTop,
+            std::max(usableTop, usableBottom - dragWindowOrigH));
+        break;
+    }
+}
+
 
 // =========================================================
 // UPDATE (AI + MOVEMENT)
@@ -527,26 +558,7 @@ void Goose::Update(double dt, double time, int w, int h) {
             if (time - yeetWindupStart > 0.75) yeetHeadDrive = -1.0f;
             if (!UpdateYeetFlight(dt, w, h)) break;
 
-            int destX = (int)std::lround(yeetPos.x) - dragWindowOrigW / 2;
-            int destY = (int)std::lround(yeetPos.y) - dragWindowOrigH / 2;
-            for (const auto& monitor : hBackend->GetMonitors()) {
-                if (monitor.id != dragWindowMonitorId) continue;
-                const int pad = g_config.windowDragEdgePadding;
-                const int usableLeft = monitor.x + monitor.reserved[2] + pad;
-                const int usableTop = monitor.y + monitor.reserved[0] + pad;
-                const int usableRight =
-                    monitor.x + monitor.width - monitor.reserved[3] - pad;
-                const int usableBottom =
-                    monitor.y + monitor.height - monitor.reserved[1] - pad;
-                destX = std::clamp(destX, usableLeft,
-                                   std::max(usableLeft, usableRight - dragWindowOrigW));
-                destY = std::clamp(destY, usableTop,
-                                   std::max(usableTop, usableBottom - dragWindowOrigH));
-                break;
-            }
-
-            dragWindowDestX = destX;
-            dragWindowDestY = destY;
+            SetWindowDestinationFromImageCenter(yeetPos);
             dragRestoreToDestination = true;
             yeetHeadDrive = -1.0f;
             dragPhaseAttempt = 0;
@@ -604,13 +616,79 @@ void Goose::Update(double dt, double time, int w, int h) {
         }
 
         case DRAG_RETILE: {
-            if (hBackend->GetWindowByAddress(dragWindowAddr).address.empty()) {
+            HyprlandBackend::Window restored =
+                hBackend->GetWindowByAddress(dragWindowAddr);
+            if (restored.address.empty()) {
                 abortWindowDrag("target window closed before retiling");
                 break;
             }
-            if (dragWindowWasTiled && dragPhaseAttempt == 0) {
-                hBackend->ToggleFloating(dragWindowAddr);
-                dragPhaseAttempt = 1;
+
+            if (dragWindowWasTiled) {
+                if (dragPhaseAttempt == 0) {
+                    const int imageX = dragImageDestX;
+                    const int imageY = dragImageDestY;
+                    double bestDistance = 1e30;
+                    dragRetileTargetAddr.clear();
+
+                    for (const auto& candidate : hBackend->GetWindows()) {
+                        if (candidate.address == dragWindowAddr ||
+                            candidate.floating ||
+                            candidate.workspaceId != dragWindowOrigWorkspaceId ||
+                            candidate.monitorId != dragWindowMonitorId) {
+                            continue;
+                        }
+
+                        const int candidateRight =
+                            candidate.x + candidate.width;
+                        const int candidateBottom =
+                            candidate.y + candidate.height;
+                        const int dx = imageX < candidate.x
+                            ? candidate.x - imageX
+                            : imageX > candidateRight
+                                ? imageX - candidateRight : 0;
+                        const int dy = imageY < candidate.y
+                            ? candidate.y - imageY
+                            : imageY > candidateBottom
+                                ? imageY - candidateBottom : 0;
+                        const double distance =
+                            (double)dx * dx + (double)dy * dy;
+                        if (distance < bestDistance) {
+                            bestDistance = distance;
+                            dragRetileTargetAddr = candidate.address;
+                        }
+                    }
+
+                    // Hyprland inserts a re-tiled client relative to focus.
+                    // Focus this client, tile it, then swap it into the tile
+                    // underneath the screenshot's final center.
+                    hBackend->FocusWindow(dragWindowAddr);
+                    hBackend->ToggleFloating(dragWindowAddr);
+                    dragPhaseAttempt = 1;
+                    break;
+                }
+
+                if (restored.floating) {
+                    if (++dragPhaseAttempt > 15) {
+                        abortWindowDrag("timed out retiling target window");
+                    }
+                    break;
+                }
+
+                if (dragPhaseAttempt < 100) {
+                    if (!dragRetileTargetAddr.empty()) {
+                        HyprlandBackend::Window targetWindow =
+                            hBackend->GetWindowByAddress(dragRetileTargetAddr);
+                        if (!targetWindow.address.empty() &&
+                            !targetWindow.floating) {
+                            hBackend->FocusWindow(dragWindowAddr);
+                            hBackend->SendDispatch(
+                                "swapwindow",
+                                "address:" + dragRetileTargetAddr);
+                        }
+                    }
+                    dragPhaseAttempt = 100;
+                    break;
+                }
             }
 
             std::string focusAddress = dragWindowWasFocused
@@ -806,6 +884,15 @@ void Goose::Update(double dt, double time, int w, int h) {
             }
         }
         else if (state == DRAG_WINDOW && dragPhase == DRAG_CARRY) {
+            if (heldItem) {
+                const float halfHeight =
+                    heldItem->h * 0.5f * g_config.globalScale;
+                const Vector2 imageCenter = btPoint + Vector2{
+                    -std::sin(dragRot) * halfHeight,
+                     std::cos(dragRot) * halfHeight
+                };
+                SetWindowDestinationFromImageCenter(imageCenter);
+            }
             dragRestoreToDestination = true;
             dragPhaseAttempt = 0;
             dragPhase = DRAG_RESTORE_WORKSPACE;
@@ -1384,6 +1471,58 @@ void Goose::Draw(cairo_t* cr) {
     // held item front
     if (heldItem && !facingBack) DrawHeldItem(cr);
 
+    if (dragIsYeet && state == DRAG_WINDOW &&
+        (dragPhase == DRAG_YEET_WINDUP || dragPhase == DRAG_YEET_FLIGHT)) {
+        // Start the word just before impact, punch it well past full size, then
+        // let it drift and fade like a cartoon sound effect.
+        const double burstAge = g_time - yeetWindupStart - 0.42;
+        if (burstAge >= 0.0 && burstAge < 1.05) {
+            const float age = (float)burstAge;
+            float popScale = 1.0f;
+            if (age < 0.13f) {
+                const float p = age / 0.13f;
+                const float overshoot =
+                    1.0f + 2.70158f * std::pow(p - 1.0f, 3.0f) +
+                    1.70158f * std::pow(p - 1.0f, 2.0f);
+                popScale = Lerp(0.12f, 1.65f, overshoot);
+            } else if (age < 0.32f) {
+                popScale = Lerp(1.65f, 1.05f, (age - 0.13f) / 0.19f);
+            } else {
+                popScale = Lerp(1.05f, 0.82f, (age - 0.32f) / 0.73f);
+            }
+
+            const float fade =
+                age < 0.60f ? 1.0f : 1.0f - (age - 0.60f) / 0.45f;
+            const float wobble =
+                std::sin(age * 24.0f) * 0.10f * (1.0f - age / 1.05f);
+            const Vector2 labelPos =
+                rig.neckHead + fwd * 20.0f +
+                Vector2{0.0f, -48.0f - age * 34.0f};
+
+            cairo_save(cr);
+            cairo_translate(cr, labelPos.x, labelPos.y);
+            cairo_rotate(cr, wobble);
+            cairo_scale(cr, popScale, popScale);
+            cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_ITALIC,
+                                   CAIRO_FONT_WEIGHT_BOLD);
+            cairo_set_font_size(cr, 72.0);
+
+            constexpr const char* label = "yeet!";
+            cairo_text_extents_t extents{};
+            cairo_text_extents(cr, label, &extents);
+            cairo_move_to(cr,
+                          -(extents.width / 2.0 + extents.x_bearing),
+                          -(extents.height / 2.0 + extents.y_bearing));
+            cairo_text_path(cr, label);
+            cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, fade);
+            cairo_fill_preserve(cr);
+            cairo_set_source_rgba(cr, 0.05, 0.05, 0.05, fade);
+            cairo_set_line_width(cr, 5.0);
+            cairo_set_line_join(cr, CAIRO_LINE_JOIN_ROUND);
+            cairo_stroke(cr);
+            cairo_restore(cr);
+        }
+    }
     cairo_restore(cr);
 }
 
@@ -1525,12 +1664,14 @@ void Goose::ResetWindowDragState() {
     dragWindowOrigX = dragWindowOrigY = 0;
     dragWindowOrigW = dragWindowOrigH = 0;
     dragWindowDestX = dragWindowDestY = 0;
+    dragImageDestX = dragImageDestY = 0;
     dragWindowStartTime = 0.0;
     dragPhase = DRAG_APPROACH;
     dragPhaseAttempt = 0;
     dragOriginalFocusAddr.clear();
     dragWindowOrigWorkspace.clear();
     dragWindowHiddenWorkspace.clear();
+    dragRetileTargetAddr.clear();
     dragWindowOrigWorkspaceId = -1;
     dragWindowMonitorId = -1;
     dragWindowWasFocused = false;
