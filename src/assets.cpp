@@ -5,6 +5,7 @@
 #include <sstream>
 #include <algorithm>
 #include <iostream>
+#include <cstdint>
 
 const std::string ASSET_ROOT_NAME = "Assets";
 fs::path ASSET_ROOT;
@@ -21,20 +22,41 @@ cairo_surface_t* ItemData::Surface() {
 
     const int width = gdk_pixbuf_get_width(pixbuf);
     const int height = gdk_pixbuf_get_height(pixbuf);
-    const int stride = gdk_pixbuf_get_rowstride(pixbuf);
-    if (stride < cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32, width)) return nullptr;
+    if (width <= 0 || height <= 0) return nullptr;
 
-    surface = cairo_image_surface_create_for_data(
-        gdk_pixbuf_get_pixels(pixbuf),
-        CAIRO_FORMAT_ARGB32,
-        width,
-        height,
-        stride
-    );
+    // GdkPixbuf pixels are straight-alpha, byte order R,G,B[,A]. Cairo ARGB32 is
+    // native-endian premultiplied 0xAARRGGBB, so convert explicitly rather than
+    // aliasing the pixbuf memory (which swaps R/B and mishandles alpha).
+    surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
     if (cairo_surface_status(surface) != CAIRO_STATUS_SUCCESS) {
         cairo_surface_destroy(surface);
         surface = nullptr;
+        return nullptr;
     }
+
+    const int channels = gdk_pixbuf_get_n_channels(pixbuf);
+    const bool hasAlpha = gdk_pixbuf_get_has_alpha(pixbuf);
+    const int srcStride = gdk_pixbuf_get_rowstride(pixbuf);
+    const guchar* src = gdk_pixbuf_get_pixels(pixbuf);
+
+    cairo_surface_flush(surface);
+    const int dstStride = cairo_image_surface_get_stride(surface);
+    unsigned char* dst = cairo_image_surface_get_data(surface);
+
+    for (int y = 0; y < height; ++y) {
+        const guchar* srcRow = src + static_cast<size_t>(y) * srcStride;
+        uint32_t* dstRow = reinterpret_cast<uint32_t*>(dst + static_cast<size_t>(y) * dstStride);
+        for (int x = 0; x < width; ++x) {
+            const guchar* p = srcRow + static_cast<size_t>(x) * channels;
+            const uint32_t a = hasAlpha ? p[3] : 255u;
+            const uint32_t r = (p[0] * a + 127u) / 255u;
+            const uint32_t g = (p[1] * a + 127u) / 255u;
+            const uint32_t b = (p[2] * a + 127u) / 255u;
+            dstRow[x] = (a << 24) | (r << 16) | (g << 8) | b;
+        }
+    }
+
+    cairo_surface_mark_dirty(surface);
     return surface;
 }
 
