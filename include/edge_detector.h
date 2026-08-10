@@ -14,6 +14,7 @@ struct HyprlandMonitor {
     int reservedBottom = 0;
     int reservedLeft = 0;
     int reservedRight = 0;
+    int activeWorkspaceId = -1;
 };
 
 struct EdgeWindow {
@@ -21,6 +22,9 @@ struct EdgeWindow {
     int x, y, width, height;
     std::string title;
     std::string cls;
+    int monitorId = -1;
+    int workspaceId = -1;
+    bool floating = false;
 };
 
 class EdgeDetector {

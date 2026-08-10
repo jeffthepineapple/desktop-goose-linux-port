@@ -97,6 +97,25 @@ static bool ExtractJsonNumber(const std::string& s, const char* key, double* out
     return true;
 }
 
+static bool ExtractJsonBool(const std::string& s, const char* key, bool* outVal) {
+    const std::string k = std::string("\"") + key + "\"";
+    size_t p = s.find(k);
+    if (p == std::string::npos) return false;
+    p = s.find(':', p);
+    if (p == std::string::npos) return false;
+    ++p;
+    while (p < s.size() && (s[p] == ' ' || s[p] == '\t')) ++p;
+    if (s.compare(p, 4, "true") == 0) {
+        *outVal = true;
+        return true;
+    }
+    if (s.compare(p, 5, "false") == 0) {
+        *outVal = false;
+        return true;
+    }
+    return false;
+}
+
 bool HyprlandBackend::Init() {
     m_socketPath = GetSocketPath();
     return !m_socketPath.empty() && std::filesystem::exists(m_socketPath);
@@ -220,14 +239,22 @@ std::vector<HyprlandBackend::Monitor> HyprlandBackend::GetMonitors() {
                     }
                 }
             }
+            size_t active_ws_start = monitor_json.find("\"activeWorkspace\"");
+            if (active_ws_start != std::string::npos) {
+                size_t active_ws_object = monitor_json.find('{', active_ws_start);
+                if (active_ws_object != std::string::npos) {
+                    size_t active_ws_end = monitor_json.find('}', active_ws_object);
+                    if (active_ws_end != std::string::npos) {
+                        std::string active_ws_json =
+                            monitor_json.substr(active_ws_object, active_ws_end - active_ws_object + 1);
+                        ExtractJsonInteger(active_ws_json, "id", &m.activeWorkspaceId);
+                    }
+                }
+            }
             monitors.push_back(m);
-            std::cerr << "[hyprland] monitor " << m.id << " " << m.name
-                      << " reserved=[" << m.reserved[0] << "," << m.reserved[1]
-                      << "," << m.reserved[2] << "," << m.reserved[3] << "]\n";
         }
         pos = obj_end + 1;
     }
-    std::cerr << "[hyprland] GetMonitors: parsed " << monitors.size() << " monitors\n";
     return monitors;
 }
 
@@ -260,11 +287,19 @@ std::vector<HyprlandBackend::Window> HyprlandBackend::GetWindows() {
             ExtractJsonInteger(window_json, "monitor", &w.monitorId) &&
             ExtractJsonString(window_json, "title", &w.title) &&
             ExtractJsonString(window_json, "class", &w.cls)) {
-            // Parse floating status
-            int floatingInt = 0;
-            if (ExtractJsonInteger(window_json, "floating", &floatingInt)) {
-                w.floating = (floatingInt != 0);
+            // Parse workspace id from nested workspace object
+            size_t ws_start = window_json.find("\"workspace\"");
+            if (ws_start != std::string::npos) {
+                size_t ws_obj = window_json.find('{', ws_start);
+                if (ws_obj != std::string::npos) {
+                    size_t ws_end = window_json.find('}', ws_obj);
+                    if (ws_end != std::string::npos) {
+                        std::string ws_json = window_json.substr(ws_obj, ws_end - ws_obj + 1);
+                        ExtractJsonInteger(ws_json, "id", &w.workspaceId);
+                    }
+                }
             }
+            ExtractJsonBool(window_json, "floating", &w.floating);
             // Extract 'at' array [x, y]
             size_t at_start = window_json.find("\"at\"");
             if (at_start != std::string::npos) {
@@ -301,7 +336,6 @@ std::vector<HyprlandBackend::Window> HyprlandBackend::GetWindows() {
         }
         pos = obj_end + 1;
     }
-    std::cerr << "[hyprland] GetWindows: parsed " << windows.size() << " windows\n";
     return windows;
 }
 
@@ -339,5 +373,96 @@ bool HyprlandBackend::FocusWindow(const std::string& address) {
 
 bool HyprlandBackend::SendDispatch(const std::string& dispatcher, const std::string& args) {
     std::string cmd = "dispatch " + dispatcher + " " + args;
+    return SendCommand(cmd, nullptr);
+}
+
+
+HyprlandBackend::Monitor HyprlandBackend::GetMonitorById(int id) {
+    auto monitors = GetMonitors();
+    for (auto& m : monitors) {
+        if (m.id == id) return m;
+    }
+    if (!monitors.empty()) return monitors[0];
+    return Monitor{};
+}
+
+HyprlandBackend::Window HyprlandBackend::GetWindowByAddress(const std::string& address) {
+    auto windows = GetWindows();
+    for (auto& w : windows) {
+        if (w.address == address) return w;
+    }
+    return Window{};
+}
+
+std::string HyprlandBackend::GetActiveWindowAddress() {
+    std::string response;
+    std::string address;
+    if (!SendCommand("j/activewindow", &response) ||
+        !ExtractJsonString(response, "address", &address)) {
+        return {};
+    }
+    return address;
+}
+
+HyprlandBackend::Workspace HyprlandBackend::GetActiveWorkspace() {
+    Workspace ws{};
+    std::string resp;
+    if (!SendCommand("j/activeworkspace", &resp)) return ws;
+    ExtractJsonInteger(resp, "id", &ws.id);
+    ExtractJsonString(resp, "name", &ws.name);
+    ExtractJsonInteger(resp, "monitorID", &ws.monitorID);
+    int specialInt = 0;
+    if (ExtractJsonInteger(resp, "special", &specialInt)) ws.special = (specialInt != 0);
+    return ws;
+}
+
+std::vector<HyprlandBackend::Workspace> HyprlandBackend::GetWorkspaces() {
+    std::vector<Workspace> workspaces;
+    std::string resp;
+    if (!SendCommand("j/workspaces", &resp)) return workspaces;
+
+    size_t pos = 0;
+    while (true) {
+        size_t obj_start = resp.find('{', pos);
+        if (obj_start == std::string::npos) break;
+
+        int depth = 1;
+        size_t obj_end = obj_start + 1;
+        while (depth > 0 && obj_end < resp.size()) {
+            if (resp[obj_end] == '{') depth++;
+            else if (resp[obj_end] == '}') depth--;
+            if (depth > 0) obj_end++;
+        }
+        if (depth != 0) break;
+
+        std::string ws_json = resp.substr(obj_start, obj_end - obj_start + 1);
+        Workspace ws;
+        if (ExtractJsonInteger(ws_json, "id", &ws.id) &&
+            ExtractJsonString(ws_json, "name", &ws.name) &&
+            ExtractJsonInteger(ws_json, "monitorID", &ws.monitorID)) {
+            ExtractJsonBool(ws_json, "special", &ws.special);
+            workspaces.push_back(ws);
+        }
+        pos = obj_end + 1;
+    }
+    return workspaces;
+}
+
+bool HyprlandBackend::MoveWindowToExact(const std::string& address, int x, int y) {
+    std::string cmd = "dispatch movewindowpixel exact " + std::to_string(x) + " " + std::to_string(y) + ",address:" + address;
+    return SendCommand(cmd, nullptr);
+}
+
+bool HyprlandBackend::ResizeWindowToExact(const std::string& address, int w, int h) {
+    std::string cmd = "dispatch resizewindowpixel exact " + std::to_string(w) + " " + std::to_string(h) + ",address:" + address;
+    return SendCommand(cmd, nullptr);
+}
+
+bool HyprlandBackend::ToggleFloating(const std::string& address) {
+    return SendDispatch("togglefloating", "address:" + address);
+}
+
+bool HyprlandBackend::MoveWindowToWorkspace(const std::string& address, const std::string& workspaceName) {
+    std::string cmd = "dispatch movetoworkspacesilent " + workspaceName + ",address:" + address;
     return SendCommand(cmd, nullptr);
 }
