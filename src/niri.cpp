@@ -419,3 +419,89 @@ std::vector<BackendWindow> NiriBackend::GetWindowList() {
     }
     return out;
 }
+
+// ---------------------------------------------------------------------------
+// Window control. niri actions are synchronous: the reply arrives once the
+// action is applied, so no polling is needed.
+// ---------------------------------------------------------------------------
+bool NiriBackend::SendAction(const std::string& actionBody) {
+    std::string resp;
+    if (!Query("{\"Action\":" + actionBody + "}", &resp)) return false;
+    return resp.find("\"Ok\"") != std::string::npos;
+}
+
+NiriBackend::WindowRect NiriBackend::FindWindow(const std::string& id) {
+    WindowRect r;
+    long wantId = std::strtol(id.c_str(), nullptr, 10);
+
+    std::string outResp, wsResp, winResp;
+    if (!Query("\"Outputs\"", &outResp)) return r;
+    Query("\"Workspaces\"", &wsResp);
+    if (!Query("\"Windows\"", &winResp)) return r;
+
+    std::vector<NiriOutput> outs = ParseOutputs(outResp);
+    std::vector<NiriWorkspace> wss = ParseWorkspaces(wsResp);
+    std::map<std::string, const NiriOutput*> outputByName;
+    for (const auto& o : outs) outputByName[o.name] = &o;
+    std::map<long, std::string> wsOutput;
+    for (const NiriWorkspace& ws : wss) wsOutput[ws.id] = ws.output;
+
+    size_t from, to;
+    if (!FindArrayBounds(winResp, "Windows", &from, &to)) return r;
+    for (const std::string& obj : CollectObjects(winResp, from, to)) {
+        long wid = -1;
+        if (!ExtractInt(obj, "id", &wid) || wid != wantId) continue;
+
+        r.valid = true;
+        ExtractBool(obj, "is_floating", &r.floating);
+        long workspaceId = -1;
+        ExtractInt(obj, "workspace_id", &workspaceId);
+        auto wsIt = wsOutput.find(workspaceId);
+        const NiriOutput* o = nullptr;
+        if (wsIt != wsOutput.end()) {
+            auto oIt = outputByName.find(wsIt->second);
+            if (oIt != outputByName.end()) o = oIt->second;
+        }
+        if (o) {
+            r.output = o->name;
+            r.outX = RoundToInt(o->x);
+            r.outY = RoundToInt(o->y);
+        }
+        std::string layout;
+        if (ExtractObject(obj, "layout", &layout)) {
+            double wsz0 = 0, wsz1 = 0, tx = 0, ty = 0, ox = 0, oy = 0;
+            ExtractPair(layout, "window_size", &wsz0, &wsz1);
+            r.w = RoundToInt(wsz0);
+            r.h = RoundToInt(wsz1);
+            if (ExtractPair(layout, "tile_pos_in_workspace_view", &tx, &ty)) {
+                ExtractPair(layout, "window_offset_in_tile", &ox, &oy);
+                r.x = RoundToInt(o ? o->x + tx + ox : tx + ox);
+                r.y = RoundToInt(o ? o->y + ty + oy : ty + oy);
+            }
+        }
+        break;
+    }
+    return r;
+}
+
+bool NiriBackend::SetFloating(const std::string& id, bool floating) {
+    const char* action = floating ? "MoveWindowToFloating" : "MoveWindowToTiling";
+    return SendAction(std::string("{\"") + action + "\":{\"id\":" + id + "}}");
+}
+
+bool NiriBackend::MoveFloating(const std::string& id, int localX, int localY) {
+    // ponytail: SetFixed is relative to the output working area, which excludes
+    // struts/bars; a top bar offsets placement by its height. Good enough; add
+    // working-area origin from the layer-shell/logical delta if it ever matters.
+    return SendAction("{\"MoveFloatingWindow\":{\"id\":" + id +
+                      ",\"x\":{\"SetFixed\":" + std::to_string((double)localX) +
+                      "},\"y\":{\"SetFixed\":" + std::to_string((double)localY) + "}}}");
+}
+
+bool NiriBackend::SetSize(const std::string& id, int wpx, int hpx) {
+    bool ok = SendAction("{\"SetWindowWidth\":{\"id\":" + id +
+                         ",\"change\":{\"SetFixed\":" + std::to_string(wpx) + "}}}");
+    ok = SendAction("{\"SetWindowHeight\":{\"id\":" + id +
+                    ",\"change\":{\"SetFixed\":" + std::to_string(hpx) + "}}}") && ok;
+    return ok;
+}
