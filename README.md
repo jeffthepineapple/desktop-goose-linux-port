@@ -31,7 +31,7 @@ chasing, cosmetics, Perlin-generated personalities, and an interactive terminal.
 
 - Transparent, click-through desktop overlays on every detected monitor
 - Multiple independently animated geese with names, skins, and behavior cycles
-- Cursor chase and snatch support through Hyprland, wlroots, and X11 backends
+- Cursor movement across Hyprland, niri, wlroots (sway/river/wayfire), and X11 backends (cursor chase/snatch where the compositor reports pointer position)
 - Hyprland window dragging and yeeting with screenshot capture and tiled-window restoration
 - Meme fetching, notepad messages, honks, fading footprints, hats, and glasses
 - Unique Perlin-generated personality traits for every spawned goose
@@ -289,11 +289,15 @@ CppGoose settings set walk_speed 220
 CppGoose tries cursor backends in this order:
 
 1. **Hyprland IPC** uses `HYPRLAND_INSTANCE_SIGNATURE` to find the compositor
-   socket. It can read and move the cursor.
-2. **wlroots virtual pointer** uses
-   `zwlr_virtual_pointer_manager_v1` to inject pointer motion on compatible
-   Wayland compositors.
-3. **X11/XTest** uses `XQueryPointer` and `XTestFakeMotionEvent` on X11 and
+   socket. It can read and move the cursor, and enumerate windows/monitors.
+2. **niri IPC + virtual pointer** detects niri via `$NIRI_SOCKET`. It moves the
+   cursor through `zwlr_virtual_pointer_manager_v1` and reads window/monitor
+   geometry over niri's line-delimited JSON IPC (`Outputs`, `Workspaces`,
+   `Windows`).
+3. **wlroots virtual pointer** uses
+   `zwlr_virtual_pointer_manager_v1` to inject pointer motion on other
+   compatible Wayland compositors (sway, river, wayfire, ...).
+4. **X11/XTest** uses `XQueryPointer` and `XTestFakeMotionEvent` on X11 and
    mixed XWayland sessions.
 
 The overlay and non-cursor behavior still work when no backend initializes. Only
@@ -301,9 +305,14 @@ one goose can control the cursor at a time.
 
 ### Display support
 
-- Hyprland has the fullest Wayland cursor support.
-- Sway, river, niri, and other wlroots compositors may expose the required
-  layer-shell and virtual-pointer protocols.
+- Hyprland has the fullest support: cursor read/move plus IPC-driven window
+  edge detection and the screenshot-carry window drag.
+- niri renders the goose (layer-shell), moves the cursor (virtual pointer), and
+  feeds window edge detection from its IPC. It exposes no pointer position over
+  IPC, so cursor chase/snatch is unavailable; the screenshot-carry window drag
+  is Hyprland-only (it depends on `hyprland-toplevel-export`, which niri lacks).
+- Sway, river, wayfire, and other wlroots compositors get overlay rendering and
+  virtual-pointer cursor movement via the generic wlroots backend.
 - KDE Plasma 6 supports layer-shell overlays, but cursor injection depends on
   compositor protocol support.
 - Stock GNOME/Mutter does not expose `wlr-layer-shell-unstable-v1`.
@@ -325,7 +334,8 @@ main.cpp
              |
              +--> overlay rendering and 60 Hz behavior tick
              +--> cursor_backend.cpp
-                     +--> hyprland.cpp
+                     +--> hyprland.cpp    (Hyprland IPC)
+                     +--> niri.cpp        (niri IPC + virtual pointer)
                      +--> wlroots_backend.cpp
                      +--> x11_backend.cpp
 ```
@@ -346,6 +356,9 @@ Important files:
 | `src/cosmetics.cpp` | Cosmetic catalog, profiles, and Cairo drawing |
 | `src/config.cpp` | Persistent typed configuration registry |
 | `src/cursor_backend.cpp` | Runtime cursor backend selection |
+| `src/hyprland.cpp` | Hyprland IPC: cursor, windows, monitors, window drag |
+| `src/niri.cpp` | niri IPC window/monitor awareness + virtual-pointer cursor |
+| `src/edge_detector.cpp` | Backend-agnostic window edge detection |
 
 ### Behavior state machine
 
