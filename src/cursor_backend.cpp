@@ -1,8 +1,10 @@
 #include "cursor_backend.h"
 #include "hyprland.h"
+#include "niri.h"
 #include "x11_backend.h"
 #include "wlroots_backend.h"
 #include <iostream>
+#include <cstdlib>
 
 
 CursorBackendManager g_backendManager;
@@ -35,16 +37,21 @@ void CursorBackendManager::Init() {
     m_cursorSampleTime = -1.0;
     // Register known backends
     RegisterBackend(std::make_unique<HyprlandBackend>());
+    RegisterBackend(std::make_unique<NiriBackend>());
     RegisterBackend(std::make_unique<WlrootsBackend>());
     RegisterBackend(std::make_unique<X11Backend>());
 
-    std::cout << "Initializing Cursor Backends..." << std::endl;
+    if (const char* desktop = std::getenv("XDG_CURRENT_DESKTOP")) {
+        std::cout << "Initializing Cursor Backends (desktop: " << desktop << ")..." << std::endl;
+    } else {
+        std::cout << "Initializing Cursor Backends..." << std::endl;
+    }
 
-    // Detection priority: 
-    // 1. Check environment hints
-    // 2. Try Init() on backends in order
-
-    // Simple priority for now: Hyprland first (since it's specific), then X11 (general)
+    // Detection priority, most specific first:
+    //   1. Hyprland  - full IPC (cursor pos + window management)
+    //   2. niri      - IPC window info + wlr-virtual-pointer cursor
+    //   3. wlroots   - generic wlr-virtual-pointer (sway, river, wayfire, ...)
+    //   4. X11       - XTest (also covers XWayland fallback)
     for (auto& backend : m_backends) {
         if (backend->Init()) {
             std::cout << "Selected Cursor Backend: " << backend->Name() << std::endl;
