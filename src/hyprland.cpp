@@ -339,6 +339,46 @@ std::vector<HyprlandBackend::Window> HyprlandBackend::GetWindows() {
     return windows;
 }
 
+std::vector<BackendMonitor> HyprlandBackend::GetWindowMonitors() {
+    std::vector<BackendMonitor> out;
+    for (const auto& m : GetMonitors()) {
+        BackendMonitor bm;
+        bm.id = m.id;
+        bm.name = m.name;
+        bm.x = m.x;
+        bm.y = m.y;
+        bm.width = m.width;
+        bm.height = m.height;
+        bm.scale = m.scale;
+        bm.reserved[0] = m.reserved[0];
+        bm.reserved[1] = m.reserved[1];
+        bm.reserved[2] = m.reserved[2];
+        bm.reserved[3] = m.reserved[3];
+        bm.activeWorkspaceId = m.activeWorkspaceId;
+        out.push_back(std::move(bm));
+    }
+    return out;
+}
+
+std::vector<BackendWindow> HyprlandBackend::GetWindowList() {
+    std::vector<BackendWindow> out;
+    for (const auto& w : GetWindows()) {
+        BackendWindow bw;
+        bw.id = w.address;
+        bw.x = w.x;
+        bw.y = w.y;
+        bw.width = w.width;
+        bw.height = w.height;
+        bw.monitorId = w.monitorId;
+        bw.workspaceId = w.workspaceId;
+        bw.title = w.title;
+        bw.cls = w.cls;
+        bw.floating = w.floating;
+        out.push_back(std::move(bw));
+    }
+    return out;
+}
+
 bool HyprlandBackend::SetWindowBorderColor(const std::string& windowAddress, const std::string& color) {
     // Example: hyprctl keyword windowrule bordercolor 0xff[color_hex_alpha],address:0x[windowAddress]
     // The color string should be in RRGGBBAA format (e.g., FF0000FF for red)
