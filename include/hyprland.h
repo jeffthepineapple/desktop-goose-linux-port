@@ -47,6 +47,11 @@ public:
     bool SetWindowBorderColor(const std::string& windowAddress, const std::string& color);
     bool ResetWindowBorder(const std::string& windowAddress);
 
+    // Neutral window-info interface (CursorBackend override).
+    bool SupportsWindowInfo() const override { return true; }
+    std::vector<BackendMonitor> GetWindowMonitors() override;
+    std::vector<BackendWindow> GetWindowList() override;
+
     // Workspace queries
     Workspace GetActiveWorkspace();
     std::vector<Workspace> GetWorkspaces();
