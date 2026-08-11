@@ -228,6 +228,8 @@ void Config_InitRegistry() {
 
     // SECTION: Behavior
     g_configRegistry.push_back({"Behavior", "memes_enabled", "Allow Memes/Notes", CFG_BOOL, &g_config.memesEnabled, 0, 1, 1, "", OnConfigChange});
+    g_configRegistry.push_back({"Behavior", "fortune_enabled", "Fortune Notes", CFG_BOOL, &g_config.fortuneEnabled, 0, 1, 1, "", OnConfigChange});
+    g_configRegistry.push_back({"Behavior", "fortune_chance", "Fortune Note Chance", CFG_INT, &g_config.fortuneChance, 0, 100, 1, "%", OnConfigChange});
     g_configRegistry.push_back({"Behavior", "multi_monitor_enabled", "Multi-Monitor Support", CFG_BOOL, &g_config.multiMonitorEnabled, 0, 1, 1, "", OnConfigChange});
     g_configRegistry.push_back({"Behavior", "audio_enabled", "Audio (Honks)", CFG_BOOL, &g_config.audioEnabled, 0, 1, 1, "", OnConfigChange});
 

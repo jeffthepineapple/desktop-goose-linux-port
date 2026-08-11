@@ -268,8 +268,11 @@ void UpdateInputRegion(GtkWindow* window, const MonitorInfo& m) {
         float localY = goose.pos.y - m.y;
         
         // Only add to region if it's within/near this monitor's bounds
+        // The clickable box must cover the pickup radius, otherwise presses
+        // near the edge of the goose are never delivered to us at all.
+        const int grab = (int)std::ceil(goose.GrabRadius()) + 4;
         if (localX > -100 && localX < m.width + 100 && localY > -100 && localY < m.height + 100) {
-            cairo_rectangle_int_t r = { (int)localX - 30, (int)localY - 30, 60, 60 };
+            cairo_rectangle_int_t r = { (int)localX - grab, (int)localY - grab, grab * 2, grab * 2 };
             cairo_region_union_rectangle(region, &r);
         }
     }
@@ -289,6 +292,62 @@ void UpdateInputRegion(GtkWindow* window, const MonitorInfo& m) {
     }
     cairo_region_destroy(region);
 }
+// --- Cursor pickup (ragdoll) -------------------------------------------------
+// Press on a goose to pick it up, drag to swing it around, release to drop it.
+// Only one goose can be held at a time (g_heldGooseId).
+static Vector2 s_grabStart{};
+
+static Goose* HeldGoose() {
+    if (g_heldGooseId == -1) return nullptr;
+    for (auto& goose : g_geese) {
+        if (goose.id == g_heldGooseId) return &goose;
+    }
+    g_heldGooseId = -1; // the goose went away underneath us
+    return nullptr;
+}
+
+static void cb_goose_drag_begin(GtkGestureDrag* gesture, double x, double y, gpointer data) {
+    const MonitorInfo* m = static_cast<const MonitorInfo*>(data);
+    const Vector2 devicePos{ (float)x + m->x, (float)y + m->y };
+
+    Goose* nearest = nullptr;
+    float nearestDist = 0.0f;
+    for (auto& goose : g_geese) {
+        const float dist = Vector2::Distance(devicePos, goose.pos);
+        if (dist > goose.GrabRadius()) continue;
+        if (!nearest || dist < nearestDist) { nearest = &goose; nearestDist = dist; }
+    }
+
+    if (!nearest || !nearest->GrabAt(devicePos)) {
+        gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_DENIED);
+        return;
+    }
+    s_grabStart = devicePos;
+    gtk_gesture_set_state(GTK_GESTURE(gesture), GTK_EVENT_SEQUENCE_CLAIMED);
+}
+
+static void cb_goose_drag_update(GtkGestureDrag*, double ox, double oy, gpointer) {
+    if (Goose* goose = HeldGoose()) {
+        goose->MoveGrab({ s_grabStart.x + (float)ox, s_grabStart.y + (float)oy });
+    }
+}
+
+static void cb_goose_drag_end(GtkGestureDrag*, double ox, double oy, gpointer) {
+    if (Goose* goose = HeldGoose()) {
+        goose->MoveGrab({ s_grabStart.x + (float)ox, s_grabStart.y + (float)oy });
+        goose->ReleaseGrab(g_screenWidth, g_screenHeight);
+    }
+}
+
+static void AttachGoosePickup(GtkWidget* canvas, MonitorInfo* monitorInfo) {
+    GtkGesture* drag = gtk_gesture_drag_new();
+    gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(drag), GDK_BUTTON_PRIMARY);
+    g_signal_connect(drag, "drag-begin", G_CALLBACK(cb_goose_drag_begin), monitorInfo);
+    g_signal_connect(drag, "drag-update", G_CALLBACK(cb_goose_drag_update), monitorInfo);
+    g_signal_connect(drag, "drag-end", G_CALLBACK(cb_goose_drag_end), monitorInfo);
+    gtk_widget_add_controller(canvas, GTK_EVENT_CONTROLLER(drag));
+}
+
 
 // --- Drawing ----------------------------------------------------------------
 static void draw_debug_overlay(cairo_t* cr) {
@@ -800,6 +859,7 @@ void draw_overlay(GtkDrawingArea* area, cairo_t* cr, int width, int height, gpoi
                 case CHASE_CURSOR: stateName = "CHASE"; break;
                 case SNATCH_CURSOR: stateName = "SNATCH"; break;
                 case DRAG_WINDOW: stateName = "DRAG"; break;
+                case HELD: stateName = "HELD"; break;
             }
             float dist = Vector2::Distance(origin, g.target);
             char infoBuf[64];
@@ -1894,6 +1954,7 @@ void setup_overlay_window(GtkApplication* app) {
         // Pass the MonitorInfo reference
         gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(canvas), draw_overlay, &monitorInfo, NULL);
         gtk_window_set_child(overlay, canvas);
+        AttachGoosePickup(canvas, &monitorInfo);
         monitorInfo.window = overlay;
         monitorInfo.canvas = canvas;
 

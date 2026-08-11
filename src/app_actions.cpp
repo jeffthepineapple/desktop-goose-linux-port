@@ -47,6 +47,7 @@ void AppActions_ClearGeese() {
     g_geese.clear();
     g_cursorGrabberId = -1;
     g_windowDragGooseId = -1;
+    g_heldGooseId = -1;
     g_suppressOverlayForCapture = false;
     g_selectedGooseId = 0;
     g_nextId = 0;
@@ -344,6 +345,7 @@ static const char* GooseStateName(GooseState state) {
         case CHASE_CURSOR:  return "chase";
         case SNATCH_CURSOR: return "snatch";
         case DRAG_WINDOW:   return "drag-window";
+        case HELD:          return "held";
     }
     return "?";
 }

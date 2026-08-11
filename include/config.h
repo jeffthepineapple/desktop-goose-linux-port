@@ -25,6 +25,8 @@ struct Config {
     float globalScale = 1.0f;
     bool audioEnabled = true;
     bool memesEnabled = true;
+    bool fortuneEnabled = false;   // pull some note text from the `fortune` program when available
+    int fortuneChance = 50;        // 0..100 chance a fetched note uses fortune instead of a bundled note
     float baseWalkSpeed = 180.0f;
     float baseRunSpeed = 480.0f;
 

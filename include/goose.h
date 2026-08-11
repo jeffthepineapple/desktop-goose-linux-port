@@ -11,7 +11,7 @@
 #include "assets.h"
 #include "cosmetics.h"
 
-enum GooseState { WANDER, FETCHING, RETURNING, CHASE_CURSOR, SNATCH_CURSOR, DRAG_WINDOW };
+enum GooseState { WANDER, FETCHING, RETURNING, CHASE_CURSOR, SNATCH_CURSOR, DRAG_WINDOW, HELD };
 
 enum DragPhase {
     DRAG_APPROACH,
@@ -38,6 +38,29 @@ struct Rig {
     Vector2 underbody, body, neckBase, neckHead, head1, head2;
     float neckLerp = 0;
     FootState lFoot, rFoot;
+};
+
+// Ragdoll: the goose hangs from the cursor and swings as a chain of damped
+// pendulums (body, neck, each leg). In the accelerating frame of the grab
+// point every limb feels an effective gravity of `gravity - cursorAccel`, so
+// shaking the cursor injects real torque instead of a canned wiggle anim.
+struct RagdollState {
+    Vector2 pivot{};      // device-space point the cursor holds
+    Vector2 lastPivot{};
+    Vector2 grabOffset{}; // pos - pivot captured at grab time
+    Vector2 pivotVel{};
+    Vector2 accel{};      // smoothed pivot acceleration
+    bool primed = false;  // pivot history is valid
+
+    float bodyAng = 0.0f, bodyVel = 0.0f; // radians, 0 = hanging straight down
+    float neckAng = 0.0f, neckVel = 0.0f; // relative to body
+    float legLAng = 0.0f, legLVel = 0.0f;
+    float legRAng = 0.0f, legRVel = 0.0f;
+
+    double nextSquirm = 0.0;
+    float squirmDrive = 0.0f; // transient neck extension while struggling
+    float headRot = 0.0f;     // radians actually applied to the head chain
+    float release = 0.0f;     // 1 -> 0 settle blend after being dropped
 };
 
 class Goose {
@@ -129,6 +152,7 @@ public:
     int yeetBounces = 0;
     float yeetHeadDrive = -1.0f;    // >= 0 overrides the rig's neck extension
 
+    RagdollState ragdoll;
 
     Goose(int _id, const std::string& _name, int screenW, int screenH);
 
@@ -141,6 +165,18 @@ public:
     bool ForceWindowDrag(int w, int h);
     bool ForceWindowYeet(int w, int h);
     void Draw(cairo_t* cr);
+
+    // --- Ragdoll pickup -------------------------------------------------
+    // Grab/Move take device-space (global) cursor coordinates. Only one goose
+    // may be held at a time; ownership lives in g_heldGooseId.
+    bool GrabAt(Vector2 devicePos);
+    void MoveGrab(Vector2 devicePos);
+    void ReleaseGrab(int w, int h);
+    bool IsHeld() const { return state == HELD; }
+    // True while the ragdoll pose still needs to be drawn (held or settling).
+    bool IsRagdolling() const { return state == HELD || ragdoll.release > 0.002f; }
+    // Device-space hit radius for cursor pickup.
+    float GrabRadius() const;
 
     // Coordinate helpers
     Vector2 GetBeakTipWorld();
@@ -167,6 +203,7 @@ private:
     HonkState m_honk;
     void UpdateDrag(double dt);
     bool UpdateYeetFlight(double dt, int w, int h);
+    void UpdateRagdoll(double dt, double time);
     void UpdateNiriDrag(class NiriBackend* nb, double dt, double time, int w, int h);
     bool BeginWindowInteraction(int w, int h, bool yeet);
     void SetWindowDestinationFromImageCenter(Vector2 centerDevice);
