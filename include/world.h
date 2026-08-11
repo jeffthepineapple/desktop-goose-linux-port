@@ -38,6 +38,7 @@ extern GtkWidget* g_entryNote;
 extern std::deque<std::string> g_uiLog;
 extern int g_cursorGrabberId; // id of goose currently dragging the cursor, -1 = none
 extern int g_windowDragGooseId; // id of goose currently dragging a window, -1 = none
+extern int g_heldGooseId; // id of goose currently held by the cursor, -1 = none
 extern bool g_suppressOverlayForCapture;
 
 extern bool g_frozen; // when true, all goose updates and rules are paused

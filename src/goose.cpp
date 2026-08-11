@@ -254,6 +254,20 @@ void Goose::Update(double dt, double time, int w, int h) {
         return true;
     };
 
+    // --- HELD: the cursor has the goose. It dangles and squirms, but no
+    // movement, steering, fetching, chasing or window work is allowed. ---
+    if (state == HELD) {
+        UpdateRagdoll(dt, time);
+        UpdateRig();
+        // An indignant honk while struggling, on the normal cooldown.
+        if (ragdoll.squirmDrive > 0.8f) TryHonk(HONK_GENERIC_CD, hs.lastGeneric);
+        return;
+    }
+    if (ragdoll.release > 0.002f) {
+        // Just dropped: keep the limbs settling while the walk cycle resumes.
+        UpdateRagdoll(dt, time);
+    }
+
     // --- SAFETY: Item holding consistency ---
     // If we have an item, we should be RETURNING (unless specifically forced elsewhere)
     if (heldItem != nullptr && state == WANDER) {
@@ -1205,6 +1219,157 @@ void Goose::Update(double dt, double time, int w, int h) {
     }
 }
 
+// =========================================================
+// RAGDOLL (cursor pickup)
+// =========================================================
+namespace {
+
+// Pixel-space gravity. Tuned so a ~22px body link swings at roughly 1 Hz,
+// which reads as "a bird dangling" rather than "a pendulum in a clock".
+constexpr float RAG_GRAVITY = 1400.0f;
+
+// One damped, driven pendulum link.
+//   ang    - angle from straight-down, radians
+//   len    - link length in px (shorter = faster swing)
+//   spring - muscle stiffness pulling back to `rest` (0 = pure ragdoll)
+//   damp   - velocity damping
+// gEff already includes the pseudo-force from the accelerating grab point.
+void IntegrateLink(float& ang, float& vel, Vector2 gEff, float len,
+                   float spring, float rest, float damp, float limit,
+                   float dt) {
+    const Vector2 u{ std::sin(ang), std::cos(ang) }; // link direction, ang=0 -> down
+    // Torque per unit mass about the pivot: u x gEff.
+    const float cross = u.x * gEff.y - u.y * gEff.x;
+    float acc = -(cross / std::max(len, 1.0f)) - spring * (ang - rest) - damp * vel;
+    vel += acc * dt;
+    ang += vel * dt;
+    if (ang > limit)  { ang = limit;  if (vel > 0) vel = -vel * 0.35f; }
+    if (ang < -limit) { ang = -limit; if (vel < 0) vel = -vel * 0.35f; }
+    if (!std::isfinite(ang) || !std::isfinite(vel)) { ang = 0.0f; vel = 0.0f; }
+}
+
+} // namespace
+
+float Goose::GrabRadius() const {
+    return 34.0f * std::max(0.35f, g_config.globalScale);
+}
+
+bool Goose::GrabAt(Vector2 devicePos) {
+    if (g_heldGooseId != -1 && g_heldGooseId != id) return false;
+    if (Vector2::Distance(devicePos, pos) > GrabRadius()) return false;
+
+    // Drop whatever the goose was in the middle of; a held goose does nothing.
+    CancelCurrentBehavior();
+
+    ragdoll = RagdollState{};
+    ragdoll.pivot = devicePos;
+    ragdoll.grabOffset = pos - devicePos;
+    ragdoll.primed = false;
+    ragdoll.nextSquirm = g_time + 0.35 + Rand01() * 1.1;
+    ragdoll.release = 0.0f;
+
+    vel = {0, 0};
+    acceleration = {0, 0};
+    currentSpeed = 0.0f;
+    state = HELD;
+    g_heldGooseId = id;
+    UiLogPush("Goose " + std::to_string(id) + " picked up");
+    return true;
+}
+
+void Goose::MoveGrab(Vector2 devicePos) {
+    if (state != HELD) return;
+    // Only record the target here; velocity/acceleration are derived in
+    // UpdateRagdoll against the fixed frame step. Pointer events arrive at an
+    // irregular rate, so differentiating them directly would be pure noise.
+    ragdoll.pivot = devicePos;
+}
+
+void Goose::ReleaseGrab(int w, int h) {
+    if (g_heldGooseId == id) g_heldGooseId = -1;
+    if (state != HELD) return;
+
+    ragdoll.release = 1.0f;
+    ragdoll.primed = false;
+    ragdoll.accel = {0, 0};
+    ragdoll.pivotVel = {0, 0};
+    vel = {0, 0};
+    acceleration = {0, 0};
+    currentSpeed = 0.0f;
+    // Feet are wherever the dangle left them; snap them under the body so the
+    // walk cycle doesn't start by lerping in from a splayed pose.
+    rig.lFoot.currentPos = GetFootHome(-90.0f);
+    rig.rFoot.currentPos = GetFootHome(90.0f);
+    rig.lFoot.moveStartTime = -1.0;
+    rig.rFoot.moveStartTime = -1.0;
+    state = WANDER;
+    PickNewTarget(w, h);
+    UiLogPush("Goose " + std::to_string(id) + " dropped");
+}
+
+void Goose::UpdateRagdoll(double dt, double time) {
+    const float step = (float)std::max(dt, 1e-4);
+
+    if (state == HELD) {
+        // Differentiate the pivot on the fixed frame clock, not on the
+        // irregular pointer-event clock.
+        if (ragdoll.primed) {
+            const Vector2 newVel = (ragdoll.pivot - ragdoll.lastPivot) / step;
+            Vector2 rawAcc = (newVel - ragdoll.pivotVel) / step;
+            // Clamp before smoothing: a single teleporting pointer sample
+            // would otherwise fling the whole chain into its angle limits.
+            const float mag = Vector2::Length(rawAcc);
+            const float kMaxAcc = 26000.0f;
+            if (mag > kMaxAcc) rawAcc = rawAcc * (kMaxAcc / mag);
+            const float smooth = 0.35f;
+            ragdoll.accel = ragdoll.accel * (1.0f - smooth) + rawAcc * smooth;
+            ragdoll.pivotVel = newVel;
+        } else {
+            ragdoll.pivotVel = {0, 0};
+            ragdoll.accel = {0, 0};
+        }
+        ragdoll.lastPivot = ragdoll.pivot;
+        ragdoll.primed = true;
+
+        pos = ragdoll.pivot + ragdoll.grabOffset;
+    } else {
+        // Settling: no drive, just gravity and damping.
+        ragdoll.accel = ragdoll.accel * 0.85f;
+    }
+
+    // Settle blend after release.
+    if (state != HELD) {
+        ragdoll.release = std::max(0.0f, ragdoll.release - (float)dt * 2.6f);
+    }
+
+    // Effective gravity in the accelerating frame of the grab point.
+    const Vector2 gEff{ -ragdoll.accel.x, RAG_GRAVITY - ragdoll.accel.y };
+
+    // Struggle: periodic muscular impulses into the neck and legs.
+    if (state == HELD && time >= ragdoll.nextSquirm) {
+        const float kick = 6.0f + Rand01() * 9.0f;
+        const float sign = (rand() % 2) ? 1.0f : -1.0f;
+        ragdoll.neckVel += sign * kick;
+        ragdoll.legLVel -= sign * kick * (0.6f + Rand01() * 0.8f);
+        ragdoll.legRVel += sign * kick * (0.6f + Rand01() * 0.8f);
+        ragdoll.bodyVel += sign * kick * 0.12f;
+        ragdoll.squirmDrive = 0.55f + Rand01() * 0.45f;
+        ragdoll.nextSquirm = time + 0.5 + Rand01() * 2.4;
+    }
+    ragdoll.squirmDrive = std::max(0.0f, ragdoll.squirmDrive - (float)dt * 1.4f);
+
+    // Body swings about the grab point; neck and legs hang off the body, so
+    // their rest angle is the body's angle carried into their local frame.
+    IntegrateLink(ragdoll.bodyAng, ragdoll.bodyVel, gEff, 26.0f,
+                  1.5f, 0.0f, 2.4f, 1.15f, step);
+    IntegrateLink(ragdoll.neckAng, ragdoll.neckVel, gEff, 15.0f,
+                  9.0f, -ragdoll.bodyAng * 0.5f, 3.1f, 0.85f, step);
+    IntegrateLink(ragdoll.legLAng, ragdoll.legLVel, gEff, 9.0f,
+                  4.0f, -ragdoll.bodyAng, 2.2f, 1.0f, step);
+    IntegrateLink(ragdoll.legRAng, ragdoll.legRVel, gEff, 9.0f,
+                  4.0f, -ragdoll.bodyAng, 2.2f, 1.0f, step);
+}
+
 
 // =========================================================
 // RIG (NO-PILL FIXES LIVE HERE)
@@ -1244,6 +1409,39 @@ void Goose::UpdateRig() {
     // ✅ UPDATED: shorten head (round, original-like), do NOT tie to BEAK_LEN
     rig.head1 = rig.neckHead + fwd * HEAD1_OFFSET;
     rig.head2 = rig.neckHead + fwd * HEAD2_OFFSET;
+
+    // --- Ragdoll pose overlay ---------------------------------------------
+    // Head chain droops toward gravity and lags behind the swing; the amount
+    // fades out over the settle window after the goose is dropped.
+    const float ragAmount = (state == HELD) ? 1.0f
+                          : Clamp(ragdoll.release, 0.0f, 1.0f);
+    if (ragAmount > 0.002f) {
+        // Struggling lifts the head; a limp goose lets it hang forward.
+        const float droop = (1.0f - Clamp(ragdoll.squirmDrive, 0.0f, 1.0f)) * 0.85f;
+        const float side = (fwd.x >= 0.0f) ? 1.0f : -1.0f;
+        ragdoll.headRot = (ragdoll.neckAng + droop * side) * ragAmount;
+
+        const float deg = ragdoll.headRot * RAD_TO_DEG;
+        rig.neckHead = rig.neckBase + (rig.neckHead - rig.neckBase).Rotate(deg);
+        rig.head1    = rig.neckBase + (rig.head1    - rig.neckBase).Rotate(deg);
+        rig.head2    = rig.neckBase + (rig.head2    - rig.neckBase).Rotate(deg);
+    } else {
+        ragdoll.headRot = 0.0f;
+    }
+
+    if (state == HELD) {
+        // Legs dangle from the hip instead of stepping.
+        const Vector2 hip = rig.underbody;
+        const float legLen = 13.0f;
+        Vector2 rawSide = Vector2::FromAngleDegrees(dir + 90.0f);
+        Vector2 lateral{ rawSide.x * ISO_SCALE.x, rawSide.y * ISO_SCALE.y };
+        rig.lFoot.currentPos = hip - lateral * 3.5f +
+            Vector2{ std::sin(ragdoll.legLAng), std::cos(ragdoll.legLAng) } * legLen;
+        rig.rFoot.currentPos = hip + lateral * 3.5f +
+            Vector2{ std::sin(ragdoll.legRAng), std::cos(ragdoll.legRAng) } * legLen;
+        rig.lFoot.moveStartTime = -1.0;
+        rig.rFoot.moveStartTime = -1.0;
+    }
 }
 
 // =========================================================
@@ -1411,6 +1609,19 @@ void Goose::Draw(cairo_t* cr) {
     cairo_scale(cr, g_config.globalScale, g_config.globalScale);
     cairo_translate(cr, -pos.x, -pos.y);
 
+    // Ragdoll: the whole goose swings about the point the cursor holds. Doing
+    // it here means the beak, eyes, cosmetics and carried item all inherit the
+    // rotation for free.
+    const float ragAmount = (state == HELD) ? 1.0f
+                          : Clamp(ragdoll.release, 0.0f, 1.0f);
+    const bool ragdolling = ragAmount > 0.002f;
+    if (ragdolling) {
+        const Vector2 pivot = (state == HELD) ? ragdoll.pivot : pos;
+        cairo_translate(cr, pivot.x, pivot.y);
+        cairo_rotate(cr, ragdoll.bodyAng * ragAmount);
+        cairo_translate(cr, -pivot.x, -pivot.y);
+    }
+
     Vector2 rawFwd = Vector2::FromAngleDegrees(dir);
     Vector2 fwd{ rawFwd.x * ISO_SCALE.x, rawFwd.y * ISO_SCALE.y };
 
@@ -1423,7 +1634,10 @@ void Goose::Draw(cairo_t* cr) {
     if (heldItem && facingBack) DrawHeldItem(cr);
 
     // shadow
-    DrawEllipse(cr, pos + Vector2{2, 10}, 20, 15, 0,0,0, 0.3f);
+    // Lifted geese cast a smaller, fainter shadow.
+    const float shadowScale = 1.0f - 0.5f * ragAmount;
+    DrawEllipse(cr, pos + Vector2{2, 10}, (int)(20 * shadowScale),
+                (int)(15 * shadowScale), 0, 0, 0, 0.3f * (1.0f - 0.55f * ragAmount));
 
     // feet
     DrawEllipse(cr, rig.lFoot.currentPos, 4, 4, ORANGE[0], ORANGE[1], ORANGE[2]);
@@ -1450,8 +1664,11 @@ void Goose::Draw(cairo_t* cr) {
     DrawLine(cr, rig.head1, rig.head2, 12);
     DrawLine(cr, underFront, underBack, 15);
 
-    Vector2 beakBase = rig.neckHead + fwd * BEAK_BASE_OFFSET;
-    Vector2 beakTip = beakBase + fwd * BEAK_LEN;
+    // The head chain is rotated by the ragdoll, so the beak has to follow it.
+    const Vector2 fwdHead = ragdolling
+        ? fwd.Rotate(ragdoll.headRot * RAD_TO_DEG) : fwd;
+    Vector2 beakBase = rig.neckHead + fwdHead * BEAK_BASE_OFFSET;
+    Vector2 beakTip = beakBase + fwdHead * BEAK_LEN;
 
     // Draw early so the white fill occludes the beak when facing away.
     cairo_set_source_rgb(cr, ORANGE[0], ORANGE[1], ORANGE[2]);
@@ -1466,10 +1683,10 @@ void Goose::Draw(cairo_t* cr) {
     cairo_restore(cr); // body squash scope
 
     // eyes
-    DrawEyes(cr, fwd, back);
+    DrawEyes(cr, fwdHead, back);
     Vector2 rawSide = Vector2::FromAngleDegrees(dir + 90.0f);
     Vector2 side{rawSide.x * ISO_SCALE.x, rawSide.y * ISO_SCALE.y};
-    Cosmetics_Draw(cr, skin, {rig.neckHead, fwd, side, back});
+    Cosmetics_Draw(cr, skin, {rig.neckHead, fwdHead, side, back});
 
     // held item front
     if (heldItem && !facingBack) DrawHeldItem(cr);
@@ -1706,12 +1923,14 @@ void Goose::ResetWindowDragState() {
 }
 
 void Goose::ForceFetch(int type, int w, int h) {
+    if (IsHeld()) return; // held geese do nothing
     CancelCurrentBehavior();
     forceItemFetch = type;
     StartFetch(w, h);
 }
 
 void Goose::ForceFetchText(const std::string& text, int w, int h) {
+    if (IsHeld()) return;
     CancelCurrentBehavior();
     forceItemFetch = 1;
     forcedText = text;
@@ -1719,6 +1938,7 @@ void Goose::ForceFetchText(const std::string& text, int w, int h) {
 }
 
 void Goose::ForceFetchMeme(const std::string& path, int w, int h) {
+    if (IsHeld()) return;
     CancelCurrentBehavior();
     forceItemFetch = 0;
     forcedMemePath = path;
@@ -1726,12 +1946,14 @@ void Goose::ForceFetchMeme(const std::string& path, int w, int h) {
 }
 
 void Goose::ForceWander(int w, int h) {
+    if (IsHeld()) return;
     CancelCurrentBehavior();
     state = WANDER;
     PickNewTarget(w, h);
 }
 
 bool Goose::ForceChase(int w, int h) {
+    if (IsHeld()) return false;
     CancelCurrentBehavior();
     // Only chase when a backend can read the cursor and nobody else is snatching.
     // Update()'s CHASE_CURSOR handler resolves the live cursor target next frame.
@@ -1757,6 +1979,7 @@ bool Goose::ForceWindowYeet(int w, int h) {
 // its state, reserve it, and walk to its near edge. `yeet` only changes what
 // happens once the real window has been hidden behind the screenshot.
 bool Goose::BeginWindowInteraction(int w, int h, bool yeet) {
+    if (IsHeld()) return false;
     CancelCurrentBehavior();
     CursorBackend* rawBackend = g_backendManager.GetActiveBackend();
     HyprlandBackend* hBackend = dynamic_cast<HyprlandBackend*>(rawBackend);

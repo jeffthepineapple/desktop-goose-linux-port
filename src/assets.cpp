@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <iostream>
 #include <cstdint>
+#include <cstdio>
 
 const std::string ASSET_ROOT_NAME = "Assets";
 fs::path ASSET_ROOT;
@@ -197,8 +198,29 @@ ItemData* AssetManager::CreateTransientMemeItem(GdkPixbuf* pixbuf, std::string* 
     return item;
 }
 
+// Runs the `fortune` program and returns its trimmed output, or an empty string
+// if fortune is unavailable, fails, or prints nothing.
+static std::string RunFortune() {
+    FILE* pipe = popen("fortune 2>/dev/null", "r");
+    if (!pipe) return {};
+    std::string out;
+    char buf[512];
+    size_t n;
+    while ((n = fread(buf, 1, sizeof(buf), pipe)) > 0) out.append(buf, n);
+    if (pclose(pipe) != 0) return {};
+    while (!out.empty() && (out.back() == '\n' || out.back() == '\r' ||
+                            out.back() == ' ' || out.back() == '\t')) {
+        out.pop_back();
+    }
+    return out;
+}
+
 ItemData* AssetManager::GetRandomText() {
-    if(textPaths.empty()) return nullptr;
+    if (g_config.fortuneEnabled && (rand() % 100) < g_config.fortuneChance) {
+        std::string fortune = RunFortune();
+        if (!fortune.empty()) return CreateTextItem(fortune);
+    }
+    if (textPaths.empty()) return nullptr;
     std::string p = textPaths[rand() % textPaths.size()];
     std::shared_ptr<const std::string> text;
 
