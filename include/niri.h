@@ -25,8 +25,24 @@ public:
     std::vector<BackendMonitor> GetWindowMonitors() override;
     std::vector<BackendWindow> GetWindowList() override;
 
+
+    // --- Window control (used by the drag/yeet behaviour) ---------------
+    // niri IPC is synchronous and supports absolute floating placement, so
+    // these are direct one-shot actions with no polling.
+    struct WindowRect {
+        bool valid = false;
+        int x = 0, y = 0, w = 0, h = 0; // global logical geometry
+        std::string output;             // output the window is on
+        int outX = 0, outY = 0;         // output logical origin
+        bool floating = false;
+    };
+    WindowRect FindWindow(const std::string& id);
+    bool SetFloating(const std::string& id, bool floating);
+    bool MoveFloating(const std::string& id, int localX, int localY); // relative to output working area
+    bool SetSize(const std::string& id, int wpx, int hpx);
 private:
     // Sends a single JSON request line and reads the single-line JSON reply.
+    bool SendAction(const std::string& actionBody);
     bool Query(const std::string& request, std::string* response);
 
     std::string m_socketPath;
