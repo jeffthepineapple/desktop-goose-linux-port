@@ -119,6 +119,27 @@ CMake regenerates the Wayland protocol bindings with `wayland-scanner`: virtual
 pointer input, screencopy capture, and Hyprland toplevel export. The generated
 files stay in the build directory.
 
+### Nix
+
+With flakes enabled, run directly from the repository:
+
+```bash
+nix run .
+```
+
+Build the package without running it:
+
+```bash
+nix build .
+```
+
+The flake also provides a development shell:
+
+```bash
+nix develop
+```
+
+
 ## Quick start
 
 The installed command works from any directory:
