@@ -791,6 +791,7 @@ void draw_overlay(GtkDrawingArea* area, cairo_t* cr, int width, int height, gpoi
                 case RETURNING: stateName = "RETURNING"; break;
                 case CHASE_CURSOR: stateName = "CHASE"; break;
                 case SNATCH_CURSOR: stateName = "SNATCH"; break;
+                case DRAG_WINDOW: stateName = "DRAG"; break;
             }
             float dist = Vector2::Distance(origin, g.target);
             char infoBuf[64];
