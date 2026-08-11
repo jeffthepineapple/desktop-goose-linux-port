@@ -5,6 +5,28 @@
 #include <memory>
 #include <cstdint>
 
+// Neutral, backend-agnostic window/monitor descriptions used by consumers
+// (e.g. the edge detector) so window awareness is not tied to any single
+// compositor. Backends that can enumerate windows fill these in.
+struct BackendMonitor {
+    int id = -1;
+    std::string name;
+    int x = 0, y = 0, width = 0, height = 0;
+    double scale = 1.0;
+    int reserved[4] = {0, 0, 0, 0}; // [top, bottom, left, right]
+    int activeWorkspaceId = -1;
+};
+
+struct BackendWindow {
+    std::string id; // Opaque handle: Hyprland address, niri numeric id, etc.
+    int x = 0, y = 0, width = 0, height = 0;
+    int monitorId = -1;
+    int workspaceId = -1;
+    std::string title;
+    std::string cls;
+    bool floating = false;
+};
+
 // Capabilities bitflags
 enum CursorCaps {
     CAP_NONE        = 0,
@@ -27,6 +49,13 @@ public:
     virtual Vector2 GetCursorPos() { return {-1.0f, -1.0f}; }
     virtual void MoveCursorAbs(int x, int y) {}
     virtual void MoveCursorRel(int dx, int dy) {}
+
+    // Optional window awareness. Backends able to enumerate the compositor's
+    // windows/monitors (via IPC or a protocol) override these. Consumers must
+    // check SupportsWindowInfo() before relying on the data.
+    virtual bool SupportsWindowInfo() const { return false; }
+    virtual std::vector<BackendMonitor> GetWindowMonitors() { return {}; }
+    virtual std::vector<BackendWindow> GetWindowList() { return {}; }
 };
 
 // Manager to handle selection and global access
