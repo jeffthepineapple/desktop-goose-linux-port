@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-class HyprlandBackend;
+class CursorBackend;
 
 struct HyprlandMonitor {
     int id;
@@ -29,7 +29,7 @@ struct EdgeWindow {
 
 class EdgeDetector {
 public:
-    void Tick(HyprlandBackend* backend);
+    void Tick(CursorBackend* backend);
 
     bool IsEnabled() const { return m_enabled; }
     void SetEnabled(bool enabled);

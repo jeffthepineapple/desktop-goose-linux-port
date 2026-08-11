@@ -15,7 +15,6 @@
 #include "cursor_backend.h"
 #include "app_actions.h"
 #include "edge_detector.h"
-#include "hyprland.h"
 
 namespace fs = std::filesystem;
 
@@ -1032,10 +1031,9 @@ gboolean on_tick(gpointer) {
         g_config.highlightEdgeWindows || g_config.windowDragEnabled;
     g_edgeDetector.SetEnabled(edgeDetectionEnabled);
     if (edgeDetectionEnabled) {
-        HyprlandBackend* hyprBackend = dynamic_cast<HyprlandBackend*>(
-            g_backendManager.GetActiveBackend());
-        if (hyprBackend) {
-            g_edgeDetector.Tick(hyprBackend);
+        CursorBackend* backend = g_backendManager.GetActiveBackend();
+        if (backend && backend->SupportsWindowInfo()) {
+            g_edgeDetector.Tick(backend);
         }
     }
 
