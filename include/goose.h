@@ -166,6 +166,7 @@ private:
     HonkState m_honk;
     void UpdateDrag(double dt);
     bool UpdateYeetFlight(double dt, int w, int h);
+    void UpdateNiriDrag(class NiriBackend* nb, double dt, double time, int w, int h);
     bool BeginWindowInteraction(int w, int h, bool yeet);
     void SetWindowDestinationFromImageCenter(Vector2 centerDevice);
     void CancelCurrentBehavior();
