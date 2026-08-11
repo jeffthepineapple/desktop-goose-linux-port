@@ -1,6 +1,6 @@
 #include "edge_detector.h"
 
-#include "hyprland.h"
+#include "cursor_backend.h"
 
 EdgeDetector g_edgeDetector;
 
@@ -31,8 +31,8 @@ bool EdgeDetector::IsWindowAtEdge(int wx, int wy, int ww, int wh,
     return false;
 }
 
-void EdgeDetector::Tick(HyprlandBackend* backend) {
-    if (!m_enabled || !backend) {
+void EdgeDetector::Tick(CursorBackend* backend) {
+    if (!m_enabled || !backend || !backend->SupportsWindowInfo()) {
         if (!m_enabled) {
             m_edgeWindows.clear();
             m_monitors.clear();
@@ -41,7 +41,7 @@ void EdgeDetector::Tick(HyprlandBackend* backend) {
     }
 
     // Refresh monitors
-    std::vector<HyprlandBackend::Monitor> rawMonitors = backend->GetMonitors();
+    std::vector<BackendMonitor> rawMonitors = backend->GetWindowMonitors();
     m_monitors.clear();
     for (const auto& rm : rawMonitors) {
         HyprlandMonitor m;
@@ -61,7 +61,7 @@ void EdgeDetector::Tick(HyprlandBackend* backend) {
     }
 
     // Refresh windows and detect edges
-    std::vector<HyprlandBackend::Window> rawWindows = backend->GetWindows();
+    std::vector<BackendWindow> rawWindows = backend->GetWindowList();
     m_edgeWindows.clear();
     for (const auto& rw : rawWindows) {
         const HyprlandMonitor* monitor = nullptr;
@@ -74,7 +74,7 @@ void EdgeDetector::Tick(HyprlandBackend* backend) {
 
         if (!monitor || rw.workspaceId != monitor->activeWorkspaceId) continue;
         if (IsWindowAtEdge(rw.x, rw.y, rw.width, rw.height, *monitor)) {
-            m_edgeWindows.push_back({rw.address, rw.x, rw.y, rw.width, rw.height,
+            m_edgeWindows.push_back({rw.id, rw.x, rw.y, rw.width, rw.height,
                                      rw.title, rw.cls, rw.monitorId, rw.workspaceId,
                                      rw.floating});
         }
