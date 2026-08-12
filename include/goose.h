@@ -96,9 +96,10 @@ public:
     int  mudChance = 15;
     float mudLifetime = 15.0f;
 
-    // Window drag state (Hyprland only)
+    // Window drag settings (copied from global defaults per goose)
     bool windowDragEnabled = true;
     int  windowDragChance = 3;
+    int  windowYeetChance = 35;
     std::string dragWindowAddr;
     bool dragWindowWasTiled = false;
     int dragWindowOrigX = 0, dragWindowOrigY = 0;

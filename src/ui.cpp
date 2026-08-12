@@ -51,6 +51,8 @@ static GtkWidget* g_sliderGooseMudChance = nullptr, * g_labelGooseMudChance = nu
 static GtkWidget* g_sliderGooseMudLife = nullptr,   * g_labelGooseMudLife = nullptr;
 static GtkWidget* g_sliderGooseCursorChance = nullptr, * g_labelGooseCursorChance = nullptr;
 static GtkWidget* g_sliderGooseSnatchDur = nullptr,     * g_labelGooseSnatchDur = nullptr;
+static GtkWidget* g_sliderGooseDragChance = nullptr,   * g_labelGooseDragChance = nullptr;
+static GtkWidget* g_sliderGooseYeetChance = nullptr,   * g_labelGooseYeetChance = nullptr;
 static GtkApplication* g_uiApp = nullptr;
 static GtkWidget* g_escapeHoldHudWindow = nullptr;
 static GtkWidget* g_escapeHoldHudBar = nullptr;
@@ -68,6 +70,9 @@ static void ApplyDefaultsToGoose(Goose* g) {
     g->cursorChaseEnabled = g_config.cursorChaseEnabled;
     g->cursorChaseChance = g_config.cursorChaseChance;
     g->snatchDuration = g_config.snatchDuration;
+    g->windowDragEnabled = g_config.windowDragEnabled;
+    g->windowDragChance = g_config.windowDragChance;
+    g->windowYeetChance = g_config.windowYeetChance;
 }
 
 static void cb_goose_copy_defaults(GtkButton*, gpointer) {
@@ -86,6 +91,9 @@ static void cb_goose_apply_to_all(GtkButton*, gpointer) {
         g.cursorChaseEnabled = src->cursorChaseEnabled;
         g.cursorChaseChance = src->cursorChaseChance;
         g.snatchDuration = src->snatchDuration;
+        g.windowDragEnabled = src->windowDragEnabled;
+        g.windowDragChance = src->windowDragChance;
+        g.windowYeetChance = src->windowYeetChance;
     }
     RefreshSelectedGooseUi();
 }
@@ -1200,6 +1208,17 @@ static void RefreshSelectedGooseUi() {
             char buf[32]; snprintf(buf, sizeof(buf), "%.1fs", g->snatchDuration);
             gtk_label_set_text(GTK_LABEL(g_labelGooseSnatchDur), buf);
         }
+        if (g_sliderGooseDragChance) gtk_range_set_value(GTK_RANGE(g_sliderGooseDragChance), g->windowDragChance);
+        if (g_labelGooseDragChance) {
+            char buf[32]; snprintf(buf, sizeof(buf), "%d%%", g->windowDragChance);
+            gtk_label_set_text(GTK_LABEL(g_labelGooseDragChance), buf);
+        }
+
+        if (g_sliderGooseYeetChance) gtk_range_set_value(GTK_RANGE(g_sliderGooseYeetChance), g->windowYeetChance);
+        if (g_labelGooseYeetChance) {
+            char buf[32]; snprintf(buf, sizeof(buf), "%d%%", g->windowYeetChance);
+            gtk_label_set_text(GTK_LABEL(g_labelGooseYeetChance), buf);
+        }
     }
 }
 void cb_action_apply(GtkButton*, gpointer user_data) {
@@ -1288,6 +1307,24 @@ static void cb_goose_snatch_dur(GtkRange* r, gpointer) {
     if (g_labelGooseSnatchDur) {
         char buf[32]; snprintf(buf, sizeof(buf), "%.1fs", g->snatchDuration);
         gtk_label_set_text(GTK_LABEL(g_labelGooseSnatchDur), buf);
+    }
+}
+static void cb_goose_drag_chance(GtkRange* r, gpointer) {
+    Goose* g = GetGooseById(g_selectedGooseId);
+    if (!g) return;
+    g->windowDragChance = (int)gtk_range_get_value(r);
+    if (g_labelGooseDragChance) {
+        char buf[32]; snprintf(buf, sizeof(buf), "%d%%", g->windowDragChance);
+        gtk_label_set_text(GTK_LABEL(g_labelGooseDragChance), buf);
+    }
+}
+static void cb_goose_yeet_chance(GtkRange* r, gpointer) {
+    Goose* g = GetGooseById(g_selectedGooseId);
+    if (!g) return;
+    g->windowYeetChance = (int)gtk_range_get_value(r);
+    if (g_labelGooseYeetChance) {
+        char buf[32]; snprintf(buf, sizeof(buf), "%d%%", g->windowYeetChance);
+        gtk_label_set_text(GTK_LABEL(g_labelGooseYeetChance), buf);
     }
 }
 
@@ -1394,6 +1431,8 @@ static void cb_randomize_biases_selected(GtkButton*, gpointer) {
     g->cursorChaseEnabled = (rand() % 2) == 0;
     g->cursorChaseChance = rand() % 26; // 0..25%
     g->snatchDuration = 1.0f + (float)(rand() % 10);
+    g->windowDragChance = rand() % 26; // 0..25%
+    g->windowYeetChance = rand() % 101;
 
     RefreshSelectedGooseUi();
 }
@@ -1704,6 +1743,10 @@ void activate_control_panel(GtkApplication* app) {
     gtk_box_append(GTK_BOX(selBox), g_chkGooseCursorEnabled);
     gtk_box_append(GTK_BOX(selBox), make_scale_row("Base Chance", 0, 100, 1, 0, G_CALLBACK(cb_goose_cursor_chance), &g_sliderGooseCursorChance, &g_labelGooseCursorChance, "0%"));
     gtk_box_append(GTK_BOX(selBox), make_scale_row("Snatch Duration", 0.5, 15, 0.5, 0, G_CALLBACK(cb_goose_snatch_dur), &g_sliderGooseSnatchDur, &g_labelGooseSnatchDur, "0s"));
+    gtk_box_append(GTK_BOX(selBox), gtk_separator_new(GTK_ORIENTATION_HORIZONTAL));
+    gtk_box_append(GTK_BOX(selBox), gtk_label_new("Individual Window Controls:"));
+    gtk_box_append(GTK_BOX(selBox), make_scale_row("Window Drag Chance", 0, 100, 1, 0, G_CALLBACK(cb_goose_drag_chance), &g_sliderGooseDragChance, &g_labelGooseDragChance, "0%"));
+    gtk_box_append(GTK_BOX(selBox), make_scale_row("Yeet Share", 0, 100, 1, 0, G_CALLBACK(cb_goose_yeet_chance), &g_sliderGooseYeetChance, &g_labelGooseYeetChance, "0%"));
 
     GtkWidget* perRow = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
     GtkWidget* btnCopyDefaults = gtk_button_new_with_label("Copy Global Defaults");
@@ -1726,7 +1769,7 @@ void activate_control_panel(GtkApplication* app) {
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook), scrollGeese, gtk_label_new("Geese"));
 
     // =========================================================
-    // PAGE 2: GLOBAL (General Settings & Mud)
+    // PAGE 2: GLOBAL (General Settings & Window Drag)
     // =========================================================
     GtkWidget* rootGlobal = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     GtkWidget* scrollGlobal = gtk_scrolled_window_new();
@@ -1747,8 +1790,11 @@ void activate_control_panel(GtkApplication* app) {
     GtkWidget* movBox = nullptr;
     gtk_box_append(GTK_BOX(globalInner), make_section("Movement & Scale", &movBox));
     PopulateConfigSection(movBox, "Movement");
+    // Mud/Cursor are per-goose now; window interaction defaults are global.
 
-    // Mud/Cursor are per-goose now; controls live on the Geese tab.
+    GtkWidget* dragBox = nullptr;
+    gtk_box_append(GTK_BOX(globalInner), make_section("Window Drag", &dragBox));
+    PopulateConfigSection(dragBox, "Window Drag");
 
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook), scrollGlobal, gtk_label_new("Global"));
 

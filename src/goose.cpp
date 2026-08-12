@@ -80,6 +80,7 @@ Goose::Goose(int _id, const std::string& _name, int screenW, int screenH) : id(_
     mudLifetime        = g_config.mudLifetime;
     windowDragEnabled  = g_config.windowDragEnabled;
     windowDragChance   = g_config.windowDragChance;
+    windowYeetChance   = g_config.windowYeetChance;
 
     PickNewTarget(screenW, screenH);
 }
@@ -791,7 +792,7 @@ void Goose::Update(double dt, double time, int w, int h) {
             // Both entry points own candidate refresh, filtering, and reservation.
             if (!chased && windowDragEnabled && g_config.windowDragEnabled &&
                 (rand() % 100) < windowDragChance) {
-                chased = ((rand() % 100) < g_config.windowYeetChance)
+                chased = ((rand() % 100) < windowYeetChance)
                              ? ForceWindowYeet(w, h)
                              : ForceWindowDrag(w, h);
             }
