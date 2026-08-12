@@ -290,6 +290,10 @@ a migration fallback.
 | `mud_lifetime` | `15.0` | Footprint lifetime in seconds |
 | `debug_visuals` | `0` | Draw state and physics overlays |
 | `debug_terminal` | `0` | Write runtime debugging to the terminal |
+| `window_drag_enabled` | `1` | Allow automatic window drag and yeet behavior |
+| `window_drag_chance` | `3` | Automatic window interaction percentage per wander cycle |
+| `window_drag_edge_padding` | `40` | Destination edge padding in pixels |
+| `window_yeet_chance` | `35` | Percentage of automatic window interactions that become yeets |
 
 Changes made through `settings set` take effect immediately and persist to disk.
 
