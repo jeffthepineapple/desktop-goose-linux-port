@@ -28,6 +28,7 @@ public:
     ItemData* CreateMemeItem(const std::string& path, std::string* errorOut = nullptr);
     ItemData* CreateTransientMemeItem(GdkPixbuf* pixbuf, std::string* errorOut = nullptr);
     ItemData* GetRandomText();
+    ItemData* GetFortune();
     ItemData* CreateTextItem(const std::string& text);
     void Honk();
     void Pat();

@@ -214,11 +214,15 @@ static std::string RunFortune() {
     }
     return out;
 }
+ItemData* AssetManager::GetFortune() {
+    const std::string fortune = RunFortune();
+    return fortune.empty() ? nullptr : CreateTextItem(fortune);
+}
+
 
 ItemData* AssetManager::GetRandomText() {
     if (g_config.fortuneEnabled && (rand() % 100) < g_config.fortuneChance) {
-        std::string fortune = RunFortune();
-        if (!fortune.empty()) return CreateTextItem(fortune);
+        if (ItemData* fortune = GetFortune()) return fortune;
     }
     if (textPaths.empty()) return nullptr;
     std::string p = textPaths[rand() % textPaths.size()];
