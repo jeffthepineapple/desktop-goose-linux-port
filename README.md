@@ -200,7 +200,7 @@ Built-in looks are `classic`, `scholar`, `party`, `pilot`, `royal`, and
 | `CppGoose settings [list]` | List every configurable value |
 | `CppGoose settings get <key>` | Read one value |
 | `CppGoose settings set <key> <value>` | Change and persist one value |
-| `CppGoose force set <id> <wander\|chase\|drag\|yeet\|meme [path]\|note [path]\|note text <text>>` | Interrupt one goose or start a window interaction |
+| `CppGoose force set <id> <wander\|chase\|drag\|yeet\|meme [path]\|note [path]\|note text <text>\|fortune>` | Interrupt one goose or start a window interaction |
 | `CppGoose rules [list]` | List active rules |
 | `CppGoose rules add <id\|all> <action> [interval] [text]` | Schedule a behavior (`wander`, `meme`, `note`, `text`, `chase`, `drag`, or `yeet`) |
 | `CppGoose rules remove <rule-id>` | Remove one rule |
@@ -215,12 +215,14 @@ restores it at the carried image's final position. `yeet` throws the captured
 window image with gravity and bounces before restoring the real window. Both
 behaviors preserve the original tiled or floating mode when possible.
 
-Force a specific goose to fetch an image, a note file, or inline note text:
+Force a specific goose to fetch an image, a note file, inline note text, or a
+fortune quote:
 
 ```bash
 CppGoose force set 0 meme /absolute/path/to/image.png
 CppGoose force set 0 note /absolute/path/to/note.txt
 CppGoose force set 0 note text 'First line\nSecond line'
+CppGoose force set 0 fortune
 ```
 
 Use an absolute path when the CLI and daemon were started from different

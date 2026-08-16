@@ -79,7 +79,7 @@ public:
     // State
     GooseState state = WANDER;
     ItemData* heldItem = nullptr;
-    int forceItemFetch = -1; // -1: Random, 0: Meme, 1: Text
+    int forceItemFetch = -1; // -1: Random, 0: Meme, 1: Text, 2: Fortune
     std::string forcedText;
     std::string forcedMemePath;
 
@@ -160,6 +160,7 @@ public:
     void ForceFetch(int type, int w, int h);
     void ForceFetchText(const std::string& text, int w, int h);
     void ForceFetchMeme(const std::string& path, int w, int h);
+    void ForceFetchFortune(int w, int h);
     void ForceWander(int w, int h);
     bool ForceChase(int w, int h);
     bool ForceWindowDrag(int w, int h);

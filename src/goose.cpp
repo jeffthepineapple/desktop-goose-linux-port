@@ -877,6 +877,9 @@ void Goose::Update(double dt, double time, int w, int h) {
                     heldItem = g_assets.GetRandomMeme();
                 } else if (forceItemFetch == 1) {
                     heldItem = g_assets.GetRandomText();
+                } else if (forceItemFetch == 2) {
+                    heldItem = g_assets.GetFortune();
+                    if (!heldItem) heldItem = g_assets.GetRandomText();
                 } else {
                     heldItem = (rand() % 2 == 0) ? g_assets.GetRandomMeme() : g_assets.GetRandomText();
                 }

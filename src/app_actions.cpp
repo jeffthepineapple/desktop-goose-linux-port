@@ -567,7 +567,7 @@ static std::string HandleQuitCommand(const std::vector<std::string>&) {
 }
 
 static constexpr const char* FORCE_USAGE =
-    "force set <goose-id> <wander|chase|drag|yeet|meme [path]|note [path]|note text <text>>";
+    "force set <goose-id> <wander|chase|drag|yeet|meme [path]|note [path]|note text <text>|fortune>";
 
 static std::string DecodeNoteText(const std::string& input) {
     std::string decoded;
@@ -678,6 +678,10 @@ static std::string HandleForceCommand(const std::vector<std::string>& args) {
             if (text.empty()) return "error note text cannot be empty\n";
             goose->ForceFetchText(text, g_screenWidth, g_screenHeight);
         }
+    } else if (behavior == "fortune") {
+        if (args.size() != 4) return "error usage: " + std::string(FORCE_USAGE) + "\n";
+        goose->ForceFetchFortune(g_screenWidth, g_screenHeight);
+        source = "fortune";
     } else {
         return "error usage: " + std::string(FORCE_USAGE) + "\n";
     }

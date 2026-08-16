@@ -13,7 +13,7 @@ enum class CliComplete {
     Slot,        // hat | glasses
     Item,        // item ids from `skins list` (+ none)
     RuleAction,     // wander | meme | note | chase | text
-    ForceBehavior,  // wander | meme | note | chase
+    ForceBehavior,  // wander | chase | drag | yeet | meme | note | fortune
     ForceSource,    // file for memes; file | text for notes
     RuleId,         // rule ids from `rules list`
 };
