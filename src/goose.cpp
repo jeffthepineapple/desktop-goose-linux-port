@@ -1932,6 +1932,13 @@ void Goose::ForceFetch(int type, int w, int h) {
     StartFetch(w, h);
 }
 
+void Goose::ForceFetchFortune(int w, int h) {
+    if (IsHeld()) return;
+    CancelCurrentBehavior();
+    forceItemFetch = 2;
+    StartFetch(w, h);
+}
+
 void Goose::ForceFetchText(const std::string& text, int w, int h) {
     if (IsHeld()) return;
     CancelCurrentBehavior();
