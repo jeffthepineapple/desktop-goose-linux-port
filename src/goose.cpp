@@ -1592,9 +1592,13 @@ void Goose::DrawHeldItem(cairo_t* cr) {
         cairo_stroke(cr);
 
         PangoLayout* layout = pango_cairo_create_layout(cr);
+        PangoFontDescription* desc = pango_font_description_from_string(kNoteFontDescription);
+        pango_layout_set_font_description(layout, desc);
+        pango_font_description_free(desc);
+        pango_layout_set_wrap(layout, PANGO_WRAP_WORD_CHAR);
         pango_layout_set_text(layout, heldItem->Text().c_str(), -1);
-        pango_layout_set_width(layout, (heldItem->w - 10) * PANGO_SCALE);
-        cairo_move_to(cr, 5, 5);
+        pango_layout_set_width(layout, (heldItem->w - kNotePadding) * PANGO_SCALE);
+        cairo_move_to(cr, kNotePadding / 2, kNotePadding / 2);
         pango_cairo_show_layout(cr, layout);
         g_object_unref(layout);
     }

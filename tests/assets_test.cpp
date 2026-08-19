@@ -65,5 +65,30 @@ int main() {
         assert(g == (0xffu * 0x80u + 127u) / 255u); // premultiplied green
     }
     delete alphaItem;
+
+    // Issue #10: text that fits the original 200x150 box keeps that size.
+    ItemData* shortNote = assets.CreateTextItem("Hi");
+    assert(shortNote != nullptr);
+    assert(shortNote->type == ItemData::TEXT);
+    assert(shortNote->w == kNoteMinWidth);
+    assert(shortNote->h == kNoteMinHeight);
+    delete shortNote;
+
+    ItemData* fittingNote = assets.CreateTextItem(
+        "Remember to water the plants and take out the trash before you "
+        "leave for work this morning.");
+    assert(fittingNote != nullptr);
+    assert(fittingNote->h == kNoteMinHeight);
+    delete fittingNote;
+
+    // Text that doesn't fit grows, capped so it can't swallow the screen.
+    const std::string longText(2000, 'x');
+    ItemData* longNote = assets.CreateTextItem(longText);
+    assert(longNote != nullptr);
+    assert(longNote->w <= kNoteMaxWidth);
+    assert(longNote->h > kNoteMinHeight);
+    assert(longNote->h <= kNoteMaxHeight);
+    delete longNote;
+
     return 0;
 }

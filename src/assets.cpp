@@ -7,6 +7,7 @@
 #include <iostream>
 #include <cstdint>
 #include <cstdio>
+#include <pango/pangocairo.h>
 
 const std::string ASSET_ROOT_NAME = "Assets";
 fs::path ASSET_ROOT;
@@ -198,6 +199,37 @@ ItemData* AssetManager::CreateTransientMemeItem(GdkPixbuf* pixbuf, std::string* 
     return item;
 }
 
+// Sizes a note to fit `text`: width comes from the unwrapped natural size
+// (clamped to [kNoteMinWidth, kNoteMaxWidth]), then height is measured by
+// wrapping at that same final width so the reported box matches what
+// actually gets drawn.
+static void MeasureNoteText(const std::string& text, int* outW, int* outH) {
+    PangoFontMap* fontMap = pango_cairo_font_map_get_default();
+    PangoContext* context = pango_font_map_create_context(fontMap);
+    PangoFontDescription* desc = pango_font_description_from_string(kNoteFontDescription);
+    pango_context_set_font_description(context, desc);
+    pango_font_description_free(desc);
+
+    PangoLayout* layout = pango_layout_new(context);
+    pango_layout_set_wrap(layout, PANGO_WRAP_WORD_CHAR);
+    pango_layout_set_text(layout, text.c_str(), -1);
+
+    pango_layout_set_width(layout, -1); // unwrapped, to find the natural width
+    int naturalW = 0, naturalH = 0;
+    pango_layout_get_pixel_size(layout, &naturalW, &naturalH);
+    const int targetW = std::clamp(naturalW + kNotePadding, kNoteMinWidth, kNoteMaxWidth);
+
+    pango_layout_set_width(layout, (targetW - kNotePadding) * PANGO_SCALE);
+    int wrappedW = 0, wrappedH = 0;
+    pango_layout_get_pixel_size(layout, &wrappedW, &wrappedH);
+
+    g_object_unref(layout);
+    g_object_unref(context);
+
+    *outW = targetW;
+    *outH = std::clamp(wrappedH + kNotePadding, kNoteMinHeight, kNoteMaxHeight);
+}
+
 // Runs the `fortune` program and returns its trimmed output, or an empty string
 // if fortune is unavailable, fails, or prints nothing.
 static std::string RunFortune() {
@@ -242,8 +274,7 @@ ItemData* AssetManager::GetRandomText() {
     ItemData* item = new ItemData();
     item->type = ItemData::TEXT;
     item->textContent = std::move(text);
-    item->w = 200; // Fixed width for notepad
-    item->h = 150;
+    MeasureNoteText(*item->textContent, &item->w, &item->h);
     return item;
 }
 
@@ -251,8 +282,7 @@ ItemData* AssetManager::CreateTextItem(const std::string& text) {
     ItemData* item = new ItemData();
     item->type = ItemData::TEXT;
     item->textContent = std::make_shared<const std::string>(text);
-    item->w = 200;
-    item->h = 150;
+    MeasureNoteText(text, &item->w, &item->h);
     return item;
 }
 

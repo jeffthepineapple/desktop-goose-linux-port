@@ -7,6 +7,15 @@
 #include <cairo.h>
 #include "goose_math.h"
 
+// Notepad note layout: original 200x150 box is the floor size; text that
+// doesn't fit grows up to the max, instead of clipping past its border.
+inline constexpr const char* kNoteFontDescription = "Sans 10";
+inline constexpr int kNoteMinWidth = 200;
+inline constexpr int kNoteMinHeight = 150;
+inline constexpr int kNoteMaxWidth = 240;
+inline constexpr int kNoteMaxHeight = 400;
+inline constexpr int kNotePadding = 10;
+
 struct ItemData {
     enum Type { MEME, TEXT } type;
     GdkPixbuf* pixbuf = nullptr; // For Memes
