@@ -346,6 +346,7 @@ static const char* GooseStateName(GooseState state) {
         case SNATCH_CURSOR: return "snatch";
         case DRAG_WINDOW:   return "drag-window";
         case HELD:          return "held";
+        case FLUNG:         return "flung";
     }
     return "?";
 }

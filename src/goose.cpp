@@ -254,18 +254,30 @@ void Goose::Update(double dt, double time, int w, int h) {
         return true;
     };
 
-    // --- HELD: the cursor has the goose. It dangles and squirms, but no
-    // movement, steering, fetching, chasing or window work is allowed. ---
+    // --- HELD: the cursor has the goose. The soft body is simulated while
+    // the rest of the AI stays suspended. ---
     if (state == HELD) {
-        UpdateRagdoll(dt, time);
-        UpdateRig();
+        if (!softActive) {
+            // Defensive: HELD is always entered together with the soft body.
+            FinishSoftBody(w, h);
+            return;
+        }
+        UpdateSoftBody(dt, time, w, h);
         // An indignant honk while struggling, on the normal cooldown.
         if (ragdoll.squirmDrive > 0.8f) TryHonk(HONK_GENERIC_CD, hs.lastGeneric);
         return;
     }
-    if (ragdoll.release > 0.002f) {
-        // Just dropped: keep the limbs settling while the walk cycle resumes.
-        UpdateRagdoll(dt, time);
+    // --- FLUNG: the goose was dropped or yeeted. Gravity, drag and wall
+    // bounces own it until it slows down and gets back on its feet. ---
+    if (state == FLUNG) {
+        if (!softActive) {
+            // Defensive: FLUNG is always entered together with the soft body,
+            // but if that ever desyncs the goose must not stay frozen.
+            FinishSoftBody(w, h);
+            return;
+        }
+        UpdateSoftBody(dt, time, w, h);
+        return;
     }
 
     // --- SAFETY: Item holding consistency ---
@@ -1206,6 +1218,13 @@ void Goose::Update(double dt, double time, int w, int h) {
             delete heldItem;
             heldItem = nullptr;
         }
+        if (softActive) {
+            softActive = false;
+            softThrown = false;
+            softBody = SoftBody{};
+            if (g_heldGooseId == id) g_heldGooseId = -1;
+            ragdoll = RagdollState{};
+        }
         pos.x = (float)w / 2.0f;
         pos.y = (float)h / 2.0f;
         vel = {0, 0};
@@ -1223,156 +1242,562 @@ void Goose::Update(double dt, double time, int w, int h) {
 }
 
 // =========================================================
-// RAGDOLL (cursor pickup)
+// SOFT BODY (cursor pickup + yeet)
 // =========================================================
 namespace {
 
-// Pixel-space gravity. Tuned so a ~22px body link swings at roughly 1 Hz,
-// which reads as "a bird dangling" rather than "a pendulum in a clock".
-constexpr float RAG_GRAVITY = 1400.0f;
+float DistanceToSegment(Vector2 point, Vector2 a, Vector2 b) {
+    const Vector2 segment = b - a;
+    const float lengthSquared = Dot(segment, segment);
+    if (lengthSquared < 1e-6f) return Vector2::Distance(point, a);
+    const float t = Clamp(Dot(point - a, segment) / lengthSquared, 0.0f, 1.0f);
+    return Vector2::Distance(point, a + segment * t);
+}
 
-// One damped, driven pendulum link.
-//   ang    - angle from straight-down, radians
-//   len    - link length in px (shorter = faster swing)
-//   spring - muscle stiffness pulling back to `rest` (0 = pure ragdoll)
-//   damp   - velocity damping
-// gEff already includes the pseudo-force from the accelerating grab point.
-void IntegrateLink(float& ang, float& vel, Vector2 gEff, float len,
-                   float spring, float rest, float damp, float limit,
-                   float dt) {
-    const Vector2 u{ std::sin(ang), std::cos(ang) }; // link direction, ang=0 -> down
-    // Torque per unit mass about the pivot: u x gEff.
-    const float cross = u.x * gEff.y - u.y * gEff.x;
-    float acc = -(cross / std::max(len, 1.0f)) - spring * (ang - rest) - damp * vel;
-    vel += acc * dt;
-    ang += vel * dt;
-    if (ang > limit)  { ang = limit;  if (vel > 0) vel = -vel * 0.35f; }
-    if (ang < -limit) { ang = -limit; if (vel < 0) vel = -vel * 0.35f; }
-    if (!std::isfinite(ang) || !std::isfinite(vel)) { ang = 0.0f; vel = 0.0f; }
+// Closed Catmull-Rom spline through the torso ring. The soft body is drawn as
+// one smooth blob so deformation reads as flesh, not as a polygon.
+void PathClosedSpline(cairo_t* cr, const Vector2* pts, int n) {
+    if (n < 3) return;
+    cairo_move_to(cr, pts[0].x, pts[0].y);
+    for (int i = 0; i < n; ++i) {
+        const Vector2& p0 = pts[(i - 1 + n) % n];
+        const Vector2& p1 = pts[i];
+        const Vector2& p2 = pts[(i + 1) % n];
+        const Vector2& p3 = pts[(i + 2) % n];
+        const Vector2 c1 = p1 + (p2 - p0) * (1.0f / 6.0f);
+        const Vector2 c2 = p2 - (p3 - p1) * (1.0f / 6.0f);
+        cairo_curve_to(cr, c1.x, c1.y, c2.x, c2.y, p2.x, p2.y);
+    }
+    cairo_close_path(cr);
+}
+
+// Inward offset of a closed polygon, used for the body's white fill.
+void InsetPolygon(const Vector2* pts, int n, float inset, Vector2* out) {
+    float area2 = 0.0f;
+    for (int i = 0; i < n; ++i) {
+        const Vector2& a = pts[i];
+        const Vector2& b = pts[(i + 1) % n];
+        area2 += a.x * b.y - b.x * a.y;
+    }
+    const float wind = (area2 >= 0.0f) ? 1.0f : -1.0f;
+
+    for (int i = 0; i < n; ++i) {
+        Vector2 tangent = pts[(i + 1) % n] - pts[(i - 1 + n) % n];
+        if (Vector2::Length(tangent) < 1e-4f) {
+            out[i] = pts[i];
+            continue;
+        }
+        tangent = Vector2::Normalize(tangent);
+        const Vector2 outward{ tangent.y * wind, -tangent.x * wind };
+        out[i] = pts[i] - outward * inset;
+    }
 }
 
 } // namespace
 
 float Goose::GrabRadius() const {
-    return 34.0f * std::max(0.35f, g_config.globalScale);
+    return 56.0f * std::max(0.35f, g_config.globalScale);
+}
+
+bool Goose::ContainsGrabPoint(Vector2 devicePos) const {
+    const float scale = std::max(0.35f, g_config.globalScale);
+    const Vector2 point = pos + (devicePos - pos) / scale;
+    const Vector2 rawFwd = Vector2::FromAngleDegrees(dir);
+    const Vector2 fwd{ rawFwd.x * ISO_SCALE.x, rawFwd.y * ISO_SCALE.y };
+
+    const Vector2 bodyFront = rig.body + fwd * 13.0f;
+    const Vector2 bodyBack = rig.body - fwd * 13.0f;
+    if (DistanceToSegment(point, bodyBack, bodyFront) <= 15.0f) return true;
+    if (DistanceToSegment(point, rig.neckBase, rig.neckHead) <= 9.5f) return true;
+    if (DistanceToSegment(point, rig.neckHead, rig.head2) <= 10.5f) return true;
+    return false;
+}
+
+// Build the soft-body skeleton from the current rig pose. Called on grab so
+// the goose starts deforming from wherever it actually is.
+void Goose::BuildSoftBody() {
+    softBody = SoftBody{};
+    softBody.gravity = { 0.0f, g_config.ragdollGravity };
+    softBody.linearDamping = std::max(0.2f, g_config.ragdollDamping * 0.35f);
+    softBody.restitution = Clamp(g_config.softbodyBounce, 0.0f, 0.95f);
+    softBody.friction = Clamp(g_config.softbodyFriction, 0.0f, 1.0f);
+    softBody.attachStiffness = Clamp(g_config.softbodyGrabStiffness, 0.05f, 1.0f);
+    softBody.iterations = std::clamp(g_config.softbodyIterations, 1, 12);
+    softBody.substeps = std::clamp(g_config.softbodySubsteps, 1, 6);
+    softBody.maxSpeed = 7000.0f;
+
+    // Spring stiffness is deliberately partial: each iteration only fixes a
+    // fraction of the length error, so the body holds its shape but visibly
+    // stretches and squashes under real loads instead of behaving rigid.
+    const float stiff = Clamp(g_config.softbodyStiffness * 0.35f, 0.05f, 0.7f);
+    const Vector2 rawFwd = Vector2::FromAngleDegrees(dir);
+    const Vector2 fwdVec{ rawFwd.x * ISO_SCALE.x, rawFwd.y * ISO_SCALE.y };
+    const float fwdLen = std::max(0.2f, Vector2::Length(fwdVec));
+    const Vector2 axis = Vector2::Normalize(fwdVec);
+    const Vector2 perp{ -axis.y, axis.x };
+
+    // Torso: an ellipse ring standing in for the body capsule. rx follows the
+    // isometric foreshortening so a goose facing away is as compact on screen
+    // as the drawn body is.
+    const float rx = 11.0f * fwdLen + 9.0f;
+    const float ry = 12.0f;
+    const Vector2 bodyCenter = rig.body;
+    for (int i = 0; i < SB_RING_COUNT; ++i) {
+        const float a = (float)i / (float)SB_RING_COUNT * 2.0f * (float)PI;
+        const Vector2 p =
+            bodyCenter + axis * (rx * std::cos(a)) + perp * (ry * std::sin(a));
+        softBody.AddPoint(p, 0.55f);
+    }
+
+    // Neck, head, beak and feet start exactly where the drawn rig has them.
+    softBody.AddPoint(rig.neckBase, 0.85f); // SB_NECK_BASE
+    softBody.AddPoint(rig.neckHead, 0.75f); // SB_NECK_HEAD
+    softBody.AddPoint(rig.head2, 0.75f);    // SB_HEAD
+
+    Vector2 headDir = rig.head2 - rig.neckHead;
+    headDir = (Vector2::Length(headDir) > 1e-3f) ? Vector2::Normalize(headDir) : axis;
+    const Vector2 beakBase = rig.neckHead + headDir * BEAK_BASE_OFFSET;
+    softBody.AddPoint(beakBase + headDir * BEAK_LEN, 1.1f); // SB_BEAK_TIP
+    softBody.AddPoint(rig.lFoot.currentPos, 1.3f);          // SB_FOOT_L
+    softBody.AddPoint(rig.rFoot.currentPos, 1.3f);          // SB_FOOT_R
+
+    // Structure: torso perimeter, one copy of each diameter, and shear braces.
+    for (int i = 0; i < SB_RING_COUNT; ++i) {
+        softBody.AddSpring(SB_RING + i, SB_RING + (i + 1) % SB_RING_COUNT,
+                           1.0f * stiff);
+        if (i < SB_RING_COUNT / 2) {
+            softBody.AddSpring(SB_RING + i, SB_RING + i + SB_RING_COUNT / 2,
+                               0.75f * stiff);
+        }
+        softBody.AddSpring(SB_RING + i, SB_RING + (i + 2) % SB_RING_COUNT,
+                           0.5f * stiff);
+    }
+
+    // Head and beak springs stay firm so they keep their length. The neck
+    // links are softer so the neck can bend and trail behind the torso.
+    softBody.AddSpring(SB_NECK_BASE, SB_NECK_HEAD, 0.55f * stiff);
+    softBody.AddSpring(SB_NECK_HEAD, SB_HEAD, 1.0f * stiff);
+    softBody.AddSpring(SB_HEAD, SB_BEAK_TIP, 1.0f * stiff);
+    softBody.AddSpring(SB_NECK_BASE, SB_HEAD, 0.3f * stiff);
+    softBody.AddSpring(SB_NECK_HEAD, SB_BEAK_TIP, 0.4f * stiff);
+
+    // Hang the neck and feet off the nearest torso points.
+    auto anchorToRing = [&](int point, int neighbours, float springStiffness) {
+        std::vector<int> anchors;
+        std::vector<unsigned char> used(SB_RING_COUNT, 0);
+        for (int pick = 0; pick < neighbours; ++pick) {
+            int best = -1;
+            float bestDist = 0.0f;
+            for (int i = 0; i < SB_RING_COUNT; ++i) {
+                if (used[i]) continue;
+                const float d = Vector2::Distance(softBody.points[point].pos,
+                                                  softBody.points[SB_RING + i].pos);
+                if (best < 0 || d < bestDist) { best = i; bestDist = d; }
+            }
+            if (best < 0) break;
+            used[best] = 1;
+            softBody.AddSpring(point, SB_RING + best, springStiffness * stiff);
+            anchors.push_back(SB_RING + best);
+        }
+        return anchors;
+    };
+    // Loose anchors: the neck and feet may lag behind the torso and swing.
+    const std::vector<int> neckAnchors = anchorToRing(SB_NECK_BASE, 3, 0.5f);
+    // Legs are pendulums: each foot hangs from the single nearest torso point
+    // on one soft link, so it can swing freely and stretch under gravity and
+    // spin. (Two anchors would fix the foot's position like a rigid strut.)
+    // The foot starts only a few pixels from that point, so the link gets a
+    // real leg length rather than tucking the foot into the body.
+    constexpr float kLegLength = 12.0f;
+    auto hangLeg = [&](int foot) {
+        int hip = SB_RING;
+        for (int i = 1; i < SB_RING_COUNT; ++i) {
+            if (Vector2::Distance(softBody.points[foot].pos, softBody.points[SB_RING + i].pos) <
+                Vector2::Distance(softBody.points[foot].pos, softBody.points[hip].pos)) {
+                hip = SB_RING + i;
+            }
+        }
+        SoftSpring leg;
+        leg.a = hip;
+        leg.b = foot;
+        leg.rest = std::max(kLegLength, Vector2::Distance(softBody.points[foot].pos,
+                                                          softBody.points[hip].pos));
+        leg.stiffness = Clamp(0.25f * stiff, 0.0f, 1.0f);
+        softBody.springs.push_back(leg);
+        return hip;
+    };
+    softHip[0] = hangLeg(SB_FOOT_L);
+    softHip[1] = hangLeg(SB_FOOT_R);
+
+    // Skin and connective tissue stretch, but never tear off under a flick.
+    // Skull/beak links are firmer than the neck and torso. A foot sits only a
+    // few pixels from its anchors, so a ratio limit would pin it in place;
+    // legs instead get a fixed reach in world pixels.
+    constexpr float kLegReach = 30.0f;
+    for (auto& spring : softBody.springs) {
+        const bool headLink = spring.a >= SB_NECK_HEAD && spring.a <= SB_BEAK_TIP &&
+                              spring.b >= SB_NECK_HEAD && spring.b <= SB_BEAK_TIP;
+        const bool footLink = spring.a >= SB_FOOT_L || spring.b >= SB_FOOT_L;
+        spring.maxStretch = headLink ? 1.15f
+                          : footLink ? (spring.rest + kLegReach) / spring.rest
+                                     : 1.5f;
+    }
+
+    // Pressure: keep the torso inflated while it is stretched and squeezed.
+    {
+        std::vector<int> ring;
+        ring.reserve(SB_RING_COUNT);
+        for (int i = 0; i < SB_RING_COUNT; ++i) ring.push_back(SB_RING + i);
+        softBody.AddArea(ring, Clamp(g_config.softbodyPressure, 0.0f, 1.0f));
+    }
+
+    // Shape memory is local, so a limb can swing without dragging the whole
+    // goose along. The torso keeps its oval, the head and beak hold their
+    // shape, and the neck keeps a weak rest pose with the torso patch it hangs
+    // from. Feet get no pose memory so the legs stay free to stretch and swing.
+    const float memory = Clamp(g_config.softbodyShapeMemory, 0.0f, 0.9f);
+    if (memory > 0.0f) {
+        std::vector<int> ring;
+        ring.reserve(SB_RING_COUNT);
+        for (int i = 0; i < SB_RING_COUNT; ++i) ring.push_back(SB_RING + i);
+        softBody.AddMemory(ring, memory);
+
+        softBody.AddMemory({ SB_NECK_HEAD, SB_HEAD, SB_BEAK_TIP }, memory);
+
+        auto limbMemory = [&](int limb, const std::vector<int>& anchors, float scale) {
+            std::vector<int> cluster{ limb };
+            cluster.insert(cluster.end(), anchors.begin(), anchors.end());
+            softBody.AddMemory(cluster, memory * scale);
+        };
+        limbMemory(SB_NECK_BASE, neckAnchors, 0.3f);
+    }
 }
 
 bool Goose::GrabAt(Vector2 devicePos) {
     if (g_heldGooseId != -1 && g_heldGooseId != id) return false;
-    if (Vector2::Distance(devicePos, pos) > GrabRadius()) return false;
-
-    // Drop whatever the goose was in the middle of; a held goose does nothing.
-    CancelCurrentBehavior();
-
-    ragdoll = RagdollState{};
-    ragdoll.pivot = devicePos;
-    ragdoll.grabOffset = pos - devicePos;
-    ragdoll.primed = false;
-    ragdoll.nextSquirm = g_time + 0.35 + Rand01() * 1.1;
-    ragdoll.release = 0.0f;
-
-    vel = {0, 0};
-    acceleration = {0, 0};
-    currentSpeed = 0.0f;
-    state = HELD;
+    if (!ContainsGrabPoint(devicePos)) return false;
+    BeginHold(devicePos);
     g_heldGooseId = id;
     UiLogPush("Goose " + std::to_string(id) + " picked up");
     return true;
 }
 
-void Goose::MoveGrab(Vector2 devicePos) {
-    if (state != HELD) return;
-    // Only record the target here; velocity/acceleration are derived in
-    // UpdateRagdoll against the fixed frame step. Pointer events arrive at an
-    // irregular rate, so differentiating them directly would be pure noise.
+// Drop the current behavior and hand the pose to the soft body, attached at
+// the point nearest the grab.
+void Goose::BeginHold(Vector2 devicePos) {
+    const Vector2 carryVel = vel; // walking momentum carries into the body
+    CancelCurrentBehavior();
+    UpdateRig(); // the soft body is built from the freshest drawn pose
+
+    BuildSoftBody();
+    for (auto& p : softBody.points) p.vel = carryVel;
+    const Vector2 worldPos = DeviceToWorld(devicePos);
+    int nearest = -1;
+    float nearestDist = 0.0f;
+    for (int i = 0; i < (int)softBody.points.size(); ++i) {
+        const float d = Vector2::Distance(softBody.points[i].pos, worldPos);
+        if (nearest < 0 || d < nearestDist) { nearest = i; nearestDist = d; }
+    }
+    softBody.attachedPoint = nearest;
+    softBody.attachTarget = worldPos;
+
+    ragdoll = RagdollState{};
     ragdoll.pivot = devicePos;
+    ragdoll.nextSquirm = g_time + 0.35 + Rand01() * 1.1;
+
+    softActive = true;
+    softThrown = false;
+    softFlightElapsed = 0.0;
+    softSettleDeadline = 0.0;
+    softCursorVel = { 0.0f, 0.0f };
+    softLastTarget = worldPos;
+    softTargetPrimed = false;
+
+    vel = { 0, 0 };
+    acceleration = { 0, 0 };
+    currentSpeed = 0.0f;
+    state = HELD;
+}
+
+void Goose::MoveGrab(Vector2 devicePos) {
+    if (state != HELD || !softActive) return;
+    // Only record the target here; velocity is derived in UpdateSoftBody on
+    // the fixed frame clock. Pointer events arrive at an irregular rate, so
+    // differentiating them directly would be pure noise.
+    ragdoll.pivot = devicePos;
+    softBody.attachTarget = DeviceToWorld(devicePos);
 }
 
 void Goose::ReleaseGrab(int w, int h) {
     if (g_heldGooseId == id) g_heldGooseId = -1;
     if (state != HELD) return;
 
-    ragdoll.release = 1.0f;
-    ragdoll.primed = false;
-    ragdoll.accel = {0, 0};
-    ragdoll.pivotVel = {0, 0};
-    vel = {0, 0};
-    acceleration = {0, 0};
+    const float throwSpeed = Vector2::Length(softCursorVel);
+    const bool thrown = throwSpeed >= g_config.softbodyYeetSpeed;
+    if (thrown) {
+        // Hand the flick's momentum to the body so the throw really carries;
+        // the grabbed point already moved with the cursor, this adds the
+        // whip-crack the rest of the body inherits.
+        for (auto& p : softBody.points) p.vel += softCursorVel * 0.15f;
+    }
+    EnterFlight(thrown);
+    UiLogPush(thrown ? "Goose " + std::to_string(id) + " yeeted at " +
+                           std::to_string((int)throwSpeed) + " px/s"
+                     : "Goose " + std::to_string(id) + " dropped");
+}
+
+// Leave HELD: a throw flies under gravity and bounces; a gentle drop stays
+// weightless and re-forms where it was let go.
+void Goose::EnterFlight(bool thrown) {
+    softBody.attachedPoint = -1;
+    softFlightElapsed = 0.0;
+    softThrown = thrown;
+    if (thrown) {
+        softBody.gravityScale = 1.0f;
+        softBody.collideBounds = true;
+        softBody.linearDamping = std::max(
+            0.1f, g_config.ragdollDamping * 0.2f + g_config.softbodyAirDrag);
+    } else {
+        softBody.gravityScale = 0.0f;
+        softBody.collideBounds = false;
+        softBody.linearDamping = std::max(0.5f, g_config.ragdollDamping);
+        for (auto& memory : softBody.memories) {
+            memory.stiffness = Clamp(memory.stiffness * 2.5f, 0.0f, 0.9f);
+        }
+        softSettleDeadline = 0.7;
+    }
+    state = FLUNG;
+    ragdoll.pivotVel = { 0.0f, 0.0f };
     currentSpeed = 0.0f;
-    // Feet are wherever the dangle left them; snap them under the body so the
-    // walk cycle doesn't start by lerping in from a splayed pose.
+    vel = { 0, 0 };
+    acceleration = { 0, 0 };
+}
+
+// One physics frame of the soft body. Owns the goose while HELD or FLUNG:
+// cursor differentiation, struggle impulses, then the solver, then the
+// settle/stand-up transition.
+void Goose::UpdateSoftBody(double dt, double time, int w, int h) {
+    if (!softActive || (int)softBody.points.size() < (int)SB_COUNT) return;
+    const float step = (float)std::clamp(dt, 1e-4, 0.05);
+
+    // Desktop bounds in world space (the space the points live in).
+    const Vector2 topLeft = DeviceToWorld({ 0.0f, 0.0f });
+    const Vector2 bottomRight = DeviceToWorld(
+        { (float)std::max(1, w - 1), (float)std::max(1, h - 1) });
+    softBody.SetBounds(std::min(topLeft.x, bottomRight.x),
+                       std::min(topLeft.y, bottomRight.y),
+                       std::max(topLeft.x, bottomRight.x),
+                       std::max(topLeft.y, bottomRight.y));
+
+    if (state == HELD) {
+        // Differentiate the cursor on the fixed frame clock, not on irregular
+        // pointer events; a teleporting sample must not fling the body.
+        if (softTargetPrimed) {
+            const Vector2 rawVel = (softBody.attachTarget - softLastTarget) / step;
+            const float mag = Vector2::Length(rawVel);
+            const float kMax = 12000.0f;
+            const Vector2 clampedVel = (mag > kMax) ? rawVel * (kMax / mag) : rawVel;
+            const float smooth = 1.0f - std::exp(-18.0f * step);
+            softCursorVel = softCursorVel * (1.0f - smooth) + clampedVel * smooth;
+        } else {
+            softCursorVel = { 0.0f, 0.0f };
+        }
+        softLastTarget = softBody.attachTarget;
+        softTargetPrimed = true;
+        ragdoll.pivotVel = softCursorVel;
+
+        // Struggle: periodic muscular impulses through the neck and legs.
+        if (time >= ragdoll.nextSquirm) {
+            const float strength = std::max(0.0f, g_config.ragdollSquirmStrength);
+            const float kick = (25.0f + (float)(rand() % 55)) * strength;
+            auto kickPoint = [&](int index) {
+                if (index < 0 || index >= (int)softBody.points.size()) return;
+                const float a = (float)(rand() % 628) * 0.01f;
+                softBody.points[index].vel += Vector2{ std::cos(a), std::sin(a) } * kick;
+            };
+            kickPoint(SB_FOOT_L);
+            kickPoint(SB_FOOT_R);
+            if (rand() % 2) {
+                kickPoint(SB_NECK_HEAD);
+            } else {
+                kickPoint(SB_HEAD);
+            }
+            ragdoll.squirmDrive =
+                (0.55f + (float)(rand() % 45) / 100.0f) * std::min(1.0f, strength);
+            ragdoll.nextSquirm = time + 0.45 + (double)(rand() % 150) * 0.01;
+        }
+    }
+    ragdoll.squirmDrive = std::max(0.0f, ragdoll.squirmDrive - (float)dt * 1.4f);
+
+    softBody.Step(step);
+
+    // World space is scaled about `pos`, and UpdateRigFromSoft moves `pos` to
+    // the torso center. Re-anchoring alone would slide every point on screen
+    // by (pos' - pos)(1 - scale) each frame, so the cursor target runs away
+    // from the body (lag and a whipping swing at scales below 1). Translate
+    // the body so its device-space pose is unchanged by the new anchor.
+    const float scale = g_config.globalScale;
+    if (scale >= 0.01f && std::fabs(scale - 1.0f) > 1e-4f) {
+        const Vector2 center = softBody.CenterOfRange(SB_RING, SB_RING_COUNT);
+        const Vector2 anchorMove = (center - pos) * scale;
+        const Vector2 shift = anchorMove * (1.0f - 1.0f / scale);
+        softBody.Translate(shift);
+        softLastTarget += shift;
+    }
+    UpdateRigFromSoft();
+
+    if (state == FLUNG) {
+        softFlightElapsed += dt;
+        const float speed = softBody.AverageSpeed();
+        const bool slow = speed < (softThrown ? 75.0f : 55.0f);
+        const bool grounded = std::any_of(
+            softBody.points.begin(), softBody.points.end(),
+            [&](const SoftPoint& p) { return p.pos.y >= softBody.boundMaxY - 0.5f; });
+        const double minAge = softThrown ? 0.4 : 0.25;
+        // Low speed at the top of a throw is not a landing. Only get up after
+        // ground contact; gentle drops still recover in place.
+        if ((softFlightElapsed > minAge && slow && (!softThrown || grounded)) ||
+            (!softThrown && softSettleDeadline > 0.0 &&
+             softFlightElapsed > softSettleDeadline) ||
+            softFlightElapsed > 6.0) {
+            FinishSoftBody(w, h);
+        }
+    }
+}
+
+// The simulation is the source of truth while it is active; this copies the
+// deformed skeleton back into the rig so cosmetics, eyes, beak helpers and the
+// window-drag code keep seeing a coherent goose.
+void Goose::UpdateRigFromSoft() {
+    if ((int)softBody.points.size() < (int)SB_COUNT) return;
+    const SoftPoint* pts = softBody.points.data();
+
+    const Vector2 ringCenter = softBody.CenterOfRange(SB_RING, SB_RING_COUNT);
+    const Vector2 tail = pts[SB_RING + SB_RING_COUNT / 2].pos;
+    const Vector2 nose = pts[SB_RING].pos;
+    const Vector2 spine = nose - tail;
+    if (Vector2::Length(spine) > 1e-3f) {
+        const Vector2 raw{ spine.x / std::max(1e-3f, ISO_SCALE.x),
+                           spine.y / std::max(1e-3f, ISO_SCALE.y) };
+        if (Vector2::Length(raw) > 1e-4f) {
+            dir = std::atan2(raw.y, raw.x) * RAD_TO_DEG;
+        }
+    }
+
+    rig.body = ringCenter;
+    rig.underbody = ringCenter + Vector2{ 0.0f, 5.0f };
+    rig.neckBase = pts[SB_NECK_BASE].pos;
+    rig.neckHead = pts[SB_NECK_HEAD].pos;
+    rig.head2 = pts[SB_HEAD].pos;
+    rig.head1 = Vector2::Lerp(rig.neckHead, rig.head2, 0.5f);
+    rig.lFoot.currentPos = pts[SB_FOOT_L].pos;
+    rig.rFoot.currentPos = pts[SB_FOOT_R].pos;
+    rig.lFoot.moveStartTime = -1.0;
+    rig.rFoot.moveStartTime = -1.0;
+    pos = ringCenter;
+}
+
+// Hand control back to the walk AI once the flop has settled.
+void Goose::FinishSoftBody(int w, int h) {
+    if (!softActive && state != HELD && state != FLUNG) return;
+    softActive = false;
+    softThrown = false;
+    softBody.attachedPoint = -1;
+    softCursorVel = { 0.0f, 0.0f };
+    softTargetPrimed = false;
+    softFlightElapsed = 0.0;
+    softSettleDeadline = 0.0;
+    if (state == HELD || state == FLUNG) state = WANDER;
+    if (g_heldGooseId == id) g_heldGooseId = -1;
+
+    vel = { 0, 0 };
+    acceleration = { 0, 0 };
+    currentSpeed = 0.0f;
+    ragdoll = RagdollState{};
+
+    // Feet snap under the body so the walk cycle does not stride in from
+    // wherever the flop left them.
     rig.lFoot.currentPos = GetFootHome(-90.0f);
     rig.rFoot.currentPos = GetFootHome(90.0f);
     rig.lFoot.moveStartTime = -1.0;
     rig.rFoot.moveStartTime = -1.0;
-    state = WANDER;
+
+    if (!std::isfinite(pos.x) || !std::isfinite(pos.y)) {
+        pos = { (float)std::max(1, w) * 0.5f, (float)std::max(1, h) * 0.5f };
+    }
+    pos.x = Clamp(pos.x, 20.0f, (float)std::max(40, w - 20));
+    pos.y = Clamp(pos.y, 20.0f, (float)std::max(40, h - 20));
     PickNewTarget(w, h);
-    UiLogPush("Goose " + std::to_string(id) + " dropped");
+    UiLogPush("Goose " + std::to_string(id) + " got back up");
 }
 
-void Goose::UpdateRagdoll(double dt, double time) {
-    const float step = (float)std::max(dt, 1e-4);
+// Soft pose rendering. The torso is one smooth blob; neck, head and beak are
+// stroked through the simulated points in the same widths and order as the
+// normal rig so the goose still reads as the desktop goose.
+void Goose::DrawSoft(cairo_t* cr) {
+    if ((int)softBody.points.size() < (int)SB_COUNT) return;
+    const SoftPoint* pts = softBody.points.data();
 
-    if (state == HELD) {
-        // Differentiate the pivot on the fixed frame clock, not on the
-        // irregular pointer-event clock.
-        if (ragdoll.primed) {
-            const Vector2 newVel = (ragdoll.pivot - ragdoll.lastPivot) / step;
-            Vector2 rawAcc = (newVel - ragdoll.pivotVel) / step;
-            // Clamp before smoothing: a single teleporting pointer sample
-            // would otherwise fling the whole chain into its angle limits.
-            const float mag = Vector2::Length(rawAcc);
-            const float kMaxAcc = 26000.0f;
-            if (mag > kMaxAcc) rawAcc = rawAcc * (kMaxAcc / mag);
-            const float smooth = 0.35f;
-            ragdoll.accel = ragdoll.accel * (1.0f - smooth) + rawAcc * smooth;
-            ragdoll.pivotVel = newVel;
-        } else {
-            ragdoll.pivotVel = {0, 0};
-            ragdoll.accel = {0, 0};
-        }
-        ragdoll.lastPivot = ragdoll.pivot;
-        ragdoll.primed = true;
+    Vector2 headFwd = pts[SB_HEAD].pos - pts[SB_NECK_HEAD].pos;
+    headFwd = (Vector2::Length(headFwd) > 1e-3f)
+        ? Vector2::Normalize(headFwd) : Vector2::FromAngleDegrees(dir);
+    const float back = Clamp(-headFwd.y, 0.0f, 1.0f);
 
-        pos = ragdoll.pivot + ragdoll.grabOffset;
-    } else {
-        // Settling: no drive, just gravity and damping.
-        ragdoll.accel = ragdoll.accel * 0.85f;
-    }
+    // shadow
+    const float shadowScale = softThrown ? 0.7f : 0.85f;
+    DrawEllipse(cr, pos + Vector2{ 2, 10 }, (int)(20 * shadowScale),
+                (int)(15 * shadowScale), 0, 0, 0,
+                softThrown ? 0.14f : 0.22f);
 
-    // Settle blend after release.
-    if (state != HELD) {
-        ragdoll.release = std::max(0.0f, ragdoll.release - (float)dt * 2.6f);
-    }
+    // Draw legs beneath the torso so swinging feet remain visibly connected.
+    cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
+    cairo_set_source_rgb(cr, ORANGE[0], ORANGE[1], ORANGE[2]);
+    DrawLine(cr, pts[softHip[0]].pos, pts[SB_FOOT_L].pos, 3.5f);
+    DrawLine(cr, pts[softHip[1]].pos, pts[SB_FOOT_R].pos, 3.5f);
+    DrawEllipse(cr, pts[SB_FOOT_L].pos, 4, 4, ORANGE[0], ORANGE[1], ORANGE[2]);
+    DrawEllipse(cr, pts[SB_FOOT_R].pos, 4, 4, ORANGE[0], ORANGE[1], ORANGE[2]);
 
-    // Effective gravity in the accelerating frame of the grab point.
-    const Vector2 gEff{ -ragdoll.accel.x, RAG_GRAVITY - ragdoll.accel.y };
+    Vector2 ring[SB_RING_COUNT];
+    for (int i = 0; i < SB_RING_COUNT; ++i) ring[i] = pts[SB_RING + i].pos;
+    Vector2 inner[SB_RING_COUNT];
+    InsetPolygon(ring, SB_RING_COUNT, 1.8f, inner);
 
-    // Struggle: periodic muscular impulses into the neck and legs.
-    if (state == HELD && time >= ragdoll.nextSquirm) {
-        const float kick = 6.0f + Rand01() * 9.0f;
-        const float sign = (rand() % 2) ? 1.0f : -1.0f;
-        ragdoll.neckVel += sign * kick;
-        ragdoll.legLVel -= sign * kick * (0.6f + Rand01() * 0.8f);
-        ragdoll.legRVel += sign * kick * (0.6f + Rand01() * 0.8f);
-        ragdoll.bodyVel += sign * kick * 0.12f;
-        ragdoll.squirmDrive = 0.55f + Rand01() * 0.45f;
-        ragdoll.nextSquirm = time + 0.5 + Rand01() * 2.4;
-    }
-    ragdoll.squirmDrive = std::max(0.0f, ragdoll.squirmDrive - (float)dt * 1.4f);
+    const Vector2 headMid =
+        Vector2::Lerp(pts[SB_NECK_HEAD].pos, pts[SB_HEAD].pos, 0.5f);
 
-    // Body swings about the grab point; neck and legs hang off the body, so
-    // their rest angle is the body's angle carried into their local frame.
-    IntegrateLink(ragdoll.bodyAng, ragdoll.bodyVel, gEff, 26.0f,
-                  1.5f, 0.0f, 2.4f, 1.15f, step);
-    IntegrateLink(ragdoll.neckAng, ragdoll.neckVel, gEff, 15.0f,
-                  9.0f, -ragdoll.bodyAng * 0.5f, 3.1f, 0.85f, step);
-    IntegrateLink(ragdoll.legLAng, ragdoll.legLVel, gEff, 9.0f,
-                  4.0f, -ragdoll.bodyAng, 2.2f, 1.0f, step);
-    IntegrateLink(ragdoll.legRAng, ragdoll.legRVel, gEff, 9.0f,
-                  4.0f, -ragdoll.bodyAng, 2.2f, 1.0f, step);
+    cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
+    cairo_set_source_rgb(cr, OUTLINE_GRAY[0], OUTLINE_GRAY[1], OUTLINE_GRAY[2]);
+    PathClosedSpline(cr, ring, SB_RING_COUNT);
+    cairo_fill(cr);
+    DrawLine(cr, rig.body, pts[SB_NECK_BASE].pos, 15);
+    DrawLine(cr, pts[SB_NECK_BASE].pos, pts[SB_NECK_HEAD].pos, 15);
+    DrawLine(cr, pts[SB_NECK_HEAD].pos, headMid, 17);
+    DrawLine(cr, headMid, pts[SB_HEAD].pos, 12);
+
+    // Beak first, so the white head occludes it when the goose faces away.
+    const Vector2 beakBase = pts[SB_NECK_HEAD].pos + headFwd * BEAK_BASE_OFFSET;
+    cairo_set_source_rgb(cr, ORANGE[0], ORANGE[1], ORANGE[2]);
+    DrawLine(cr, beakBase, pts[SB_BEAK_TIP].pos, BEAK_WID);
+
+    cairo_set_source_rgb(cr, 1, 1, 1);
+    PathClosedSpline(cr, inner, SB_RING_COUNT);
+    cairo_fill(cr);
+    DrawLine(cr, rig.body, pts[SB_NECK_BASE].pos, 13);
+    DrawLine(cr, pts[SB_NECK_BASE].pos, pts[SB_NECK_HEAD].pos, 13);
+    DrawLine(cr, pts[SB_NECK_HEAD].pos, headMid, 15);
+    DrawLine(cr, headMid, pts[SB_HEAD].pos, 10);
+
+    // Eyes and cosmetics ride the simulated head instead of the walk rig.
+    const Vector2 savedNeckHead = rig.neckHead;
+    rig.neckHead = Vector2::Lerp(pts[SB_NECK_HEAD].pos, pts[SB_HEAD].pos, 0.3f);
+    DrawEyes(cr, headFwd, back);
+    rig.neckHead = savedNeckHead;
+
+    const Vector2 side{ -headFwd.y, headFwd.x };
+    const Vector2 cosmeticsHead =
+        Vector2::Lerp(pts[SB_NECK_HEAD].pos, pts[SB_HEAD].pos, 0.55f);
+    Cosmetics_Draw(cr, skin, { cosmeticsHead, headFwd, side, back });
 }
-
 
 // =========================================================
 // RIG (NO-PILL FIXES LIVE HERE)
@@ -1413,38 +1838,8 @@ void Goose::UpdateRig() {
     rig.head1 = rig.neckHead + fwd * HEAD1_OFFSET;
     rig.head2 = rig.neckHead + fwd * HEAD2_OFFSET;
 
-    // --- Ragdoll pose overlay ---------------------------------------------
-    // Head chain droops toward gravity and lags behind the swing; the amount
-    // fades out over the settle window after the goose is dropped.
-    const float ragAmount = (state == HELD) ? 1.0f
-                          : Clamp(ragdoll.release, 0.0f, 1.0f);
-    if (ragAmount > 0.002f) {
-        // Struggling lifts the head; a limp goose lets it hang forward.
-        const float droop = (1.0f - Clamp(ragdoll.squirmDrive, 0.0f, 1.0f)) * 0.85f;
-        const float side = (fwd.x >= 0.0f) ? 1.0f : -1.0f;
-        ragdoll.headRot = (ragdoll.neckAng + droop * side) * ragAmount;
-
-        const float deg = ragdoll.headRot * RAD_TO_DEG;
-        rig.neckHead = rig.neckBase + (rig.neckHead - rig.neckBase).Rotate(deg);
-        rig.head1    = rig.neckBase + (rig.head1    - rig.neckBase).Rotate(deg);
-        rig.head2    = rig.neckBase + (rig.head2    - rig.neckBase).Rotate(deg);
-    } else {
-        ragdoll.headRot = 0.0f;
-    }
-
-    if (state == HELD) {
-        // Legs dangle from the hip instead of stepping.
-        const Vector2 hip = rig.underbody;
-        const float legLen = 13.0f;
-        Vector2 rawSide = Vector2::FromAngleDegrees(dir + 90.0f);
-        Vector2 lateral{ rawSide.x * ISO_SCALE.x, rawSide.y * ISO_SCALE.y };
-        rig.lFoot.currentPos = hip - lateral * 3.5f +
-            Vector2{ std::sin(ragdoll.legLAng), std::cos(ragdoll.legLAng) } * legLen;
-        rig.rFoot.currentPos = hip + lateral * 3.5f +
-            Vector2{ std::sin(ragdoll.legRAng), std::cos(ragdoll.legRAng) } * legLen;
-        rig.lFoot.moveStartTime = -1.0;
-        rig.rFoot.moveStartTime = -1.0;
-    }
+    // Pickup poses are owned by the soft body; the walk rig above is only for
+    // the normal states.
 }
 
 // =========================================================
@@ -1616,17 +2011,12 @@ void Goose::Draw(cairo_t* cr) {
     cairo_scale(cr, g_config.globalScale, g_config.globalScale);
     cairo_translate(cr, -pos.x, -pos.y);
 
-    // Ragdoll: the whole goose swings about the point the cursor holds. Doing
-    // it here means the beak, eyes, cosmetics and carried item all inherit the
-    // rotation for free.
-    const float ragAmount = (state == HELD) ? 1.0f
-                          : Clamp(ragdoll.release, 0.0f, 1.0f);
-    const bool ragdolling = ragAmount > 0.002f;
-    if (ragdolling) {
-        const Vector2 pivot = (state == HELD) ? ragdoll.pivot : pos;
-        cairo_translate(cr, pivot.x, pivot.y);
-        cairo_rotate(cr, ragdoll.bodyAng * ragAmount);
-        cairo_translate(cr, -pivot.x, -pivot.y);
+    // While the soft body owns the pose (held, thrown or recovering) it draws
+    // itself from the simulated skeleton instead of the walk rig.
+    if (softActive) {
+        DrawSoft(cr);
+        cairo_restore(cr);
+        return;
     }
 
     Vector2 rawFwd = Vector2::FromAngleDegrees(dir);
@@ -1641,10 +2031,7 @@ void Goose::Draw(cairo_t* cr) {
     if (heldItem && facingBack) DrawHeldItem(cr);
 
     // shadow
-    // Lifted geese cast a smaller, fainter shadow.
-    const float shadowScale = 1.0f - 0.5f * ragAmount;
-    DrawEllipse(cr, pos + Vector2{2, 10}, (int)(20 * shadowScale),
-                (int)(15 * shadowScale), 0, 0, 0, 0.3f * (1.0f - 0.55f * ragAmount));
+    DrawEllipse(cr, pos + Vector2{2, 10}, 20, 15, 0, 0, 0, 0.3f);
 
     // feet
     DrawEllipse(cr, rig.lFoot.currentPos, 4, 4, ORANGE[0], ORANGE[1], ORANGE[2]);
@@ -1662,18 +2049,18 @@ void Goose::Draw(cairo_t* cr) {
     Vector2 bodyBack  = rig.body - fwd * 11.0f;
     Vector2 underFront= rig.underbody + fwd * 7.0f;
     Vector2 underBack = rig.underbody - fwd * 7.0f;
+    const Vector2 bodyControl = rig.body;
+    const Vector2 underControl = rig.underbody;
 
     cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
     cairo_set_source_rgb(cr, OUTLINE_GRAY[0], OUTLINE_GRAY[1], OUTLINE_GRAY[2]);
-    DrawLine(cr, bodyFront, bodyBack, 24);
+    DrawBentLine(cr, bodyFront, bodyControl, bodyBack, 24);
     DrawLine(cr, rig.neckBase, rig.neckHead, 15);
     DrawLine(cr, rig.neckHead, rig.head1, 17);
     DrawLine(cr, rig.head1, rig.head2, 12);
-    DrawLine(cr, underFront, underBack, 15);
+    DrawBentLine(cr, underFront, underControl, underBack, 15);
 
-    // The head chain is rotated by the ragdoll, so the beak has to follow it.
-    const Vector2 fwdHead = ragdolling
-        ? fwd.Rotate(ragdoll.headRot * RAD_TO_DEG) : fwd;
+    const Vector2 fwdHead = fwd;
     Vector2 beakBase = rig.neckHead + fwdHead * BEAK_BASE_OFFSET;
     Vector2 beakTip = beakBase + fwdHead * BEAK_LEN;
 
@@ -1682,7 +2069,7 @@ void Goose::Draw(cairo_t* cr) {
     DrawLine(cr, beakBase, beakTip, BEAK_WID);
 
     cairo_set_source_rgb(cr, 1, 1, 1);
-    DrawLine(cr, bodyFront, bodyBack, 22);
+    DrawBentLine(cr, bodyFront, bodyControl, bodyBack, 22);
     DrawLine(cr, rig.neckBase, rig.neckHead, 13);
     DrawLine(cr, rig.neckHead, rig.head1, 15);
     DrawLine(cr, rig.head1, rig.head2, 10);
@@ -1775,6 +2162,19 @@ void Goose::DrawLine(cairo_t* cr, Vector2 a, Vector2 b, float width) {
     cairo_stroke(cr);
 }
 
+void Goose::DrawBentLine(cairo_t* cr, Vector2 a, Vector2 control,
+                         Vector2 b, float width) {
+    const Vector2 firstControl = a + (control - a) * (2.0f / 3.0f);
+    const Vector2 secondControl = b + (control - b) * (2.0f / 3.0f);
+    cairo_set_line_width(cr, width);
+    cairo_move_to(cr, a.x, a.y);
+    cairo_curve_to(cr,
+                   firstControl.x, firstControl.y,
+                   secondControl.x, secondControl.y,
+                   b.x, b.y);
+    cairo_stroke(cr);
+}
+
 // =========================================================
 // AI HELPERS
 // =========================================================
@@ -1828,6 +2228,20 @@ Vector2 Goose::GetBeakTipWorld() {
 // =========================================================
 
 void Goose::CancelCurrentBehavior() {
+    // A force command or a new grab takes the goose back from the soft body.
+    if (softActive) {
+        softActive = false;
+        softThrown = false;
+        softBody.attachedPoint = -1;
+        softCursorVel = { 0.0f, 0.0f };
+        softTargetPrimed = false;
+        softFlightElapsed = 0.0;
+        softSettleDeadline = 0.0;
+        if (g_heldGooseId == id) g_heldGooseId = -1;
+        if (state == HELD || state == FLUNG) state = WANDER;
+        ragdoll = RagdollState{};
+    }
+
     if (state == DRAG_WINDOW || !dragWindowAddr.empty() ||
         g_windowDragGooseId == id) {
         RestoreDraggedWindowNow(false);

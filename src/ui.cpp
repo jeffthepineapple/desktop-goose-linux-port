@@ -262,6 +262,18 @@ void UpdateInputRegion(GtkWindow* window, const MonitorInfo& m) {
         return;
     }
 
+    // While a goose is held the cursor routinely outruns the goose's small
+    // box. Claim the whole monitor so motion and the release keep arriving;
+    // otherwise the drag stalls and the goose freezes in the air.
+    if (g_heldGooseId != -1) {
+        cairo_rectangle_int_t all = { 0, 0, m.width, m.height };
+        cairo_region_union_rectangle(region, &all);
+        GdkSurface* s = gtk_native_get_surface(GTK_NATIVE(window));
+        if (s) gdk_surface_set_input_region(s, region);
+        cairo_region_destroy(region);
+        return;
+    }
+
     for (auto& goose : g_geese) {
         // Calculate relative position to this monitor
         float localX = goose.pos.x - m.x;
@@ -313,8 +325,8 @@ static void cb_goose_drag_begin(GtkGestureDrag* gesture, double x, double y, gpo
     Goose* nearest = nullptr;
     float nearestDist = 0.0f;
     for (auto& goose : g_geese) {
+        if (!goose.ContainsGrabPoint(devicePos)) continue;
         const float dist = Vector2::Distance(devicePos, goose.pos);
-        if (dist > goose.GrabRadius()) continue;
         if (!nearest || dist < nearestDist) { nearest = &goose; nearestDist = dist; }
     }
 
@@ -339,13 +351,21 @@ static void cb_goose_drag_end(GtkGestureDrag*, double ox, double oy, gpointer) {
     }
 }
 
+// The compositor or GTK can cancel the sequence (focus loss, another grab);
+// no drag-end follows, so drop the goose instead of leaving it held forever.
+static void cb_goose_drag_cancel(GtkGesture*, GdkEventSequence*, gpointer) {
+    if (Goose* goose = HeldGoose()) goose->ReleaseGrab(g_screenWidth, g_screenHeight);
+}
+
 static void AttachGoosePickup(GtkWidget* canvas, MonitorInfo* monitorInfo) {
     GtkGesture* drag = gtk_gesture_drag_new();
     gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(drag), GDK_BUTTON_PRIMARY);
     g_signal_connect(drag, "drag-begin", G_CALLBACK(cb_goose_drag_begin), monitorInfo);
     g_signal_connect(drag, "drag-update", G_CALLBACK(cb_goose_drag_update), monitorInfo);
     g_signal_connect(drag, "drag-end", G_CALLBACK(cb_goose_drag_end), monitorInfo);
+    g_signal_connect(drag, "cancel", G_CALLBACK(cb_goose_drag_cancel), monitorInfo);
     gtk_widget_add_controller(canvas, GTK_EVENT_CONTROLLER(drag));
+
 }
 
 
@@ -1854,6 +1874,10 @@ void activate_control_panel(GtkApplication* app) {
     GtkWidget* movBox = nullptr;
     gtk_box_append(GTK_BOX(globalInner), make_section("Movement & Scale", &movBox));
     PopulateConfigSection(movBox, "Movement");
+
+    GtkWidget* physicsBox = nullptr;
+    gtk_box_append(GTK_BOX(globalInner), make_section("Physics & Effects", &physicsBox));
+    PopulateConfigSection(physicsBox, "Physics & Effects");
     // Mud/Cursor are per-goose now; window interaction defaults are global.
 
     GtkWidget* dragBox = nullptr;

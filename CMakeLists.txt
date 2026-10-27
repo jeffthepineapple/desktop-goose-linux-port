@@ -177,6 +177,46 @@ if(BUILD_TESTING)
     )
     target_link_libraries(CppGooseSoftBodyTest m)
     add_test(NAME softbody_physics_contracts COMMAND CppGooseSoftBodyTest)
+
+    add_executable(CppGooseInteractionTest
+        tests/goose_interaction_test.cpp
+        ${SRC_SOURCES}
+        ${LINENOISE_SOURCES}
+        ${GENERATED_SOURCES}
+    )
+    target_include_directories(CppGooseInteractionTest PRIVATE
+        ${GTK4_INCLUDE_DIRS}
+        ${LS_INCLUDE_DIRS}
+        ${SDL2_INCLUDE_DIRS}
+        ${SDL2MIXER_INCLUDE_DIRS}
+        ${GDKPIXBUF_INCLUDE_DIRS}
+        ${WAYLAND_CLIENT_INCLUDE_DIRS}
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/linenoise
+        ${CMAKE_CURRENT_BINARY_DIR}
+    )
+    target_compile_options(CppGooseInteractionTest PRIVATE
+        ${GTK4_CFLAGS_OTHER}
+        ${LS_CFLAGS_OTHER}
+        ${SDL2_CFLAGS_OTHER}
+        ${SDL2MIXER_CFLAGS_OTHER}
+        ${GDKPIXBUF_CFLAGS_OTHER}
+        ${WAYLAND_CLIENT_CFLAGS_OTHER}
+    )
+    target_link_libraries(CppGooseInteractionTest
+        ${GTK4_LIBRARIES}
+        ${LS_LIBRARIES}
+        ${SDL2_LIBRARIES}
+        ${SDL2MIXER_LIBRARIES}
+        ${GDKPIXBUF_LIBRARIES}
+        ${X11_LIBRARIES}
+        ${X11_XTest_LIB}
+        ${WAYLAND_CLIENT_LIBRARIES}
+        Threads::Threads
+        m
+    )
+    add_test(NAME goose_interaction_contracts COMMAND CppGooseInteractionTest)
+
     add_test(NAME cli_help COMMAND CppGoose help)
     set_tests_properties(cli_help PROPERTIES PASS_REGULAR_EXPRESSION "help <page")
     add_test(NAME cli_help_page COMMAND CppGoose help skins)

@@ -41,6 +41,23 @@ struct Config {
     int mudChance = 15;        // 0..100
     float mudLifetime = 15.0f; // seconds
 
+    // Cursor pickup ragdoll physics
+    float ragdollGravity = 1400.0f;
+    float ragdollDamping = 2.4f;
+    float ragdollSquirmStrength = 1.0f;
+
+    // Soft-body pickup/yeet physics
+    float softbodyStiffness = 1.0f;      // spring stiffness scale 0.25..2
+    float softbodyPressure = 0.5f;       // area preservation 0..1
+    float softbodyShapeMemory = 0.45f;   // pull back to the rest pose 0..1
+    float softbodyGrabStiffness = 0.4f;  // cursor pull per sub-step 0.05..1
+    float softbodyAirDrag = 0.5f;        // extra velocity damping in flight
+    float softbodyBounce = 0.45f;        // wall restitution 0..0.95
+    float softbodyFriction = 0.35f;      // contact friction 0..1
+    float softbodyYeetSpeed = 420.0f;    // px/s flick that counts as a throw
+    int softbodyIterations = 4;          // constraint iterations 1..12
+    int softbodySubsteps = 3;            // physics substeps 1..6
+
     // Edge detection debug visuals (Hyprland only)
     bool highlightEdgeWindows = false;
 

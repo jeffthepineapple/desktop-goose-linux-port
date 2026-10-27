@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cctype>
+#include <cmath>
 #include <cerrno>
 #include <cstdlib>
 #include <filesystem>
@@ -121,7 +122,7 @@ static bool AssignValueToOption(const ConfigOption& opt, const std::string& rawV
             const std::string trimmed = Trim(rawValue);
             size_t parsedChars = 0;
             const float parsed = std::stof(trimmed, &parsedChars);
-            if (parsedChars != trimmed.size()) {
+            if (parsedChars != trimmed.size() || !std::isfinite(parsed)) {
                 if (errorOut) *errorOut = "Invalid value for " + std::string(opt.key);
                 return false;
             }
@@ -242,6 +243,21 @@ void Config_InitRegistry() {
     g_configRegistry.push_back({"Mud", "mud_enabled", "Default: Enable Mud", CFG_BOOL, &g_config.mudEnabled, 0, 1, 1, "", OnConfigChange});
     g_configRegistry.push_back({"Mud", "mud_chance", "Default: Mud Chance", CFG_INT, &g_config.mudChance, 0, 100, 1, "%", OnConfigChange});
     g_configRegistry.push_back({"Mud", "mud_lifetime", "Default: Footprint Life", CFG_FLOAT, &g_config.mudLifetime, 5.0f, 120.0f, 1.0f, "s", OnConfigChange});
+
+    // SECTION: Physics & Effects
+    g_configRegistry.push_back({"Physics & Effects", "ragdoll_gravity", "Pickup Gravity", CFG_FLOAT, &g_config.ragdollGravity, 200.0f, 4000.0f, 50.0f, "px/s²", OnConfigChange});
+    g_configRegistry.push_back({"Physics & Effects", "ragdoll_damping", "Motion Damping", CFG_FLOAT, &g_config.ragdollDamping, 0.2f, 10.0f, 0.1f, "", OnConfigChange});
+    g_configRegistry.push_back({"Physics & Effects", "softbody_stiffness", "Soft Body Stiffness", CFG_FLOAT, &g_config.softbodyStiffness, 0.25f, 2.0f, 0.05f, "×", OnConfigChange});
+    g_configRegistry.push_back({"Physics & Effects", "softbody_pressure", "Soft Body Pressure", CFG_FLOAT, &g_config.softbodyPressure, 0.0f, 1.0f, 0.05f, "", OnConfigChange});
+    g_configRegistry.push_back({"Physics & Effects", "softbody_shape_memory", "Pose Memory", CFG_FLOAT, &g_config.softbodyShapeMemory, 0.0f, 0.9f, 0.05f, "", OnConfigChange});
+    g_configRegistry.push_back({"Physics & Effects", "softbody_grab_stiffness", "Grab Stiffness", CFG_FLOAT, &g_config.softbodyGrabStiffness, 0.05f, 1.0f, 0.05f, "", OnConfigChange});
+    g_configRegistry.push_back({"Physics & Effects", "softbody_air_drag", "Throw Air Drag", CFG_FLOAT, &g_config.softbodyAirDrag, 0.0f, 3.0f, 0.05f, "", OnConfigChange});
+    g_configRegistry.push_back({"Physics & Effects", "softbody_bounce", "Throw Bounce", CFG_FLOAT, &g_config.softbodyBounce, 0.0f, 0.95f, 0.05f, "", OnConfigChange});
+    g_configRegistry.push_back({"Physics & Effects", "softbody_friction", "Throw Friction", CFG_FLOAT, &g_config.softbodyFriction, 0.0f, 1.0f, 0.05f, "", OnConfigChange});
+    g_configRegistry.push_back({"Physics & Effects", "softbody_yeet_speed", "Yeet Speed", CFG_FLOAT, &g_config.softbodyYeetSpeed, 80.0f, 3000.0f, 20.0f, "px/s", OnConfigChange});
+    g_configRegistry.push_back({"Physics & Effects", "softbody_iterations", "Soft Body Iterations", CFG_INT, &g_config.softbodyIterations, 1, 12, 1, "", OnConfigChange});
+    g_configRegistry.push_back({"Physics & Effects", "softbody_substeps", "Soft Body Substeps", CFG_INT, &g_config.softbodySubsteps, 1, 6, 1, "", OnConfigChange});
+    g_configRegistry.push_back({"Physics & Effects", "ragdoll_squirm_strength", "Struggle Strength", CFG_FLOAT, &g_config.ragdollSquirmStrength, 0.0f, 3.0f, 0.1f, "×", OnConfigChange});
 
     // SECTION: Debug
     g_configRegistry.push_back({"Debug", "debug_visuals", "Show Overlays", CFG_BOOL, &g_config.debugVisuals, 0, 1, 1, "", OnConfigChange});

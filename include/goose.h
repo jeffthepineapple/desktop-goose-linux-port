@@ -10,8 +10,13 @@
 #include "goose_math.h"
 #include "assets.h"
 #include "cosmetics.h"
+#include "softbody.h"
 
-enum GooseState { WANDER, FETCHING, RETURNING, CHASE_CURSOR, SNATCH_CURSOR, DRAG_WINDOW, HELD };
+// HELD: the cursor owns the goose; the soft body is simulated around the
+// attached point and the rest of the AI stays suspended.
+// FLUNG: the goose was released (dropped or yeeted) and the soft body is a
+// free projectile with gravity, drag and bouncing until it settles.
+enum GooseState { WANDER, FETCHING, RETURNING, CHASE_CURSOR, SNATCH_CURSOR, DRAG_WINDOW, HELD, FLUNG };
 
 enum DragPhase {
     DRAG_APPROACH,
@@ -40,27 +45,14 @@ struct Rig {
     FootState lFoot, rFoot;
 };
 
-// Ragdoll: the goose hangs from the cursor and swings as a chain of damped
-// pendulums (body, neck, each leg). In the accelerating frame of the grab
-// point every limb feels an effective gravity of `gravity - cursorAccel`, so
-// shaking the cursor injects real torque instead of a canned wiggle anim.
+// Derived pickup/soft-body pose values. The pose itself lives in `softBody`;
+// these fields are the small readouts the honk/squirm logic still uses.
 struct RagdollState {
-    Vector2 pivot{};      // device-space point the cursor holds
-    Vector2 lastPivot{};
-    Vector2 grabOffset{}; // pos - pivot captured at grab time
-    Vector2 pivotVel{};
-    Vector2 accel{};      // smoothed pivot acceleration
-    bool primed = false;  // pivot history is valid
-
-    float bodyAng = 0.0f, bodyVel = 0.0f; // radians, 0 = hanging straight down
-    float neckAng = 0.0f, neckVel = 0.0f; // relative to body
-    float legLAng = 0.0f, legLVel = 0.0f;
-    float legRAng = 0.0f, legRVel = 0.0f;
+    Vector2 pivot{};      // last cursor target while held (device space)
+    Vector2 pivotVel{};   // smoothed cursor velocity while held
 
     double nextSquirm = 0.0;
-    float squirmDrive = 0.0f; // transient neck extension while struggling
-    float headRot = 0.0f;     // radians actually applied to the head chain
-    float release = 0.0f;     // 1 -> 0 settle blend after being dropped
+    float squirmDrive = 0.0f; // 1 right after a struggle impulse
 };
 
 class Goose {
@@ -167,17 +159,23 @@ public:
     bool ForceWindowYeet(int w, int h);
     void Draw(cairo_t* cr);
 
-    // --- Ragdoll pickup -------------------------------------------------
+    // --- Soft-body pickup and yeet --------------------------------------
     // Grab/Move take device-space (global) cursor coordinates. Only one goose
-    // may be held at a time; ownership lives in g_heldGooseId.
+    // may be held at a time; ownership lives in g_heldGooseId. Releasing with
+    // a fast enough cursor flick throws the goose (FLUNG) so it tumbles,
+    // bounces and flops back to its feet.
     bool GrabAt(Vector2 devicePos);
     void MoveGrab(Vector2 devicePos);
     void ReleaseGrab(int w, int h);
     bool IsHeld() const { return state == HELD; }
-    // True while the ragdoll pose still needs to be drawn (held or settling).
-    bool IsRagdolling() const { return state == HELD || ragdoll.release > 0.002f; }
-    // Device-space hit radius for cursor pickup.
+    // True while the soft body owns the pose (held, thrown or recovering).
+    bool IsSoftActive() const { return softActive; }
+    bool IsRagdolling() const { return softActive; }
+    // Read-only view of the simulation for tests and debug tooling.
+    const SoftBody& Soft() const { return softBody; }
+    // Conservative input-region radius plus visible-body hit testing.
     float GrabRadius() const;
+    bool ContainsGrabPoint(Vector2 devicePos) const;
 
     // Coordinate helpers
     Vector2 GetBeakTipWorld();
@@ -202,12 +200,46 @@ private:
     };
 
     HonkState m_honk;
+
+    // Soft-body skeleton indices. The torso is a ring sampled around the body
+    // capsule; neck, head, beak and the two feet hang off it on springs.
+    enum SoftIndex {
+        SB_RING = 0,
+        SB_RING_COUNT = 10,
+        SB_NECK_BASE = SB_RING + SB_RING_COUNT, // 10
+        SB_NECK_HEAD,                           // 11
+        SB_HEAD,                                // 12
+        SB_BEAK_TIP,                            // 13
+        SB_FOOT_L,                              // 14
+        SB_FOOT_R,                              // 15
+        SB_COUNT
+    };
+
+    SoftBody softBody;
+    int softHip[2] = { SB_RING, SB_RING }; // torso points the left/right legs hang from
+    bool softActive = false;  // soft body owns the pose (HELD/FLUNG/recover)
+    bool softThrown = false;  // the release carried enough speed to fly
+    double softFlightElapsed = 0.0;
+    double softSettleDeadline = 0.0; // gentle drops re-form by this age
+    Vector2 softCursorVel{};         // smoothed cursor velocity while held
+    Vector2 softLastTarget{};
+    bool softTargetPrimed = false;
+
+    void BuildSoftBody();
+    void UpdateSoftBody(double dt, double time, int w, int h);
+    void FinishSoftBody(int w, int h);
+    void UpdateRigFromSoft();
+    void DrawSoft(cairo_t* cr);
+
     void UpdateDrag(double dt);
     bool UpdateYeetFlight(double dt, int w, int h);
-    void UpdateRagdoll(double dt, double time);
     void UpdateNiriDrag(class NiriBackend* nb, double dt, double time, int w, int h);
     bool BeginWindowInteraction(int w, int h, bool yeet);
     void SetWindowDestinationFromImageCenter(Vector2 centerDevice);
+    // Hold setup for the cursor grab; the release side enters flight as a
+    // throw or a gentle in-place drop.
+    void BeginHold(Vector2 devicePos);
+    void EnterFlight(bool thrown);
     void CancelCurrentBehavior();
     void RestoreDraggedWindowNow(bool placeAtDestination);
     void ResetWindowDragState();
@@ -220,6 +252,7 @@ private:
     void UpdateRig();
     void DrawEllipse(cairo_t* cr, Vector2 p, int rx, int ry, float r, float g, float b, float a=1.0);
     void DrawLine(cairo_t* cr, Vector2 a, Vector2 b, float width);
+    void DrawBentLine(cairo_t* cr, Vector2 a, Vector2 control, Vector2 b, float width);
 };
 
 #endif // GOOSE_H

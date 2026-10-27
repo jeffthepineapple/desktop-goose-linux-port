@@ -33,6 +33,7 @@ chasing, cosmetics, Perlin-generated personalities, and an interactive terminal.
 - Multiple independently animated geese with names, skins, and behavior cycles
 - Cursor movement across Hyprland, niri, wlroots (sway/river/wayfire), and X11 backends (cursor chase/snatch where the compositor reports pointer position)
 - Hyprland window dragging and yeeting with screenshot capture and tiled-window restoration
+- Pickup physics: grab a goose with the cursor, watch it stretch and flop, then flick to yeet it across the desktop until it re-forms and stands back up
 - Meme fetching, notepad messages, honks, fading footprints, hats, and glasses
 - Unique Perlin-generated personality traits for every spawned goose
 - Interactive shell with history, inline hints, TAB completion, and compact help pages
@@ -290,6 +291,19 @@ a migration fallback.
 | `mud_enabled` | `1` | Enable footprint trails |
 | `mud_chance` | `15` | Footprint chance percentage |
 | `mud_lifetime` | `15.0` | Footprint lifetime in seconds |
+| `ragdoll_gravity` | `1400` | Downward acceleration while a goose is held or thrown |
+| `ragdoll_damping` | `2.4` | Base damping for the soft body and its struggle motion |
+| `ragdoll_squirm_strength` | `1.0` | Strength of neck and leg struggle impulses while held |
+| `softbody_stiffness` | `1.0` | Tissue stiffness scale; lower is stretchier |
+| `softbody_pressure` | `0.5` | How hard the torso pushes back when squashed |
+| `softbody_shape_memory` | `0.45` | Pull back toward the goose's rest silhouette |
+| `softbody_grab_stiffness` | `0.4` | How tightly the grabbed point follows the cursor |
+| `softbody_air_drag` | `0.5` | Extra damping while a thrown goose is in the air |
+| `softbody_bounce` | `0.45` | Wall restitution when a thrown goose hits a screen edge |
+| `softbody_friction` | `0.35` | Contact friction when a thrown goose lands |
+| `softbody_yeet_speed` | `420` | Cursor speed in px/s that counts as a throw on release |
+| `softbody_iterations` | `4` | Constraint solver iterations |
+| `softbody_substeps` | `3` | Physics substeps per frame |
 | `debug_visuals` | `0` | Draw state and physics overlays |
 | `debug_terminal` | `0` | Write runtime debugging to the terminal |
 | `window_drag_enabled` | `1` | Allow automatic window drag and yeet behavior |
@@ -297,7 +311,23 @@ a migration fallback.
 | `window_drag_edge_padding` | `40` | Destination edge padding in pixels |
 | `window_yeet_chance` | `35` | Percentage of automatic window interactions that become yeets |
 
-Changes made through `settings set` take effect immediately and persist to disk.
+Pickup tissue uses time-scaled compliant springs and mass-weighted pressure:
+the torso resists volume loss when squashed, while the neck and feet can lag
+and swing independently. Shape memory is local rather than locking the whole
+goose into one rigid pose. Internal damping settles jiggle without cancelling
+the momentum of a throw.
+
+Fast flicks cannot tear the goose apart: head/beak links allow at most 15%
+stretch and neck/torso links 50%. Legs are pendulums: each foot hangs from one
+hip point on a soft 12-pixel link with no pose memory, so it swings freely and
+can stretch up to 30 pixels further when the goose is shaken, swung or spun. Extreme cursor jumps
+prioritize keeping the anatomy connected over following the cursor instantly.
+Visible neck and leg connections follow the simulated body. Impacts use the
+incoming velocity for bounce and impulse-based friction for sliding; a thrown
+goose waits for ground contact before getting back up.
+
+Changes made through `settings set` or the control panel's **Physics & Effects**
+section take effect immediately and persist to disk.
 
 ```bash
 CppGoose settings
@@ -374,6 +404,7 @@ Important files:
 | `main.cpp` | CLI entry, daemon launch, GTK lifecycle |
 | `src/goose.cpp` | Movement, rendering, state transitions, forced behavior |
 | `src/goose_traits.cpp` | Seeded Perlin map and unique personality profiles |
+| `src/softbody.cpp` | Compliant tissue, pressure, anatomical stretch limits, damping, and contact impulses |
 | `src/ui.cpp` | Overlay windows, drawing, and frame tick |
 | `src/world.cpp` | Shared geese, items, monitors, rules, and cursor ownership |
 | `src/app_actions.cpp` | Runtime command handlers |
@@ -397,6 +428,9 @@ Important files:
 | `CHASE_CURSOR` | Follow the live cursor target |
 | `SNATCH_CURSOR` | Hold and move the cursor for a short period |
 | `DRAG_WINDOW` | Capture, carry or yeet a Hyprland edge window, then restore it |
+| `HELD` | Pinned to the cursor: the soft body flops, stretches and squirms |
+| `FLUNG` | Thrown or dropped: flies under gravity, bounces, then re-forms and stands up |
+
 `force set` safely cancels the current held item or cursor grab before entering a
 new behavior. Rules use the same force helpers from the regular frame tick.
 
