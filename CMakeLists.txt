@@ -168,6 +168,15 @@ if(BUILD_TESTING)
         ${CMAKE_CURRENT_SOURCE_DIR}/include
     )
     add_test(NAME goose_traits_contracts COMMAND CppGooseTraitsTest)
+    add_executable(CppGooseSoftBodyTest
+        tests/softbody_test.cpp
+        src/softbody.cpp
+    )
+    target_include_directories(CppGooseSoftBodyTest PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+    )
+    target_link_libraries(CppGooseSoftBodyTest m)
+    add_test(NAME softbody_physics_contracts COMMAND CppGooseSoftBodyTest)
     add_test(NAME cli_help COMMAND CppGoose help)
     set_tests_properties(cli_help PROPERTIES PASS_REGULAR_EXPRESSION "help <page")
     add_test(NAME cli_help_page COMMAND CppGoose help skins)
