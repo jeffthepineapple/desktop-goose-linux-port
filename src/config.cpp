@@ -233,6 +233,9 @@ void Config_InitRegistry() {
     g_configRegistry.push_back({"Behavior", "fortune_chance", "Fortune Note Chance", CFG_INT, &g_config.fortuneChance, 0, 100, 1, "%", OnConfigChange});
     g_configRegistry.push_back({"Behavior", "multi_monitor_enabled", "Multi-Monitor Support", CFG_BOOL, &g_config.multiMonitorEnabled, 0, 1, 1, "", OnConfigChange});
     g_configRegistry.push_back({"Behavior", "audio_enabled", "Audio (Honks)", CFG_BOOL, &g_config.audioEnabled, 0, 1, 1, "", OnConfigChange});
+    g_configRegistry.push_back({"Behavior", "goose_yeet_enabled", "Geese Yeet Geese", CFG_BOOL, &g_config.gooseYeetEnabled, 0, 1, 1, "", OnConfigChange});
+    g_configRegistry.push_back({"Behavior", "goose_yeet_chance", "Goose Yeet Chance", CFG_INT, &g_config.gooseYeetChance, 0, 100, 1, "%", OnConfigChange});
+    g_configRegistry.push_back({"Behavior", "goose_yeet_min_distance", "Goose Yeet Min Distance", CFG_INT, &g_config.gooseYeetMinDistance, 0, 2000, 25, "px", OnConfigChange});
 
     // SECTION: Cursor
     g_configRegistry.push_back({"Cursor", "cursor_chase_enabled", "Default: Cursor Chase", CFG_BOOL, &g_config.cursorChaseEnabled, 0, 1, 1, "", OnConfigChange});

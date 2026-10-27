@@ -34,6 +34,7 @@ chasing, cosmetics, Perlin-generated personalities, and an interactive terminal.
 - Cursor movement across Hyprland, niri, wlroots (sway/river/wayfire), and X11 backends (cursor chase/snatch where the compositor reports pointer position)
 - Hyprland window dragging and yeeting with screenshot capture and tiled-window restoration
 - Pickup physics: grab a goose with the cursor, watch it stretch and flop, then flick to yeet it across the desktop until it re-forms and stands back up
+- Geese yeet each other: a goose rockets after another at up to triple run speed, grabs it by the beak, spins around hammer-throw style and flings it to a random spot at least a minimum distance away
 - Meme fetching, notepad messages, honks, fading footprints, hats, and glasses
 - Unique Perlin-generated personality traits for every spawned goose
 - Interactive shell with history, inline hints, TAB completion, and compact help pages
@@ -201,7 +202,7 @@ Built-in looks are `classic`, `scholar`, `party`, `pilot`, `royal`, and
 | `CppGoose settings [list]` | List every configurable value |
 | `CppGoose settings get <key>` | Read one value |
 | `CppGoose settings set <key> <value>` | Change and persist one value |
-| `CppGoose force set <id> <wander\|chase\|drag\|yeet\|meme [path]\|note [path]\|note text <text>\|fortune>` | Interrupt one goose or start a window interaction |
+| `CppGoose force set <id> <wander\|chase\|drag\|yeet\|yeet-goose [victim-id]\|meme [path]\|note [path]\|note text <text>\|fortune>` | Interrupt one goose, start a window interaction, or yeet another goose |
 | `CppGoose rules [list]` | List active rules |
 | `CppGoose rules add <id\|all> <action> [interval] [text]` | Schedule a behavior (`wander`, `meme`, `note`, `text`, `chase`, `drag`, or `yeet`) |
 | `CppGoose rules remove <rule-id>` | Remove one rule |
@@ -215,6 +216,16 @@ On Hyprland, `drag` carries a captured edge window behind the goose and
 restores it at the carried image's final position. `yeet` throws the captured
 window image with gravity and bounces before restoring the real window. Both
 behaviors preserve the original tiled or floating mode when possible.
+
+`yeet-goose` sends the goose after another goose: the given `victim-id`, or the
+nearest one that is wandering, carrying an item, or chasing the cursor. The
+attacker accelerates from 1.2x to 3x run speed over 0.8 seconds, aims ahead
+of a walking victim, and grabs it by the beak. It then spins one to two turns
+in a hammer throw with the victim swinging from its beak, and lets go facing
+a random on-screen point at least `goose_yeet_min_distance` pixels away.
+The throw is solved for gravity and air drag and flattened to stay under the
+top of the screen. Cancelling the attacker, or grabbing the victim with the
+cursor, drops the victim instead of leaving it stuck in a beak.
 
 Force a specific goose to fetch an image, a note file, inline note text, or a
 fortune quote:
@@ -284,6 +295,9 @@ a migration fallback.
 | `run_speed` | `480` | Base chase speed in pixels |
 | `memes_enabled` | `1` | Allow meme and note fetching |
 | `multi_monitor_enabled` | `1` | Let geese roam across monitors |
+| `goose_yeet_enabled` | `1` | Let geese pick on and yeet each other |
+| `goose_yeet_chance` | `4` | Goose-yeet percentage per wander cycle |
+| `goose_yeet_min_distance` | `400` | Minimum distance in pixels from the victim to its throw's aim point |
 | `audio_enabled` | `1` | Play honks and behavior sounds |
 | `cursor_chase_enabled` | `1` | Allow cursor chase behavior |
 | `cursor_chase_chance` | `3` | Base cursor chase percentage |
@@ -428,8 +442,10 @@ Important files:
 | `CHASE_CURSOR` | Follow the live cursor target |
 | `SNATCH_CURSOR` | Hold and move the cursor for a short period |
 | `DRAG_WINDOW` | Capture, carry or yeet a Hyprland edge window, then restore it |
-| `HELD` | Pinned to the cursor: the soft body flops, stretches and squirms |
+| `HELD` | Pinned to the cursor or another goose's beak: the soft body flops, stretches and squirms |
 | `FLUNG` | Thrown or dropped: flies under gravity, bounces, then re-forms and stands up |
+| `CHASE_GOOSE` | Run at another goose to grab it by the beak |
+| `YEET_GOOSE` | Hold the grabbed goose, wind up, and throw it |
 
 `force set` safely cancels the current held item or cursor grab before entering a
 new behavior. Rules use the same force helpers from the regular frame tick.

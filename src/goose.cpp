@@ -38,6 +38,7 @@ static const double HONK_MIN_GAP    = 0.60;   // global anti-spam gap
 static const double HONK_CHASE_CD   = 1.80;
 static const double HONK_FETCH_CD   = 1.20;
 static const double HONK_GENERIC_CD = 0.90;
+static const double kGooseYeetSpinTime = 0.8; // hammer-throw spin before release
 
 
 // ✅ NEW: Predicted cursor for backends that can't read global position (or for Tier 3 drag logic)
@@ -46,6 +47,7 @@ static Vector2 s_predictedCursor = { -1.0f, -1.0f };
 
 // tiny helper
 static inline double Rand01() { return (double)(rand() % 1000) / 1000.0; }
+static Vector2 PickGooseYeetLanding(Vector2 from, int w, int h);
 static Vector2 GetSnatchForward(float dirDegrees, const Vector2& isoScale) {
     Vector2 rawFwd = Vector2::FromAngleDegrees(dirDegrees);
     Vector2 fwd{ rawFwd.x * isoScale.x, rawFwd.y * isoScale.y };
@@ -262,6 +264,15 @@ void Goose::Update(double dt, double time, int w, int h) {
             FinishSoftBody(w, h);
             return;
         }
+        // Held by a goose that no longer has us in its beak (cancelled,
+        // removed, or grabbed by the cursor itself): fall free.
+        if (heldByGooseId != -1) {
+            const Goose* attacker = GetGooseById(heldByGooseId);
+            if (!attacker || attacker->state != YEET_GOOSE ||
+                attacker->yeetVictimId != id) {
+                DropFromGoose();
+            }
+        }
         UpdateSoftBody(dt, time, w, h);
         // An indignant honk while struggling, on the normal cooldown.
         if (ragdoll.squirmDrive > 0.8f) TryHonk(HONK_GENERIC_CD, hs.lastGeneric);
@@ -349,6 +360,58 @@ void Goose::Update(double dt, double time, int w, int h) {
 
             // ✅ UPDATED: treat as generic honk (don’t spam)
             TryHonk(HONK_GENERIC_CD, hs.lastGeneric);
+        }
+    }
+
+    // --- CHASE_GOOSE / YEET_GOOSE: run down another goose, then fling it ---
+    if (state == CHASE_GOOSE) {
+        Goose* victim = GetGooseById(yeetVictimId);
+        if (!victim || !victim->CanBeGooseYeeted() || time - gooseYeetStart > 8.0) {
+            ReleaseYeetVictim();
+            PickNewTarget(w, h);
+        } else {
+            // Aim a little ahead of a walking victim instead of tail-chasing.
+            const float lead = Clamp(Vector2::Distance(pos, victim->pos) /
+                                         std::max(currentSpeed, 1.0f), 0.0f, 0.4f);
+            target = victim->pos + victim->vel * lead;
+        }
+    } else if (state == YEET_GOOSE) {
+        // Plant the feet; the windup only turns and coils the neck.
+        target = pos;
+        vel = { 0.0f, 0.0f };
+        const double elapsed = time - gooseYeetStart;
+        if (!gooseYeetLaunched) {
+            Goose* victim = GetGooseById(yeetVictimId);
+            if (!victim || victim->state != HELD || victim->heldByGooseId != id) {
+                ReleaseYeetVictim();
+                PickNewTarget(w, h);
+            } else if (elapsed < kGooseYeetSpinTime) {
+                // Hammer throw: spin faster and faster with the victim in the
+                // beak, coiling the neck, then whip it out to face the aim.
+                const float u = (float)(elapsed / kGooseYeetSpinTime);
+                dir = std::remainder(gooseYeetSpinFrom + gooseYeetSpinTotal * u * u, 360.0f);
+                yeetHeadDrive = u < 0.6f ? Lerp(0.35f, 0.0f, u / 0.6f)
+                                         : Lerp(0.0f, 1.0f, (u - 0.6f) / 0.4f);
+            } else {
+                dir = std::remainder(gooseYeetSpinFrom + gooseYeetSpinTotal, 360.0f);
+                // The spin swung the victim around; keep the throw at least
+                // the minimum distance from where it actually is.
+                if (Vector2::Distance(victim->pos, gooseYeetLanding) <
+                    (float)std::max(0, g_config.gooseYeetMinDistance)) {
+                    gooseYeetLanding = PickGooseYeetLanding(victim->pos, w, h);
+                }
+                victim->FlingFromGoose(gooseYeetLanding);
+                gooseYeetLaunched = true;
+                gooseYeetStart = time;
+                yeetHeadDrive = 1.0f;
+                TryHonk(HONK_GENERIC_CD, hs.lastGeneric);
+                UiLogPush("Goose " + std::to_string(id) + " yeeted goose " +
+                          std::to_string(victim->id));
+            }
+        } else if (elapsed > 0.3) {
+            // Follow-through finished.
+            ReleaseYeetVictim();
+            PickNewTarget(w, h);
         }
     }
 
@@ -743,6 +806,7 @@ void Goose::Update(double dt, double time, int w, int h) {
     // --- Normal state machine ---
     Vector2 btPoint = WorldToDevice(GetBeakTipWorld()); // Calculate once per frame
     bool reached = false;
+    bool caughtGoose = false; // separate: a WANDER decision may enter CHASE_GOOSE below
 
     if (state == WANDER) {
         reached = (Vector2::Distance(pos, target) < 20.0f);
@@ -789,6 +853,17 @@ void Goose::Update(double dt, double time, int w, int h) {
         // Carried items use visual contact and a larger drop threshold.
         float threshold = std::max(60.0f * g_config.globalScale, 50.0f);
         reached = (Vector2::Distance(btPoint, target) < threshold);
+    } else if (state == CHASE_GOOSE) {
+        // Catch when the beak touches the victim's body, or the two bodies
+        // meet (the victim shuffles away from close geese).
+        if (const Goose* victim = GetGooseById(yeetVictimId)) {
+            const float scale = g_config.globalScale;
+            // A standing goose's torso sits 14 world px above its feet
+            // (UpdateRig); derived from pos so it never reads a stale rig.
+            const Vector2 victimBody = victim->pos + Vector2{ 0.0f, -14.0f * scale };
+            caughtGoose = Vector2::Distance(btPoint, victimBody) < std::max(34.0f * scale, 26.0f) ||
+                          Vector2::Distance(pos, victim->pos) < 45.0f * scale + 10.0f;
+        }
     } else {
         reached = false;
     }
@@ -821,6 +896,12 @@ void Goose::Update(double dt, double time, int w, int h) {
                 chased = ((rand() % 100) < windowYeetChance)
                              ? ForceWindowYeet(w, h)
                              : ForceWindowDrag(w, h);
+            }
+
+            // Goose-on-goose yeet: pick on the nearest available goose.
+            if (!chased && g_config.gooseYeetEnabled &&
+                (rand() % 100) < g_config.gooseYeetChance) {
+                chased = ForceGooseYeet(-1, w, h);
             }
 
             if (!chased) {
@@ -976,6 +1057,33 @@ void Goose::Update(double dt, double time, int w, int h) {
         }
     }
 
+    if (caughtGoose && state == CHASE_GOOSE) {
+        Goose* victim = GetGooseById(yeetVictimId);
+        if (victim && victim->GrabByGoose(id, btPoint)) {
+            state = YEET_GOOSE;
+            gooseYeetStart = time;
+            gooseYeetLaunched = false;
+            gooseYeetLanding = PickGooseYeetLanding(victim->pos, w, h);
+            // Spin one full extra turn in a random direction and end facing
+            // the landing spot.
+            const Vector2 aim = gooseYeetLanding - pos;
+            const float toAim = std::remainder(std::atan2(aim.y, aim.x) * RAD_TO_DEG - dir, 360.0f);
+            const bool clockwise = rand() % 2;
+            const float offset = clockwise ? (toAim < 0.0f ? toAim + 360.0f : toAim)
+                                           : (toAim > 0.0f ? toAim - 360.0f : toAim);
+            gooseYeetSpinFrom = dir;
+            gooseYeetSpinTotal = (clockwise ? 360.0f : -360.0f) + offset;
+            target = pos;
+            vel = { 0.0f, 0.0f };
+            TryHonk(HONK_CHASE_CD, hs.lastChase);
+            UiLogPush("Goose " + std::to_string(id) + " grabbed goose " +
+                      std::to_string(victim->id));
+        } else {
+            ReleaseYeetVictim();
+            PickNewTarget(w, h);
+        }
+    }
+
     // --- Passive Grab (Contact Snatching) ---
     // If the goose's beak touches any dropped item while wandering or fetching, it snatches it.
     if (heldItem == nullptr && (state == WANDER || state == FETCHING)) {
@@ -1016,11 +1124,16 @@ void Goose::Update(double dt, double time, int w, int h) {
     Vector2 moveDir = Vector2::Normalize(diff);
     float dist = Vector2::Length(diff);
 
-    float tSpeed = (dist > 300 || state == FETCHING || state == CHASE_CURSOR || state == SNATCH_CURSOR || state == RETURNING || state == DRAG_WINDOW)
+    float tSpeed = (dist > 300 || state == FETCHING || state == CHASE_CURSOR || state == SNATCH_CURSOR || state == RETURNING || state == DRAG_WINDOW || state == CHASE_GOOSE)
         ? g_config.baseRunSpeed
         : g_config.baseWalkSpeed;
+    if (state == CHASE_GOOSE) {
+        // Rocket after the victim: 1.2x run speed ramping to 3x in 0.8 s.
+        const float ramp = Clamp((float)((time - gooseYeetStart) / 0.8), 0.0f, 1.0f);
+        tSpeed = g_config.baseRunSpeed * (1.2f + 1.8f * ramp);
+    }
 
-    currentSpeed = Lerp(currentSpeed, tSpeed, 0.05f);
+    currentSpeed = Lerp(currentSpeed, tSpeed, state == CHASE_GOOSE ? 0.2f : 0.05f);
 
     Vector2 steerForce{0, 0};
 
@@ -1031,11 +1144,13 @@ void Goose::Update(double dt, double time, int w, int h) {
     if (dist < arrivalRadius) {
         desiredVel = desiredVel * (dist / arrivalRadius);
     }
-    steerForce += (desiredVel - vel) * 2.0f;
+    // A chasing goose homes hard so its super speed turns into a catch.
+    steerForce += (desiredVel - vel) * (state == CHASE_GOOSE ? 6.0f : 2.0f);
 
     // 2. PARABOLIC DRIFT (Tangential Force)
     // Curvature creates an arc. We use a force perpendicular to current velocity.
-    if (Vector2::Length(vel) > 10.0f) {
+    // Not while chasing a goose: at super speed the arc becomes an orbit.
+    if (Vector2::Length(vel) > 10.0f && state != CHASE_GOOSE) {
         Vector2 normalizedVel = Vector2::Normalize(vel);
         Vector2 tangent = { -normalizedVel.y, normalizedVel.x }; // Perpendicular
         // Apply tangential force based on current parabolicCurvature
@@ -1058,8 +1173,9 @@ void Goose::Update(double dt, double time, int w, int h) {
     }
 
     // 4. CONTEXT-AWARE EDGE AVOIDANCE
-    // Only apply avoidance if NOT fetching (let them reach edge items)
-    if (state != FETCHING) {
+    // Fetches must reach the edge, and a goose rocketing at its victim would
+    // otherwise veer away from anyone standing near one.
+    if (state != FETCHING && state != CHASE_GOOSE) {
         // Look ahead (whisker) to see if we're heading for an edge
         float lookAhead = currentSpeed * 0.4f + 30.0f;
         Vector2 probePos = pos + Vector2::Normalize(vel) * lookAhead;
@@ -1077,10 +1193,12 @@ void Goose::Update(double dt, double time, int w, int h) {
         }
     }
 
-    // Limit and apply force
+    // Limit and apply force (a chasing goose gets far more grip so the super
+    // speed is reached, and turned, almost immediately)
+    const float forceCap = state == CHASE_GOOSE ? maxForce * 8.0f : maxForce;
     float forceMag = Vector2::Length(steerForce);
-    if (forceMag > maxForce) {
-        steerForce = steerForce * (maxForce / forceMag);
+    if (forceMag > forceCap) {
+        steerForce = steerForce * (forceCap / forceMag);
     }
 
     acceleration = steerForce;
@@ -1142,7 +1260,8 @@ void Goose::Update(double dt, double time, int w, int h) {
 
 
     // Smooth rotation
-    if (Vector2::Length(vel) > 1.0f) {
+    // (A yeeting goose is aimed explicitly by its windup instead.)
+    if (Vector2::Length(vel) > 1.0f && state != YEET_GOOSE) {
         Vector2 curDirVec = Vector2::FromAngleDegrees(dir);
         Vector2 targetDirVec = Vector2::Normalize(vel);
 
@@ -1164,6 +1283,14 @@ void Goose::Update(double dt, double time, int w, int h) {
     UpdateRig();
     SolveFeet(time);
     UpdateDrag(dt);
+
+    // The victim's grab point rides this frame's beak tip.
+    if (state == YEET_GOOSE && !gooseYeetLaunched) {
+        Goose* victim = GetGooseById(yeetVictimId);
+        if (victim && victim->heldByGooseId == id) {
+            victim->MoveGrab(WorldToDevice(GetBeakTipWorld()));
+        }
+    }
 
     if (state == SNATCH_CURSOR) {
         Vector2 bt = WorldToDevice(GetBeakTipWorld());
@@ -1218,6 +1345,8 @@ void Goose::Update(double dt, double time, int w, int h) {
             delete heldItem;
             heldItem = nullptr;
         }
+        ReleaseYeetVictim();
+        heldByGooseId = -1;
         if (softActive) {
             softActive = false;
             softThrown = false;
@@ -1482,8 +1611,21 @@ bool Goose::GrabAt(Vector2 devicePos) {
     return true;
 }
 
-// Drop the current behavior and hand the pose to the soft body, attached at
-// the point nearest the grab.
+bool Goose::CanBeGooseYeeted() const {
+    if (softActive || g_heldGooseId == id) return false;
+    // Off-screen fetches and window/cursor carries are left alone.
+    return state == WANDER || state == RETURNING || state == CHASE_CURSOR;
+}
+
+bool Goose::GrabByGoose(int attackerId, Vector2 beakDevice) {
+    if (attackerId == id || !CanBeGooseYeeted()) return false;
+    BeginHold(beakDevice);
+    heldByGooseId = attackerId;
+    return true;
+}
+
+// Shared by cursor and goose grabs: drop the current behavior and hand the
+// pose to the soft body, attached at the point nearest the grab.
 void Goose::BeginHold(Vector2 devicePos) {
     const Vector2 carryVel = vel; // walking momentum carries into the body
     CancelCurrentBehavior();
@@ -1512,6 +1654,7 @@ void Goose::BeginHold(Vector2 devicePos) {
     softCursorVel = { 0.0f, 0.0f };
     softLastTarget = worldPos;
     softTargetPrimed = false;
+    heldByGooseId = -1;
 
     vel = { 0, 0 };
     acceleration = { 0, 0 };
@@ -1546,11 +1689,61 @@ void Goose::ReleaseGrab(int w, int h) {
                      : "Goose " + std::to_string(id) + " dropped");
 }
 
+void Goose::FlingFromGoose(Vector2 landingDevice) {
+    if (state != HELD || heldByGooseId == -1) return;
+    EnterFlight(true); // sets the flight gravity and air drag solved below
+
+    // Every point gets the same launch velocity, so the whole body follows
+    // the torso's trajectory. Solve x(T) = goal under the solver's exact
+    // linear drag k and gravity g:
+    //   x(T) = x0 + v0 * E + g * (T - E) / k,   E = (1 - e^(-kT)) / k.
+    const Vector2 start = softBody.CenterOfRange(SB_RING, SB_RING_COUNT);
+    const Vector2 goal = DeviceToWorld(landingDevice);
+    const float k = softBody.linearDamping;
+    const float g = softBody.gravity.y * softBody.gravityScale;
+    auto launchFor = [&](float flightTime) {
+        const float e = k > 1e-4f ? -std::expm1(-k * flightTime) / k : flightTime;
+        const float fall = k > 1e-4f ? (flightTime - e) / k
+                                     : 0.5f * flightTime * flightTime;
+        return (goal - start - Vector2{ 0.0f, g * fall }) / e;
+    };
+    // Highest point of the arc (screen y grows downward), same drag model.
+    auto apexFor = [&](float vy) {
+        if (vy >= 0.0f || g <= 0.0f) return start.y;
+        if (k <= 1e-4f) return start.y - vy * vy / (2.0f * g);
+        const float terminal = g / k;
+        const float riseTime = std::log((terminal - vy) / terminal) / k;
+        return start.y + terminal * riseTime +
+               (vy - terminal) * -std::expm1(-k * riseTime) / k;
+    };
+
+    // Long throws get a longer, higher arc, but never into the top of the
+    // screen: a ceiling bounce would wreck the aim, so flatten it instead.
+    const float distance = Vector2::Distance(WorldToDevice(start), landingDevice);
+    const float ceiling = softBody.boundMinY + 24.0f;
+    float flightTime = Clamp(0.35f + distance / 1800.0f, 0.45f, 1.0f);
+    Vector2 launch = launchFor(flightTime);
+    for (int i = 0; i < 12 && flightTime > 0.25f && apexFor(launch.y) < ceiling; ++i) {
+        flightTime *= 0.85f;
+        launch = launchFor(flightTime);
+    }
+    // The safety cap is in world units, which grow as the scale shrinks; a
+    // solved, screen-bounded throw must not be clipped short by it.
+    softBody.maxSpeed = std::max(softBody.maxSpeed, Vector2::Length(launch) * 1.05f);
+    for (auto& p : softBody.points) p.vel = launch;
+}
+
+void Goose::DropFromGoose() {
+    if (state != HELD || heldByGooseId == -1) return;
+    EnterFlight(false);
+}
+
 // Leave HELD: a throw flies under gravity and bounces; a gentle drop stays
 // weightless and re-forms where it was let go.
 void Goose::EnterFlight(bool thrown) {
     softBody.attachedPoint = -1;
     softFlightElapsed = 0.0;
+    heldByGooseId = -1;
     softThrown = thrown;
     if (thrown) {
         softBody.gravityScale = 1.0f;
@@ -2240,7 +2433,12 @@ void Goose::CancelCurrentBehavior() {
         if (g_heldGooseId == id) g_heldGooseId = -1;
         if (state == HELD || state == FLUNG) state = WANDER;
         ragdoll = RagdollState{};
+        heldByGooseId = -1;
     }
+
+    // An interrupted attacker lets its victim go rather than leaving it
+    // dangling from a beak that no longer exists.
+    ReleaseYeetVictim();
 
     if (state == DRAG_WINDOW || !dragWindowAddr.empty() ||
         g_windowDragGooseId == id) {
@@ -2393,6 +2591,70 @@ bool Goose::ForceChase(int w, int h) {
     state = WANDER;
     PickNewTarget(w, h);
     return false;
+}
+
+// A goose another attacker is already after is off the table.
+static bool IsGooseYeetTarget(int victimId) {
+    for (const auto& goose : g_geese) {
+        if (goose.yeetVictimId == victimId) return true;
+    }
+    return false;
+}
+
+bool Goose::ForceGooseYeet(int victimId, int w, int h) {
+    if (IsHeld()) return false;
+    Goose* victim = nullptr;
+    float nearest = 0.0f;
+    for (auto& other : g_geese) {
+        if (other.id == id || (victimId >= 0 && other.id != victimId)) continue;
+        if (!other.CanBeGooseYeeted() || IsGooseYeetTarget(other.id)) continue;
+        const float d = Vector2::Distance(pos, other.pos);
+        if (!victim || d < nearest) { victim = &other; nearest = d; }
+    }
+    if (!victim) return false;
+
+    CancelCurrentBehavior();
+    state = CHASE_GOOSE;
+    yeetVictimId = victim->id;
+    gooseYeetStart = g_time;
+    gooseYeetLaunched = false;
+    target = victim->pos;
+    UiLogPush("Goose " + std::to_string(id) + " is coming for goose " +
+              std::to_string(victim->id));
+    return true;
+}
+
+void Goose::ReleaseYeetVictim() {
+    if (yeetVictimId != -1) {
+        if (Goose* victim = GetGooseById(yeetVictimId)) {
+            if (victim->heldByGooseId == id) victim->DropFromGoose();
+        }
+    }
+    yeetVictimId = -1;
+    gooseYeetLaunched = false;
+    if (state == CHASE_GOOSE || state == YEET_GOOSE) {
+        yeetHeadDrive = -1.0f;
+        state = WANDER;
+    }
+}
+
+// Any on-screen point whose distance from `from` is at least the configured
+// minimum; on a screen too small for that, the farthest corner.
+static Vector2 PickGooseYeetLanding(Vector2 from, int w, int h) {
+    const float margin = 40.0f;
+    const float minX = margin, maxX = std::max(margin, (float)w - margin);
+    const float minY = margin, maxY = std::max(margin, (float)h - margin);
+    const float minDistance = (float)std::max(0, g_config.gooseYeetMinDistance);
+    for (int attempt = 0; attempt < 32; ++attempt) {
+        const Vector2 p{ minX + (float)Rand01() * (maxX - minX), minY + (float)Rand01() * (maxY - minY) };
+        if (Vector2::Distance(p, from) >= minDistance) return p;
+    }
+    Vector2 best{ minX, minY };
+    for (const Vector2 corner : { Vector2{ minX, minY }, Vector2{ maxX, minY },
+                                  Vector2{ minX, maxY }, Vector2{ maxX, maxY } }) {
+        if (Vector2::Distance(corner, from) > Vector2::Distance(best, from)) best = corner;
+    }
+    return best;
 }
 
 bool Goose::ForceWindowDrag(int w, int h) {

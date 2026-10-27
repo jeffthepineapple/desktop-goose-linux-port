@@ -12,11 +12,14 @@
 #include "cosmetics.h"
 #include "softbody.h"
 
-// HELD: the cursor owns the goose; the soft body is simulated around the
-// attached point and the rest of the AI stays suspended.
+// HELD: the cursor (or another goose's beak) owns the goose; the soft body is
+// simulated around the attached point and the rest of the AI stays suspended.
 // FLUNG: the goose was released (dropped or yeeted) and the soft body is a
 // free projectile with gravity, drag and bouncing until it settles.
-enum GooseState { WANDER, FETCHING, RETURNING, CHASE_CURSOR, SNATCH_CURSOR, DRAG_WINDOW, HELD, FLUNG };
+// CHASE_GOOSE: run at another goose to grab it by the beak.
+// YEET_GOOSE: hold the grabbed goose, coil the neck back, then fling it.
+enum GooseState { WANDER, FETCHING, RETURNING, CHASE_CURSOR, SNATCH_CURSOR, DRAG_WINDOW, HELD, FLUNG,
+                  CHASE_GOOSE, YEET_GOOSE };
 
 enum DragPhase {
     DRAG_APPROACH,
@@ -144,6 +147,17 @@ public:
     int yeetBounces = 0;
     float yeetHeadDrive = -1.0f;    // >= 0 overrides the rig's neck extension
 
+    // Goose-on-goose yeet. The attacker records its victim and the victim
+    // records its attacker; each side checks the other every frame, so a
+    // cancelled, removed or cursor-stolen partner never leaves a goose stuck.
+    int yeetVictimId = -1;          // attacker: goose being chased/held
+    int heldByGooseId = -1;         // victim: goose whose beak holds us
+    double gooseYeetStart = 0.0;    // attacker: chase start, then windup start
+    bool gooseYeetLaunched = false; // attacker: victim already thrown
+    Vector2 gooseYeetLanding{};     // attacker: device-space landing aim point
+    float gooseYeetSpinFrom = 0.0f;  // attacker: facing when the hammer spin starts
+    float gooseYeetSpinTotal = 0.0f; // attacker: signed degrees, ends facing the aim
+
     RagdollState ragdoll;
 
     Goose(int _id, const std::string& _name, int screenW, int screenH);
@@ -157,6 +171,11 @@ public:
     bool ForceChase(int w, int h);
     bool ForceWindowDrag(int w, int h);
     bool ForceWindowYeet(int w, int h);
+    // Run at another goose, grab it by the beak and fling it. victimId -1
+    // picks the nearest available goose. Returns false when none is available.
+    bool ForceGooseYeet(int victimId, int w, int h);
+    // True when this goose can currently be grabbed by another goose.
+    bool CanBeGooseYeeted() const;
     void Draw(cairo_t* cr);
 
     // --- Soft-body pickup and yeet --------------------------------------
@@ -167,6 +186,12 @@ public:
     bool GrabAt(Vector2 devicePos);
     void MoveGrab(Vector2 devicePos);
     void ReleaseGrab(int w, int h);
+    // Victim side of a goose yeet: another goose's beak becomes the grab
+    // point (device space). The fling solves the launch velocity, including
+    // gravity and air drag, so the body arrives at `landingDevice`.
+    bool GrabByGoose(int attackerId, Vector2 beakDevice);
+    void FlingFromGoose(Vector2 landingDevice);
+    void DropFromGoose();
     bool IsHeld() const { return state == HELD; }
     // True while the soft body owns the pose (held, thrown or recovering).
     bool IsSoftActive() const { return softActive; }
@@ -236,10 +261,11 @@ private:
     void UpdateNiriDrag(class NiriBackend* nb, double dt, double time, int w, int h);
     bool BeginWindowInteraction(int w, int h, bool yeet);
     void SetWindowDestinationFromImageCenter(Vector2 centerDevice);
-    // Hold setup for the cursor grab; the release side enters flight as a
-    // throw or a gentle in-place drop.
+    // Shared hold setup for cursor and goose grabs; the release side enters
+    // flight as a throw or a gentle in-place drop.
     void BeginHold(Vector2 devicePos);
     void EnterFlight(bool thrown);
+    void ReleaseYeetVictim(); // drop any goose in our beak and leave the yeet states
     void CancelCurrentBehavior();
     void RestoreDraggedWindowNow(bool placeAtDestination);
     void ResetWindowDragState();

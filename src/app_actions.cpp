@@ -347,6 +347,8 @@ static const char* GooseStateName(GooseState state) {
         case DRAG_WINDOW:   return "drag-window";
         case HELD:          return "held";
         case FLUNG:         return "flung";
+        case CHASE_GOOSE:   return "chase-goose";
+        case YEET_GOOSE:    return "yeet-goose";
     }
     return "?";
 }
@@ -568,7 +570,7 @@ static std::string HandleQuitCommand(const std::vector<std::string>&) {
 }
 
 static constexpr const char* FORCE_USAGE =
-    "force set <goose-id> <wander|chase|drag|yeet|meme [path]|note [path]|note text <text>|fortune>";
+    "force set <goose-id> <wander|chase|drag|yeet|yeet-goose [victim-id]|meme [path]|note [path]|note text <text>|fortune>";
 
 static std::string DecodeNoteText(const std::string& input) {
     std::string decoded;
@@ -643,6 +645,19 @@ static std::string HandleForceCommand(const std::vector<std::string>& args) {
         if (!goose->ForceWindowYeet(g_screenWidth, g_screenHeight)) {
             return "error no yeetable edge window is currently available\n";
         }
+    } else if (behavior == "yeet-goose") {
+        if (args.size() > 5) return "error usage: " + std::string(FORCE_USAGE) + "\n";
+        int victimId = -1;
+        if (args.size() == 5) {
+            Goose* victim = FindCommandGoose(args[4], &error);
+            if (!victim) return "error " + error + "\n";
+            if (victim == goose) return "error a goose cannot yeet itself\n";
+            victimId = victim->id;
+        }
+        if (!goose->ForceGooseYeet(victimId, g_screenWidth, g_screenHeight)) {
+            return "error no goose is available to yeet\n";
+        }
+        source = victimId >= 0 ? std::to_string(victimId) : "nearest";
     } else if (behavior == "meme") {
         if (args.size() == 4) {
             goose->ForceFetch(0, g_screenWidth, g_screenHeight);

@@ -66,6 +66,11 @@ struct Config {
     int windowDragChance = 3;       // 0..100 percentage per wander cycle
     int windowDragEdgePadding = 40;       // px edge padding for destination bounds
     int windowYeetChance = 35;      // 0..100 share of window grabs that become yeets
+
+    // Goose-on-goose yeet
+    bool gooseYeetEnabled = true;
+    int gooseYeetChance = 4;          // 0..100 percentage per wander cycle
+    int gooseYeetMinDistance = 400;   // px the throw's aim point must clear
 };
 
 extern Config g_config;
