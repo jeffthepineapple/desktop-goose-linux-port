@@ -36,8 +36,8 @@ Vector2 CursorBackendManager::GetCursorPos(double frameTime) {
 void CursorBackendManager::Init() {
     m_cursorSampleTime = -1.0;
     // Register known backends
-    RegisterBackend(std::make_unique<HyprlandBackend>());
     RegisterBackend(std::make_unique<NiriBackend>());
+    RegisterBackend(std::make_unique<HyprlandBackend>());
     RegisterBackend(std::make_unique<WlrootsBackend>());
     RegisterBackend(std::make_unique<X11Backend>());
 
@@ -48,8 +48,8 @@ void CursorBackendManager::Init() {
     }
 
     // Detection priority, most specific first:
-    //   1. Hyprland  - full IPC (cursor pos + window management)
-    //   2. niri      - IPC window info + wlr-virtual-pointer cursor
+    //   1. niri      - prefer the nested compositor over inherited outer IPC
+    //   2. Hyprland  - full IPC (cursor pos + window management)
     //   3. wlroots   - generic wlr-virtual-pointer (sway, river, wayfire, ...)
     //   4. X11       - XTest (also covers XWayland fallback)
     for (auto& backend : m_backends) {

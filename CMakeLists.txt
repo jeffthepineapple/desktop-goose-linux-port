@@ -35,23 +35,42 @@ set(VIRTUAL_POINTER_PROTOCOL "${CMAKE_CURRENT_SOURCE_DIR}/protocols/wlr-virtual-
 wayland_generate(${VIRTUAL_POINTER_PROTOCOL}
     "${CMAKE_CURRENT_BINARY_DIR}/wlr-virtual-pointer-unstable-v1-client-protocol.h"
     "${CMAKE_CURRENT_BINARY_DIR}/wlr-virtual-pointer-unstable-v1-protocol.c")
-set(SCREENCOPY_PROTOCOL "${CMAKE_CURRENT_SOURCE_DIR}/protocols/wlr-screencopy-unstable-v1.xml")
-wayland_generate(${SCREENCOPY_PROTOCOL}
-    "${CMAKE_CURRENT_BINARY_DIR}/wlr-screencopy-unstable-v1-client-protocol.h"
-    "${CMAKE_CURRENT_BINARY_DIR}/wlr-screencopy-unstable-v1-protocol.c")
 set(TOPLEVEL_EXPORT_PROTOCOL "${CMAKE_CURRENT_SOURCE_DIR}/protocols/hyprland-toplevel-export-v1.xml")
 wayland_generate(${TOPLEVEL_EXPORT_PROTOCOL}
     "${CMAKE_CURRENT_BINARY_DIR}/hyprland-toplevel-export-v1-client-protocol.h"
     "${CMAKE_CURRENT_BINARY_DIR}/hyprland-toplevel-export-v1-protocol.c")
 
+# Installed wayland-protocols (staging): ext-image-copy-capture carries the
+# pointer cursor session used for niri cursor tracking.
+pkg_check_modules(WAYLAND_PROTOCOLS REQUIRED wayland-protocols)
+pkg_get_variable(WAYLAND_PROTOCOLS_DIR wayland-protocols pkgdatadir)
+set(EXT_IMAGE_CAPTURE_SOURCE_PROTOCOL "${WAYLAND_PROTOCOLS_DIR}/staging/ext-image-capture-source/ext-image-capture-source-v1.xml")
+set(EXT_IMAGE_COPY_CAPTURE_PROTOCOL "${WAYLAND_PROTOCOLS_DIR}/staging/ext-image-copy-capture/ext-image-copy-capture-v1.xml")
+if(NOT EXISTS "${EXT_IMAGE_CAPTURE_SOURCE_PROTOCOL}" OR NOT EXISTS "${EXT_IMAGE_COPY_CAPTURE_PROTOCOL}")
+    message(FATAL_ERROR "ext-image-capture-source / ext-image-copy-capture XML not found under ${WAYLAND_PROTOCOLS_DIR}/staging")
+endif()
+wayland_generate(${EXT_IMAGE_CAPTURE_SOURCE_PROTOCOL}
+    "${CMAKE_CURRENT_BINARY_DIR}/ext-image-capture-source-v1-client-protocol.h"
+    "${CMAKE_CURRENT_BINARY_DIR}/ext-image-capture-source-v1-protocol.c")
+wayland_generate(${EXT_IMAGE_COPY_CAPTURE_PROTOCOL}
+    "${CMAKE_CURRENT_BINARY_DIR}/ext-image-copy-capture-v1-client-protocol.h"
+    "${CMAKE_CURRENT_BINARY_DIR}/ext-image-copy-capture-v1-protocol.c")
+wayland_generate("${WAYLAND_PROTOCOLS_DIR}/staging/ext-foreign-toplevel-list/ext-foreign-toplevel-list-v1.xml"
+    "${CMAKE_CURRENT_BINARY_DIR}/ext-foreign-toplevel-list-v1-client-protocol.h"
+    "${CMAKE_CURRENT_BINARY_DIR}/ext-foreign-toplevel-list-v1-protocol.c")
+
 
 set(GENERATED_SOURCES
     "${CMAKE_CURRENT_BINARY_DIR}/wlr-virtual-pointer-unstable-v1-protocol.c"
     "${CMAKE_CURRENT_BINARY_DIR}/wlr-virtual-pointer-unstable-v1-client-protocol.h"
-    "${CMAKE_CURRENT_BINARY_DIR}/wlr-screencopy-unstable-v1-protocol.c"
-    "${CMAKE_CURRENT_BINARY_DIR}/wlr-screencopy-unstable-v1-client-protocol.h"
     "${CMAKE_CURRENT_BINARY_DIR}/hyprland-toplevel-export-v1-protocol.c"
     "${CMAKE_CURRENT_BINARY_DIR}/hyprland-toplevel-export-v1-client-protocol.h"
+    "${CMAKE_CURRENT_BINARY_DIR}/ext-image-capture-source-v1-protocol.c"
+    "${CMAKE_CURRENT_BINARY_DIR}/ext-image-capture-source-v1-client-protocol.h"
+    "${CMAKE_CURRENT_BINARY_DIR}/ext-image-copy-capture-v1-protocol.c"
+    "${CMAKE_CURRENT_BINARY_DIR}/ext-image-copy-capture-v1-client-protocol.h"
+    "${CMAKE_CURRENT_BINARY_DIR}/ext-foreign-toplevel-list-v1-protocol.c"
+    "${CMAKE_CURRENT_BINARY_DIR}/ext-foreign-toplevel-list-v1-client-protocol.h"
 )
 
 file(GLOB_RECURSE SRC_SOURCES CONFIGURE_DEPENDS "src/*.cpp")

@@ -30,7 +30,7 @@ struct Config {
     float baseWalkSpeed = 180.0f;
     float baseRunSpeed = 480.0f;
 
-    // Cursor chase/snatch (Hyprland only)
+    // Cursor chase/snatch (requires cursor-position tracking)
     bool cursorChaseEnabled = true;
     int cursorChaseChance = 3;     // Percentage chance per wander cycle
     float snatchDuration = 3.0f;   // Seconds to hold cursor
@@ -58,10 +58,10 @@ struct Config {
     int softbodyIterations = 4;          // constraint iterations 1..12
     int softbodySubsteps = 3;            // physics substeps 1..6
 
-    // Edge detection debug visuals (Hyprland only)
+    // Edge detection debug visuals (requires compositor window information)
     bool highlightEdgeWindows = false;
 
-    // Window drag (Hyprland only)
+    // Window drag (Hyprland and niri)
     bool windowDragEnabled = true;
     int windowDragChance = 3;       // 0..100 percentage per wander cycle
     int windowDragEdgePadding = 40;       // px edge padding for destination bounds

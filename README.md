@@ -31,8 +31,8 @@ chasing, cosmetics, pickup physics, and an interactive terminal.
 
 - Transparent, click-through overlays on every detected monitor
 - Multiple named geese with skins, hats, glasses, and saved looks
-- Cursor chase and snatch on Hyprland and niri, overlays on wlroots and X11
-- Hyprland window dragging and yeeting, plus goose-vs-goose yeeting
+- Cursor chase and snatch on Hyprland and protocol-capable niri
+- Window dragging and yeeting on Hyprland and niri floating windows, plus goose-vs-goose yeeting
 - Pickup physics: grab a goose, stretch it, and fling it across the desktop
 - Memes, notes, honks, fading footprints, and Perlin-generated personalities
 - Interactive shell with history, inline hints, and TAB completion
@@ -51,14 +51,14 @@ chasing, cosmetics, pickup physics, and an interactive terminal.
 
 CppGoose requires CMake 3.17 or newer, a C++17 compiler, Ninja, Git,
 `pkg-config`, GTK4, `gtk4-layer-shell`, SDL2, SDL2_mixer, GDK Pixbuf, Wayland
-client libraries, X11, and XTest. CMake downloads FTXUI if it is not installed.
+client libraries, `wayland-protocols` with ext-image-copy-capture XML, X11, and XTest.
 
 <details>
 <summary><b>Arch Linux</b></summary>
 
 ```bash
 sudo pacman -S cmake ninja git gtk4 gtk4-layer-shell sdl2 sdl2_mixer \
-  gdk-pixbuf2 wayland xorg-server-devel libxtst
+  gdk-pixbuf2 wayland wayland-protocols xorg-server-devel libxtst
 ```
 
 </details>
@@ -69,7 +69,7 @@ sudo pacman -S cmake ninja git gtk4 gtk4-layer-shell sdl2 sdl2_mixer \
 ```bash
 sudo dnf install cmake ninja-build git gtk4-devel gtk4-layer-shell-devel \
   SDL2-devel SDL2_mixer-devel gdk-pixbuf2-devel wayland-devel \
-  libX11-devel libXtst-devel
+  wayland-protocols-devel libX11-devel libXtst-devel
 ```
 
 </details>
@@ -80,7 +80,7 @@ sudo dnf install cmake ninja-build git gtk4-devel gtk4-layer-shell-devel \
 ```bash
 sudo apt install cmake ninja-build git libgtk-4-dev libgtk4-layer-shell-dev \
   libsdl2-dev libsdl2-mixer-dev libgdk-pixbuf-2.0-dev libwayland-dev \
-  libx11-dev libxtst-dev
+  wayland-protocols libx11-dev libxtst-dev
 ```
 
 If your repository does not provide `gtk4-layer-shell`, build it from
@@ -129,8 +129,8 @@ it is already running. Use `--foreground` after `spawn` for live logs.
 | `CppGoose freeze` / `ram` | Pause behavior updates, or inspect memory use |
 | `CppGoose help all` | Print the full command reference |
 
-`CppGoose help <page-or-command>` opens a single section. On Hyprland, `drag`
-and `yeet` carry a captured window behind the goose and restore it afterwards;
+`CppGoose help <page-or-command>` opens a single section. On Hyprland and niri,
+`drag` and `yeet` carry a captured window behind the goose and restore it afterwards;
 `force set <id> yeet-goose` throws one goose at another.
 
 ## Configuration
@@ -148,10 +148,38 @@ runtime settings. Changes apply immediately and persist to disk.
 
 ## Caveats
 
-- Window dragging and focus enforcement require Hyprland.
-- niri lacks cursor chase/snatch; stock GNOME lacks layer-shell support.
+- niri window interactions require floating windows at a monitor edge. Tiled
+  windows without IPC pixel positions are skipped rather than guessed.
+- niri cursor chase/snatch requires `ext-image-copy-capture` output/cursor support
+  (upstream PR #4554); the tested stock niri 26.04 does not advertise it.
+- niri captures use `niri msg action screenshot-window`, which also replaces the
+  clipboard image. Temporary capture files are removed after decoding. During
+  carry, the real window is parked on an inactive workspace and restored on
+  completion or cancellation. An unnamed original workspace is temporarily named
+  to keep it alive, then unnamed again.
+- Focus enforcement requires Hyprland; stock GNOME lacks layer-shell support.
 - Focus sends `Ctrl+W` to matched windows.
 - No project-level license; bundled media may have separate terms.
+
+### Testing niri without replacing your desktop
+
+Run `niri` in a terminal in your current graphical session, without `--session`.
+Launch Goose from a terminal inside the nested compositor so it inherits that
+instance's `WAYLAND_DISPLAY` and `NIRI_SOCKET`. The niri backend takes priority
+over an inherited outer Hyprland IPC socket.
+
+Use a floating test window touching the output edge, then run:
+
+```bash
+CppGoose force set 0 drag
+CppGoose force set 0 yeet
+CppGoose force set 0 chase
+```
+
+Chase is unavailable when the compositor does not advertise the capture protocol.
+Nested testing covers overlay rendering, capture, IPC restoration, and cursor
+events; physical multi-monitor/GPU behavior still needs a real session.
+
 
 ## Contributing
 

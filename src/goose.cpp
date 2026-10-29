@@ -2459,7 +2459,8 @@ void Goose::RestoreDraggedWindowNow(bool placeAtDestination) {
         g_backendManager.GetActiveBackend());
     if (NiriBackend* nb = dynamic_cast<NiriBackend*>(
             g_backendManager.GetActiveBackend())) {
-        if (!dragWindowAddr.empty()) {
+        if (!dragWindowAddr.empty() && dragWindowWasHidden) {
+            nb->RestoreWindowWorkspace(dragWindowAddr, dragWindowOrigWorkspaceId);
             NiriBackend::WindowRect r = nb->FindWindow(dragWindowAddr);
             if (r.valid) {
                 int px = placeAtDestination ? dragWindowDestX : dragWindowOrigX;
@@ -2791,16 +2792,17 @@ bool Goose::BeginWindowInteraction(int w, int h, bool yeet) {
     return true;
 }
 
-// niri window drag/yeet. niri IPC is synchronous and supports absolute
-// floating placement, so this needs none of the Hyprland machine's polling,
-// float-dance, hidden-workspace juggling, or swapwindow retile.
+// niri carries a window snapshot while the original rests on an inactive
+// workspace. Placement is clamped to the output, so off-screen moves cannot hide it.
 void Goose::UpdateNiriDrag(NiriBackend* nb, double dt, double time, int w, int h) {
     auto abort = [&](const std::string& why) {
         if (!why.empty()) {
             std::cerr << "[Goose] niri window drag aborted: " << why << '\n';
             UiLogPush("Goose " + std::to_string(id) + " window drag aborted: " + why);
         }
-        if (!dragWindowAddr.empty()) {
+        // Before the hide, the window was never touched; leave its tiling alone.
+        if (!dragWindowAddr.empty() && dragWindowWasHidden) {
+            nb->RestoreWindowWorkspace(dragWindowAddr, dragWindowOrigWorkspaceId);
             NiriBackend::WindowRect r = nb->FindWindow(dragWindowAddr);
             if (r.valid) {
                 nb->SetSize(dragWindowAddr, dragWindowOrigW, dragWindowOrigH);
@@ -2848,19 +2850,15 @@ void Goose::UpdateNiriDrag(NiriBackend* nb, double dt, double time, int w, int h
         NiriBackend::WindowRect r = nb->FindWindow(dragWindowAddr);
         if (!r.valid) { abort("target window disappeared before capture"); break; }
 
-        WindowCaptureRegion region;
-        region.outputName = r.output;
-        region.outputX = r.outX;
-        region.outputY = r.outY;
-        region.x = std::max(0, r.x - r.outX);
-        region.y = std::max(0, r.y - r.outY);
-        region.width = r.w > 0 ? r.w : dragWindowOrigW;
-        region.height = r.h > 0 ? r.h : dragWindowOrigH;
-
+        // Whole-window capture by id: the window's own surface, not whatever
+        // composites behind it in a screen rectangle.
+        if (dragWindowAddr.find_first_not_of("0123456789") != std::string::npos) {
+            abort("niri window id is invalid");
+            break;
+        }
         std::string captureError;
-        // ponytail: wlr-screencopy region grab (niri has no toplevel-export),
-        // so the image is whatever composited in that rect.
-        GdkPixbuf* capture = CaptureWaylandRegion(region, &captureError);
+        GdkPixbuf* capture = CaptureNiriWindow(
+            std::strtoull(dragWindowAddr.c_str(), nullptr, 10), &captureError);
         if (!capture) {
             abort(captureError.empty() ? "window capture failed" : captureError);
             break;
@@ -2883,9 +2881,12 @@ void Goose::UpdateNiriDrag(NiriBackend* nb, double dt, double time, int w, int h
             abort("target window disappeared while hiding");
             break;
         }
-        // Float and shove off-screen; the screenshot stands in for the window.
-        nb->SetFloating(dragWindowAddr, true);
-        nb->MoveFloating(dragWindowAddr, 1000000, 1000000);
+        dragWindowWasHidden = true;
+        if (!nb->SetFloating(dragWindowAddr, true) ||
+            !nb->HideWindow(dragWindowAddr, dragWindowOrigWorkspaceId)) {
+            abort("could not hide the window on an inactive workspace");
+            break;
+        }
 
         g_suppressOverlayForCapture = false;
         for (const auto& monitor : g_monitors)
@@ -2893,6 +2894,25 @@ void Goose::UpdateNiriDrag(NiriBackend* nb, double dt, double time, int w, int h
         dragInit = false;
         dragPos = GetBeakTipWorld();
 
+        // niri applies these asynchronously: DRAG_PREPARE_WINDOW waits until the
+        // compositor reports the window floating before anything carries it.
+        dragWindowStartTime = time;
+        dragPhase = DRAG_PREPARE_WINDOW;
+        break;
+    }
+
+    case DRAG_PREPARE_WINDOW: {
+        // niri-only settle wait after hiding. Hyprland's float/retile dance uses
+        // this phase too, but it never runs on this path.
+        NiriBackend::WindowRect r = nb->FindWindow(dragWindowAddr);
+        if (!r.valid) {
+            abort("target window disappeared while hiding");
+            break;
+        }
+        if (!r.floating || r.workspaceId == dragWindowOrigWorkspaceId) {
+            if (time - dragWindowStartTime > 1.0) abort("niri did not hide the window");
+            break;
+        }
         if (dragIsYeet) {
             target = pos;
             yeetWindupStart = time;
@@ -2970,6 +2990,7 @@ void Goose::UpdateNiriDrag(NiriBackend* nb, double dt, double time, int w, int h
     default: {
         // One-shot restore: place the (floating) window at the landing point,
         // drop back to tiling if it started tiled.
+        nb->RestoreWindowWorkspace(dragWindowAddr, dragWindowOrigWorkspaceId);
         NiriBackend::WindowRect r = nb->FindWindow(dragWindowAddr);
         if (r.valid) {
             int px = dragRestoreToDestination ? dragWindowDestX : dragWindowOrigX;

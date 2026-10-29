@@ -22,6 +22,7 @@
             cmake
             pkg-config
             wayland-scanner
+            wayland-protocols
           ];
 
           buildInputs = with pkgs; [
@@ -50,6 +51,7 @@
             cmake
             pkg-config
             wayland-scanner
+            wayland-protocols
           ];
 
           buildInputs = with pkgs; [

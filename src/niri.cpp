@@ -1,4 +1,5 @@
 #include "niri.h"
+#include "niri_cursor.h"
 
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -197,6 +198,8 @@ struct NiriWorkspace {
     long id = -1;
     std::string output;
     bool isActive = false;
+    std::string name;
+    long activeWindowId = -1;
 };
 
 int RoundToInt(double v) { return static_cast<int>(std::lround(v)); }
@@ -264,6 +267,9 @@ bool NiriBackend::Init() {
         std::cerr << "NiriBackend: niri detected but wlr-virtual-pointer is unavailable." << std::endl;
         return false;
     }
+    // Cursor position is optional: without the protocol the virtual pointer
+    // path still works and CAP_GET_POS stays unadvertised.
+    InitCursorTracking();
     return true;
 }
 
@@ -306,12 +312,54 @@ std::vector<NiriWorkspace> ParseWorkspaces(const std::string& resp) {
         if (!ExtractInt(obj, "id", &ws.id)) continue;
         ExtractString(obj, "output", &ws.output);
         ExtractBool(obj, "is_active", &ws.isActive);
+        ExtractString(obj, "name", &ws.name);
+        ExtractInt(obj, "active_window_id", &ws.activeWindowId);
         wss.push_back(std::move(ws));
     }
     return wss;
 }
 
 } // namespace
+
+bool NiriBackend::InitCursorTracking() {
+    std::string outResp;
+    if (!Query("\"Outputs\"", &outResp)) {
+        std::cerr << "NiriBackend: cursor position unavailable (niri IPC outputs query failed)." << std::endl;
+        return false;
+    }
+    std::vector<NiriCursorOutput> cursorOuts;
+    for (const NiriOutput& o : ParseOutputs(outResp)) {
+        cursorOuts.push_back({o.name, o.x, o.y, o.w, o.h, o.scale});
+    }
+    auto tracker = std::make_unique<NiriCursorTracker>();
+    if (!tracker->Init(cursorOuts)) {
+        std::cerr << "NiriBackend: cursor position unavailable: " << tracker->Reason() << "." << std::endl;
+        return false;
+    }
+    m_cursor = std::move(tracker);
+    return true;
+}
+
+NiriBackend::NiriBackend() = default;
+NiriBackend::~NiriBackend() = default;
+
+uint32_t NiriBackend::Caps() const {
+    uint32_t caps = WlrootsBackend::Caps();
+    if (m_cursor && m_cursor->Active()) caps |= CAP_GET_POS;
+    return caps;
+}
+
+Vector2 NiriBackend::GetCursorPos() {
+    if (!m_cursor) return {-1.0f, -1.0f};
+    m_cursor->Pump();
+    if (m_cursor->NeedsRefresh()) {
+        if (!InitCursorTracking()) {
+            m_cursor.reset();
+            return {-1.0f, -1.0f};
+        }
+    }
+    return m_cursor->Position();
+}
 
 std::vector<BackendMonitor> NiriBackend::GetWindowMonitors() {
     std::vector<BackendMonitor> out;
@@ -421,8 +469,7 @@ std::vector<BackendWindow> NiriBackend::GetWindowList() {
 }
 
 // ---------------------------------------------------------------------------
-// Window control. niri actions are synchronous: the reply arrives once the
-// action is applied, so no polling is needed.
+// Actions acknowledge requests; window state must be observed separately.
 // ---------------------------------------------------------------------------
 bool NiriBackend::SendAction(const std::string& actionBody) {
     std::string resp;
@@ -456,6 +503,7 @@ NiriBackend::WindowRect NiriBackend::FindWindow(const std::string& id) {
         ExtractBool(obj, "is_floating", &r.floating);
         long workspaceId = -1;
         ExtractInt(obj, "workspace_id", &workspaceId);
+        r.workspaceId = workspaceId;
         auto wsIt = wsOutput.find(workspaceId);
         const NiriOutput* o = nullptr;
         if (wsIt != wsOutput.end()) {
@@ -490,12 +538,15 @@ bool NiriBackend::SetFloating(const std::string& id, bool floating) {
 }
 
 bool NiriBackend::MoveFloating(const std::string& id, int localX, int localY) {
-    // ponytail: SetFixed is relative to the output working area, which excludes
-    // struts/bars; a top bar offsets placement by its height. Good enough; add
-    // working-area origin from the layer-shell/logical delta if it ever matters.
+    // Relative movement avoids the working-area offset of SetFixed (bars and
+    // exclusive zones). IPC geometry is relative to the full output.
+    const auto window = FindWindow(id);
+    if (!window.valid || !window.floating) return false;
     return SendAction("{\"MoveFloatingWindow\":{\"id\":" + id +
-                      ",\"x\":{\"SetFixed\":" + std::to_string((double)localX) +
-                      "},\"y\":{\"SetFixed\":" + std::to_string((double)localY) + "}}}");
+                      ",\"x\":{\"AdjustFixed\":" +
+                      std::to_string(localX - (window.x - window.outX)) +
+                      "},\"y\":{\"AdjustFixed\":" +
+                      std::to_string(localY - (window.y - window.outY)) + "}}}");
 }
 
 bool NiriBackend::SetSize(const std::string& id, int wpx, int hpx) {
@@ -504,4 +555,55 @@ bool NiriBackend::SetSize(const std::string& id, int wpx, int hpx) {
     ok = SendAction("{\"SetWindowHeight\":{\"id\":" + id +
                     ",\"change\":{\"SetFixed\":" + std::to_string(hpx) + "}}}") && ok;
     return ok;
+}
+
+bool NiriBackend::HideWindow(const std::string& id, long workspaceId) {
+    std::string response;
+    if (!Query("\"Workspaces\"", &response)) return false;
+    const auto workspaces = ParseWorkspaces(response);
+    const NiriWorkspace* original = nullptr;
+    for (const auto& ws : workspaces)
+        if (ws.id == workspaceId) original = &ws;
+    if (!original) return false;
+    long hiddenId = -1;
+    for (const auto& ws : workspaces) {
+        if (!ws.isActive && ws.activeWindowId < 0 && ws.output == original->output) {
+            hiddenId = ws.id;
+            break;
+        }
+    }
+    if (hiddenId < 0) return false;
+    if (original->name.empty()) {
+        m_protectedWorkspaceName = "cppgoose-restore-" + std::to_string(getpid());
+        if (!SendAction("{\"SetWorkspaceName\":{\"workspace\":{\"Id\":" +
+                        std::to_string(workspaceId) + "},\"name\":\"" +
+                        m_protectedWorkspaceName + "\"}}")) {
+            m_protectedWorkspaceName.clear();
+            return false;
+        }
+    }
+    return SendAction("{\"MoveWindowToWorkspace\":{\"window_id\":" + id +
+                      ",\"reference\":{\"Id\":" + std::to_string(hiddenId) +
+                      "},\"focus\":false}}");
+}
+
+bool NiriBackend::RestoreWindowWorkspace(const std::string& id, long workspaceId) {
+    const bool restored = SendAction("{\"MoveWindowToWorkspace\":{\"window_id\":" +
+        id + ",\"reference\":{\"Id\":" + std::to_string(workspaceId) +
+        "},\"focus\":false}}");
+    // Only remove the name we installed; a user may have renamed the workspace.
+    if (!m_protectedWorkspaceName.empty()) {
+        std::string response;
+        if (Query("\"Workspaces\"", &response)) {
+            for (const auto& ws : ParseWorkspaces(response)) {
+                if (ws.id == workspaceId && ws.name == m_protectedWorkspaceName) {
+                    SendAction("{\"UnsetWorkspaceName\":{\"reference\":{\"Id\":" +
+                               std::to_string(workspaceId) + "}}}");
+                    break;
+                }
+            }
+        }
+        m_protectedWorkspaceName.clear();
+    }
+    return restored;
 }
