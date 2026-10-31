@@ -140,6 +140,93 @@ int main() {
     passed &= Check(reloaded && std::abs(reloaded->accent.g - 1.0) < 1e-9,
                     "custom item colors did not survive a save and reload");
 
+    // Items drawn in the web skin creator.
+    {
+        std::ofstream file(testDirectory / "skins.ini");
+        file << "item.dot_hat.style=custom\n"
+                "item.dot_hat.slot=hat\n"
+                "item.dot_hat.primary=#ff0000\n"
+                "item.dot_hat.accent=#0000ff\n"
+                "item.dot_hat.shape0=ellipse primary flat - 0,0 4,4\n"
+                "item.dot_hat.shape1=poly accent line smooth,closed,w=2.5 -8,3 0,-6.25 8,3\n"
+                "item.dot_hat.shape2=rect accent fill flip -6,-12 12,3 1.5\n"
+                "item.dot_hat.shape3=poly primary fill - 1,1\n"
+                "item.dot_hat.shape4=oval primary fill - 0,0 1,1\n"
+                "item.lens_glasses.style=custom\n"
+                "item.lens_glasses.slot=glasses\n"
+                "item.lens_glasses.primary=#ff0000\n"
+                "item.lens_glasses.accent=#0000ff\n"
+                "item.lens_glasses.shape0=ellipse primary flat pair 0,0 2,2\n"
+                "item.nowhere.style=custom\n"
+                "item.nowhere.slot=beard\n"
+                "item.nowhere.primary=#ff0000\n"
+                "item.nowhere.accent=#0000ff\n"
+                "item.nowhere.shape0=ellipse primary flat - 0,0 2,2\n"
+                "item.empty.style=custom\n"
+                "item.empty.slot=hat\n"
+                "item.empty.primary=#ff0000\n"
+                "item.empty.accent=#0000ff\n"
+                "item.empty.shape0=poly primary fill - 1,1\n"
+                "profile.drawn.hat=dot_hat\n"
+                "profile.drawn.glasses=lens_glasses\n";
+    }
+    Cosmetics_Reload();
+    passed &= Check(Cosmetics_CustomItems().size() == 2,
+                    "drawn items need a slot and at least one valid shape");
+    const CosmeticItem* dotHat = Cosmetics_FindItem("dot_hat");
+    passed &= Check(dotHat && dotHat->style == CosmeticStyle::Custom &&
+                    dotHat->slot == CosmeticSlot::Hat && dotHat->shapes.size() == 3,
+                    "invalid shapes should be dropped and valid ones kept in order");
+    passed &= Check(dotHat && dotHat->shapes.size() == 3 &&
+                    dotHat->shapes[1].smooth && dotHat->shapes[1].closed &&
+                    std::abs(dotHat->shapes[1].width - 2.5) < 1e-9 &&
+                    dotHat->shapes[2].flip && dotHat->shapes[2].radius == 1.5,
+                    "shape flags and numbers did not parse");
+    passed &= Check(Cosmetics_FindProfile("drawn") != nullptr,
+                    "look using drawn items did not load");
+
+    // Saving rewrites the file; the drawn items must survive unchanged.
+    GooseSkin drawn;
+    passed &= Check(Cosmetics_ApplyProfile(drawn, "drawn", &error), error);
+    passed &= Check(Cosmetics_SaveProfile("drawn-copy", drawn, &error), error);
+    Cosmetics_Reload();
+    const CosmeticItem* roundTrip = Cosmetics_FindItem("dot_hat");
+    passed &= Check(roundTrip && roundTrip->shapes.size() == 3 &&
+                    roundTrip->shapes[1].points.size() == 3 &&
+                    std::abs(roundTrip->shapes[1].points[1].y + 6.25) < 1e-9,
+                    "drawn shapes did not survive a save and reload");
+
+    // Render through Cairo: the hat anchors 9 units above the head point and the
+    // lenses sit 5 units either side of the eye line, collapsing when facing away.
+    cairo_surface_t* surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 200, 200);
+    cairo_t* cr = cairo_create(surface);
+    cairo_translate(cr, 100, 100);
+    GooseSkin worn{"dot_hat", "lens_glasses"};
+    Cosmetics_Draw(cr, worn, {{0, 0}, {1, 0}, {1, 0}, 0.0f});
+    cairo_surface_flush(surface);
+    const auto opaque = [&](int x, int y) {
+        const unsigned char* row = cairo_image_surface_get_data(surface) +
+                                   y * cairo_image_surface_get_stride(surface);
+        return row[x * 4 + 3] == 255;
+    };
+    passed &= Check(opaque(100, 91), "drawn hat was not painted above the head");
+    passed &= Check(opaque(105, 97) && opaque(95, 97),
+                    "paired lens was not drawn for both eyes");
+    passed &= Check(!opaque(100, 97), "paired lens leaked into the middle of the face");
+    passed &= Check(!opaque(150, 150), "drawing touched pixels far from the goose");
+    cairo_destroy(cr);
+    cairo_surface_destroy(surface);
+
+    surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 200, 200);
+    cr = cairo_create(surface);
+    cairo_translate(cr, 100, 100);
+    Cosmetics_Draw(cr, GooseSkin{"none", "lens_glasses"}, {{0, 0}, {0, -1}, {1, 0}, 1.0f});
+    cairo_surface_flush(surface);
+    passed &= Check(opaque(100, 95) && !opaque(105, 95) && !opaque(95, 95),
+                    "paired lens did not collapse to one when facing away");
+    cairo_destroy(cr);
+    cairo_surface_destroy(surface);
+
     fs::remove_all(testDirectory, ignored);
     if (!passed) return 1;
     std::cout << "cosmetics contracts passed\n";

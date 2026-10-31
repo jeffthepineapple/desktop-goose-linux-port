@@ -13,13 +13,40 @@ enum class CosmeticStyle {
     Crown,
     RoundGlasses,
     Shades,
-    Aviators
+    Aviators,
+    Custom  // drawn from shapes
 };
 
 struct CosmeticColor {
     double r;
     double g;
     double b;
+};
+
+enum class ShapeKind { Polygon, Ellipse, Rect };
+// Fill: role color plus the ink outline. Flat: role color only. Line: a
+// stroke in the role color. Glass: accent at 26% alpha with a primary rim.
+enum class ShapePaint { Fill, Flat, Line, Glass };
+
+struct ShapePoint {
+    double x;
+    double y;
+};
+
+// One drawn piece of a custom item, in the same local units as the built-in
+// shapes. Polygon: points. Ellipse: {center, radii}. Rect: {origin, size}.
+struct CosmeticShape {
+    ShapeKind kind = ShapeKind::Polygon;
+    bool accent = false;   // color role: accent instead of primary
+    ShapePaint paint = ShapePaint::Fill;
+    bool pair = false;     // glasses: repeat for both eyes, mirrored on the left
+    bool bridge = false;   // glasses: hidden when the two lenses collapse to one
+    bool flip = false;     // hats: mirrored when the goose faces left
+    bool smooth = false;   // polygon: round the corners
+    bool closed = false;   // polygon lines: close the path
+    double width = 0.0;    // stroke width, 0 for the paint's default
+    double radius = 0.0;   // rect corner radius
+    std::vector<ShapePoint> points;
 };
 
 struct CosmeticItem {
@@ -29,6 +56,7 @@ struct CosmeticItem {
     CosmeticStyle style;
     CosmeticColor primary;
     CosmeticColor accent;
+    std::vector<CosmeticShape> shapes;  // only for CosmeticStyle::Custom
 };
 
 struct GooseSkin {

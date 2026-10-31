@@ -4,9 +4,11 @@
 #include <cctype>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <map>
+#include <sstream>
 #include "config.h"
 
 namespace fs = std::filesystem;
@@ -129,6 +131,143 @@ bool IsBuiltInItemId(const std::string& id) {
                                        [&](const CosmeticItem& item) { return item.id == id; });
 }
 
+constexpr double MAX_COORD = 40.0;
+constexpr size_t MAX_SHAPES = 32;
+constexpr size_t MAX_POINTS = 64;
+
+bool ParseNumber(const std::string& text, double* out) {
+    if (text.empty()) return false;
+    char* end = nullptr;
+    const double value = std::strtod(text.c_str(), &end);
+    if (end != text.c_str() + text.size() || !std::isfinite(value)) return false;
+    *out = value;
+    return true;
+}
+
+bool ParsePoint(const std::string& text, ShapePoint* out) {
+    const size_t comma = text.find(',');
+    if (comma == std::string::npos) return false;
+    ShapePoint point{};
+    if (!ParseNumber(text.substr(0, comma), &point.x) ||
+        !ParseNumber(text.substr(comma + 1), &point.y)) {
+        return false;
+    }
+    if (std::fabs(point.x) > MAX_COORD || std::fabs(point.y) > MAX_COORD) return false;
+    *out = point;
+    return true;
+}
+
+std::string FormatNumber(double value) {
+    char buffer[32];
+    std::snprintf(buffer, sizeof(buffer), "%.2f", value);
+    std::string text = buffer;
+    while (text.back() == '0') text.pop_back();
+    if (text.back() == '.') text.pop_back();
+    return text == "-0" ? "0" : text;
+}
+
+// "<poly|ellipse|rect> <primary|accent> <fill|flat|line|glass> <flags|-> <args>"
+// Flags: pair, bridge, flip, smooth, closed, w=<width>, comma separated.
+bool ParseShape(const std::string& line, CosmeticShape* out) {
+    std::istringstream in(line);
+    std::string kind, role, paint, flags;
+    if (!(in >> kind >> role >> paint >> flags)) return false;
+    CosmeticShape shape;
+
+    if (kind == "poly") shape.kind = ShapeKind::Polygon;
+    else if (kind == "ellipse") shape.kind = ShapeKind::Ellipse;
+    else if (kind == "rect") shape.kind = ShapeKind::Rect;
+    else return false;
+
+    if (role == "primary") shape.accent = false;
+    else if (role == "accent") shape.accent = true;
+    else return false;
+
+    if (paint == "fill") shape.paint = ShapePaint::Fill;
+    else if (paint == "flat") shape.paint = ShapePaint::Flat;
+    else if (paint == "line") shape.paint = ShapePaint::Line;
+    else if (paint == "glass") shape.paint = ShapePaint::Glass;
+    else return false;
+
+    if (flags != "-") {
+        std::istringstream flagStream(flags);
+        std::string flag;
+        while (std::getline(flagStream, flag, ',')) {
+            if (flag == "pair") shape.pair = true;
+            else if (flag == "bridge") shape.bridge = true;
+            else if (flag == "flip") shape.flip = true;
+            else if (flag == "smooth") shape.smooth = true;
+            else if (flag == "closed") shape.closed = true;
+            else if (flag.rfind("w=", 0) == 0) {
+                if (!ParseNumber(flag.substr(2), &shape.width) || shape.width < 0.1 ||
+                    shape.width > 8.0) {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        }
+    }
+
+    std::string token;
+    while (in >> token) {
+        if (shape.kind == ShapeKind::Rect && shape.points.size() == 2) {
+            if (!ParseNumber(token, &shape.radius) || shape.radius < 0.0 ||
+                shape.radius > MAX_COORD) {
+                return false;
+            }
+            continue;
+        }
+        ShapePoint point{};
+        if (!ParsePoint(token, &point) || shape.points.size() >= MAX_POINTS) return false;
+        shape.points.push_back(point);
+    }
+
+    switch (shape.kind) {
+        case ShapeKind::Polygon:
+            if (shape.points.size() < (shape.paint == ShapePaint::Line ? 2u : 3u)) return false;
+            break;
+        case ShapeKind::Ellipse:
+            if (shape.points.size() != 2 || shape.points[1].x <= 0.0 || shape.points[1].y <= 0.0) {
+                return false;
+            }
+            break;
+        case ShapeKind::Rect:
+            if (shape.points.size() != 2 || shape.points[1].x <= 0.0 || shape.points[1].y <= 0.0) {
+                return false;
+            }
+            break;
+    }
+    *out = std::move(shape);
+    return true;
+}
+
+std::string FormatShape(const CosmeticShape& shape) {
+    std::string flags;
+    const auto addFlag = [&](const std::string& flag) {
+        flags += (flags.empty() ? "" : ",") + flag;
+    };
+    if (shape.pair) addFlag("pair");
+    if (shape.bridge) addFlag("bridge");
+    if (shape.flip) addFlag("flip");
+    if (shape.smooth) addFlag("smooth");
+    if (shape.closed) addFlag("closed");
+    if (shape.width > 0.0) addFlag("w=" + FormatNumber(shape.width));
+
+    const char* kind = shape.kind == ShapeKind::Ellipse ? "ellipse"
+                     : shape.kind == ShapeKind::Rect    ? "rect" : "poly";
+    const char* paint = shape.paint == ShapePaint::Flat  ? "flat"
+                      : shape.paint == ShapePaint::Line  ? "line"
+                      : shape.paint == ShapePaint::Glass ? "glass" : "fill";
+    std::string text = std::string(kind) + ' ' + (shape.accent ? "accent" : "primary") + ' ' +
+                       paint + ' ' + (flags.empty() ? "-" : flags);
+    for (const ShapePoint& point : shape.points) {
+        text += ' ' + FormatNumber(point.x) + ',' + FormatNumber(point.y);
+    }
+    if (shape.kind == ShapeKind::Rect) text += ' ' + FormatNumber(shape.radius);
+    return text;
+}
+
 bool WriteProfiles(const std::vector<SkinProfile>& profiles, std::string* errorOut) {
     const fs::path path = Cosmetics_ConfigPath();
     std::error_code directoryError;
@@ -148,9 +287,18 @@ bool WriteProfiles(const std::vector<SkinProfile>& profiles, std::string* errorO
     output << "# Desktop Goose custom skins\n";
     for (const CosmeticItem& item : g_customItems) {
         output << "item." << item.id << ".label=" << item.label << '\n';
-        output << "item." << item.id << ".style=" << FindStyle(item.style)->name << '\n';
+        if (item.style == CosmeticStyle::Custom) {
+            output << "item." << item.id << ".style=custom\n";
+            output << "item." << item.id << ".slot=" << Cosmetics_SlotName(item.slot) << '\n';
+        } else {
+            output << "item." << item.id << ".style=" << FindStyle(item.style)->name << '\n';
+        }
         output << "item." << item.id << ".primary=" << FormatHexColor(item.primary) << '\n';
         output << "item." << item.id << ".accent=" << FormatHexColor(item.accent) << '\n';
+        for (size_t i = 0; i < item.shapes.size(); ++i) {
+            output << "item." << item.id << ".shape" << i << '=' << FormatShape(item.shapes[i])
+                   << '\n';
+        }
     }
     for (const SkinProfile& profile : profiles) {
         output << "profile." << profile.id << ".hat=" << profile.skin.hat << '\n';
@@ -203,35 +351,65 @@ bool SplitKey(const std::string& key, const std::string& prefix, std::string* id
     return IsValidProfileId(*idOut);
 }
 
-// Recolored copies of the built-in shapes. An item needs its style and both
-// colors; a label is optional.
+// Items are either a recolored built-in style (style + two colors) or a drawn
+// "custom" item (slot + shapes + two colors). A label is optional.
 void LoadItems(const std::vector<SettingLine>& lines) {
     g_customItems.clear();
     struct Draft {
         std::string label;
+        std::string slot;
         const StyleName* style = nullptr;
+        bool custom = false;
         CosmeticColor primary{};
         CosmeticColor accent{};
         bool hasPrimary = false;
         bool hasAccent = false;
+        std::map<int, std::string> shapeLines;
     };
     std::map<std::string, Draft> drafts;
     for (const SettingLine& line : lines) {
         std::string id, property;
         if (!SplitKey(line.key, "item.", &id, &property) || IsBuiltInItemId(id)) continue;
         Draft& draft = drafts[id];
-        if (property == "label") draft.label = line.value;
-        else if (property == "style") draft.style = FindStyle(line.value);
-        else if (property == "primary") draft.hasPrimary = ParseHexColor(line.value, &draft.primary);
-        else if (property == "accent") draft.hasAccent = ParseHexColor(line.value, &draft.accent);
+        if (property == "label") {
+            draft.label = line.value;
+        } else if (property == "style") {
+            draft.custom = line.value == "custom";
+            draft.style = FindStyle(line.value);
+        } else if (property == "slot") {
+            draft.slot = line.value;
+        } else if (property == "primary") {
+            draft.hasPrimary = ParseHexColor(line.value, &draft.primary);
+        } else if (property == "accent") {
+            draft.hasAccent = ParseHexColor(line.value, &draft.accent);
+        } else if (property.size() > 5 && property.size() <= 8 &&
+                   property.compare(0, 5, "shape") == 0 &&
+                   std::all_of(property.begin() + 5, property.end(),
+                               [](unsigned char c) { return std::isdigit(c); })) {
+            draft.shapeLines[std::atoi(property.c_str() + 5)] = line.value;
+        }
     }
     for (const auto& entry : drafts) {
         const Draft& draft = entry.second;
-        if (!draft.style || !draft.hasPrimary || !draft.hasAccent) continue;
-        g_customItems.push_back({entry.first,
-                                 draft.label.empty() ? entry.first : draft.label,
-                                 draft.style->slot, draft.style->style, draft.primary,
-                                 draft.accent});
+        if (!draft.hasPrimary || !draft.hasAccent) continue;
+        const std::string label = draft.label.empty() ? entry.first : draft.label;
+
+        if (draft.custom) {
+            CosmeticSlot slot;
+            if (!Cosmetics_ParseSlot(draft.slot, &slot)) continue;
+            CosmeticItem item{entry.first, label, slot, CosmeticStyle::Custom, draft.primary,
+                              draft.accent, {}};
+            for (const auto& shapeLine : draft.shapeLines) {
+                CosmeticShape shape;
+                if (item.shapes.size() < MAX_SHAPES && ParseShape(shapeLine.second, &shape)) {
+                    item.shapes.push_back(std::move(shape));
+                }
+            }
+            if (!item.shapes.empty()) g_customItems.push_back(std::move(item));
+        } else if (draft.style) {
+            g_customItems.push_back({entry.first, label, draft.style->slot, draft.style->style,
+                                     draft.primary, draft.accent, {}});
+        }
     }
 }
 
@@ -286,6 +464,115 @@ void FillAndStroke(cairo_t* cr, CosmeticColor fill, double lineWidth = 1.2) {
     cairo_set_source_rgb(cr, 0.08, 0.08, 0.09);
     cairo_set_line_width(cr, lineWidth);
     cairo_stroke(cr);
+}
+
+// Quadratic-through-midpoints smoothing, so a drawn outline rounds off its
+// corners the same way in the native renderer and in the web editor.
+void QuadTo(cairo_t* cr, ShapePoint control, ShapePoint end) {
+    double x0 = 0.0, y0 = 0.0;
+    cairo_get_current_point(cr, &x0, &y0);
+    cairo_curve_to(cr, x0 + (control.x - x0) * 2.0 / 3.0, y0 + (control.y - y0) * 2.0 / 3.0,
+                   end.x + (control.x - end.x) * 2.0 / 3.0,
+                   end.y + (control.y - end.y) * 2.0 / 3.0, end.x, end.y);
+}
+
+ShapePoint Midpoint(ShapePoint a, ShapePoint b) {
+    return {(a.x + b.x) / 2.0, (a.y + b.y) / 2.0};
+}
+
+void AppendShapePath(cairo_t* cr, const CosmeticShape& shape, bool forceClosed) {
+    const std::vector<ShapePoint>& p = shape.points;
+    if (shape.kind == ShapeKind::Ellipse) {
+        cairo_save(cr);
+        cairo_translate(cr, p[0].x, p[0].y);
+        cairo_scale(cr, p[1].x, p[1].y);
+        cairo_new_sub_path(cr);
+        cairo_arc(cr, 0, 0, 1.0, 0, M_PI * 2);
+        cairo_restore(cr);
+    } else if (shape.kind == ShapeKind::Rect) {
+        const double radius = std::min(shape.radius, std::min(p[1].x, p[1].y) / 2.0);
+        if (radius > 0.01) RoundedRectangle(cr, p[0].x, p[0].y, p[1].x, p[1].y, radius);
+        else cairo_rectangle(cr, p[0].x, p[0].y, p[1].x, p[1].y);
+    } else {
+        const size_t n = p.size();
+        const bool closed = forceClosed || shape.closed;
+        if (shape.smooth && n > 2 && closed) {
+            const ShapePoint start = Midpoint(p[n - 1], p[0]);
+            cairo_move_to(cr, start.x, start.y);
+            for (size_t i = 0; i < n; ++i) QuadTo(cr, p[i], Midpoint(p[i], p[(i + 1) % n]));
+            cairo_close_path(cr);
+        } else if (shape.smooth && n > 2) {
+            cairo_move_to(cr, p[0].x, p[0].y);
+            for (size_t i = 1; i + 1 < n; ++i) QuadTo(cr, p[i], Midpoint(p[i], p[i + 1]));
+            cairo_line_to(cr, p[n - 1].x, p[n - 1].y);
+        } else {
+            cairo_move_to(cr, p[0].x, p[0].y);
+            for (size_t i = 1; i < n; ++i) cairo_line_to(cr, p[i].x, p[i].y);
+            if (closed) cairo_close_path(cr);
+        }
+    }
+}
+
+void PaintShape(cairo_t* cr, const CosmeticItem& item, const CosmeticShape& shape) {
+    const CosmeticColor& color = shape.accent ? item.accent : item.primary;
+    cairo_save(cr);
+    if (shape.paint == ShapePaint::Line) {
+        AppendShapePath(cr, shape, false);
+        SetColor(cr, color);
+        cairo_set_line_width(cr, shape.width > 0.0 ? shape.width : 1.4);
+        cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
+        cairo_set_line_join(cr, CAIRO_LINE_JOIN_ROUND);
+        cairo_stroke(cr);
+    } else if (shape.paint == ShapePaint::Glass) {
+        AppendShapePath(cr, shape, true);
+        SetColor(cr, item.accent, 0.26);
+        cairo_fill_preserve(cr);
+        SetColor(cr, item.primary);
+        cairo_set_line_width(cr, shape.width > 0.0 ? shape.width : 1.5);
+        cairo_stroke(cr);
+    } else if (shape.paint == ShapePaint::Flat) {
+        AppendShapePath(cr, shape, true);
+        SetColor(cr, color);
+        cairo_fill(cr);
+    } else {
+        AppendShapePath(cr, shape, true);
+        cairo_set_line_join(cr, CAIRO_LINE_JOIN_ROUND);
+        FillAndStroke(cr, color, shape.width > 0.0 ? shape.width : 1.2);
+    }
+    cairo_restore(cr);
+}
+
+void DrawCustomHat(cairo_t* cr, const CosmeticItem& item, const CosmeticPose& pose) {
+    const bool facingLeft = pose.forward.x < -0.1f;
+    for (const CosmeticShape& shape : item.shapes) {
+        cairo_save(cr);
+        if (shape.flip && facingLeft) cairo_scale(cr, -1.0, 1.0);
+        PaintShape(cr, item, shape);
+        cairo_restore(cr);
+    }
+}
+
+// Paired shapes are drawn once per eye, mirrored on the left, and collapse to a
+// single centered copy when the goose faces away.
+void DrawCustomGlasses(cairo_t* cr, const CosmeticItem& item, bool singleLens,
+                       double separation) {
+    for (const CosmeticShape& shape : item.shapes) {
+        if (shape.pair) {
+            cairo_save(cr);
+            cairo_translate(cr, separation, 0);
+            PaintShape(cr, item, shape);
+            cairo_restore(cr);
+            if (!singleLens) {
+                cairo_save(cr);
+                cairo_translate(cr, -separation, 0);
+                cairo_scale(cr, -1.0, 1.0);
+                PaintShape(cr, item, shape);
+                cairo_restore(cr);
+            }
+        } else if (!(shape.bridge && singleLens)) {
+            PaintShape(cr, item, shape);
+        }
+    }
 }
 
 void DrawBaseballCap(cairo_t* cr, const CosmeticItem& item, const CosmeticPose& pose) {
@@ -359,6 +646,7 @@ void DrawHat(cairo_t* cr, const CosmeticItem& item, const CosmeticPose& pose) {
     else if (item.style == CosmeticStyle::TopHat) DrawTopHat(cr, item);
     else if (item.style == CosmeticStyle::PartyHat) DrawPartyHat(cr, item);
     else if (item.style == CosmeticStyle::Crown) DrawCrown(cr, item);
+    else if (item.style == CosmeticStyle::Custom) DrawCustomHat(cr, item, pose);
     cairo_restore(cr);
 }
 
@@ -384,6 +672,12 @@ void DrawGlasses(cairo_t* cr, const CosmeticItem& item, const CosmeticPose& pose
     cairo_save(cr);
     cairo_translate(cr, center.x, center.y);
     cairo_rotate(cr, angle);
+
+    if (item.style == CosmeticStyle::Custom) {
+        DrawCustomGlasses(cr, item, singleLens, separation);
+        cairo_restore(cr);
+        return;
+    }
 
     if (item.style == CosmeticStyle::RoundGlasses) {
         DrawRoundLens(cr, -separation, item, true);

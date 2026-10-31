@@ -169,6 +169,29 @@ Styles are `baseball-cap`, `top-hat`, `party-hat`, `crown` for hats and `round`,
 and look ids cannot reuse a built-in look. Equip with
 `CppGoose skins equip <goose-id> neon`.
 
+The creator can also draw an item from scratch. Those use `style=custom`, a
+`slot` of `hat` or `glasses`, and up to 32 numbered shapes in the same local
+units as the built-in items (a hat sits on the head at `0,0`, glasses sit on
+the eye line):
+
+```ini
+item.heart_glasses.style=custom
+item.heart_glasses.slot=glasses
+item.heart_glasses.primary=#141417
+item.heart_glasses.accent=#42addb
+item.heart_glasses.shape0=poly primary glass pair,smooth 0,3 -2,-0.8 0,-3 2,-1.4 4,-3 6,-0.8 4,3 2,5.5
+item.heart_glasses.shape1=poly primary line bridge,w=1.4 -2,0.5 2,0.5
+```
+
+A shape line is `<poly|ellipse|rect> <primary|accent> <fill|flat|line|glass>
+<flags|-> <args>`. `poly` takes `x,y` points, `ellipse` takes `cx,cy rx,ry`,
+and `rect` takes `x,y w,h radius`. Flags are comma separated: `pair` draws the
+shape for both eyes (mirrored on the left), `bridge` hides it when the goose
+faces away, `flip` mirrors a hat shape when the goose faces left, `smooth`
+rounds a polygon, `closed` closes a `line`, and `w=<width>` sets the stroke.
+Lines the app cannot parse are skipped, and an item with no valid shape is
+ignored.
+
 ## Caveats
 
 - niri window interactions require floating windows at a monitor edge. Tiled
