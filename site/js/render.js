@@ -177,6 +177,118 @@ function crown(ctx, item) {
   }
 }
 
+// ---- Drawn items (cosmetics.cpp: AppendShapePath, PaintShape, DrawCustom*) ----
+
+const mid = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+
+export function shapePath(shape, forceClosed) {
+  const path = new Path2D();
+  const p = shape.points;
+  if (shape.kind === 'ellipse') {
+    path.ellipse(p[0][0], p[0][1], p[1][0], p[1][1], 0, 0, Math.PI * 2);
+  } else if (shape.kind === 'rect') {
+    const [x, y] = p[0];
+    const [w, h] = p[1];
+    const r = Math.min(shape.radius, Math.min(w, h) / 2);
+    if (r > 0.01) {
+      path.arc(x + w - r, y + r, r, -Math.PI / 2, 0);
+      path.arc(x + w - r, y + h - r, r, 0, Math.PI / 2);
+      path.arc(x + r, y + h - r, r, Math.PI / 2, Math.PI);
+      path.arc(x + r, y + r, r, Math.PI, Math.PI * 1.5);
+      path.closePath();
+    } else {
+      path.rect(x, y, w, h);
+    }
+  } else {
+    const n = p.length;
+    const closed = forceClosed || shape.closed;
+    if (shape.smooth && n > 2 && closed) {
+      const start = mid(p[n - 1], p[0]);
+      path.moveTo(start[0], start[1]);
+      for (let i = 0; i < n; i++) {
+        const end = mid(p[i], p[(i + 1) % n]);
+        path.quadraticCurveTo(p[i][0], p[i][1], end[0], end[1]);
+      }
+      path.closePath();
+    } else if (shape.smooth && n > 2) {
+      path.moveTo(p[0][0], p[0][1]);
+      for (let i = 1; i + 1 < n; i++) {
+        const end = mid(p[i], p[i + 1]);
+        path.quadraticCurveTo(p[i][0], p[i][1], end[0], end[1]);
+      }
+      path.lineTo(p[n - 1][0], p[n - 1][1]);
+    } else {
+      path.moveTo(p[0][0], p[0][1]);
+      for (let i = 1; i < n; i++) path.lineTo(p[i][0], p[i][1]);
+      if (closed) path.closePath();
+    }
+  }
+  return path;
+}
+
+export function paintShape(ctx, item, shape) {
+  const color = shape.role === 'accent' ? item.accent : item.primary;
+  ctx.save();
+  if (shape.paint === 'line') {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = shape.width > 0 ? shape.width : 1.4;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.stroke(shapePath(shape, false));
+  } else if (shape.paint === 'glass') {
+    const path = shapePath(shape, true);
+    ctx.fillStyle = withAlpha(item.accent, 0.26);
+    ctx.fill(path);
+    ctx.strokeStyle = item.primary;
+    ctx.lineWidth = shape.width > 0 ? shape.width : 1.5;
+    ctx.stroke(path);
+  } else if (shape.paint === 'flat') {
+    ctx.fillStyle = color;
+    ctx.fill(shapePath(shape, true));
+  } else {
+    const path = shapePath(shape, true);
+    ctx.fillStyle = color;
+    ctx.fill(path);
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = shape.width > 0 ? shape.width : 1.2;
+    ctx.lineJoin = 'round';
+    ctx.stroke(path);
+  }
+  ctx.restore();
+}
+
+function drawCustomHat(ctx, item, pose) {
+  const facingLeft = pose.forward.x < -0.1;
+  for (const shape of item.shapes) {
+    ctx.save();
+    if (shape.flip && facingLeft) ctx.scale(-1, 1);
+    paintShape(ctx, item, shape);
+    ctx.restore();
+  }
+}
+
+// Paired shapes repeat once per eye, mirrored on the left, and collapse to one
+// centered copy when the goose faces away.
+function drawCustomGlasses(ctx, item, single, separation) {
+  for (const shape of item.shapes) {
+    if (shape.pair) {
+      ctx.save();
+      ctx.translate(separation, 0);
+      paintShape(ctx, item, shape);
+      ctx.restore();
+      if (!single) {
+        ctx.save();
+        ctx.translate(-separation, 0);
+        ctx.scale(-1, 1);
+        paintShape(ctx, item, shape);
+        ctx.restore();
+      }
+    } else if (!(shape.bridge && single)) {
+      paintShape(ctx, item, shape);
+    }
+  }
+}
+
 function drawHat(ctx, item, pose) {
   ctx.save();
   ctx.translate(pose.head.x, pose.head.y - 9);
@@ -184,6 +296,7 @@ function drawHat(ctx, item, pose) {
   else if (item.style === 'top-hat') topHat(ctx, item);
   else if (item.style === 'party-hat') partyHat(ctx, item);
   else if (item.style === 'crown') crown(ctx, item);
+  else if (item.style === 'custom') drawCustomHat(ctx, item, pose);
   ctx.restore();
 }
 
@@ -207,6 +320,12 @@ function drawGlasses(ctx, item, pose) {
   ctx.save();
   ctx.translate(pose.head.x, pose.head.y - eyeLift);
   ctx.rotate(angle);
+
+  if (item.style === 'custom') {
+    drawCustomGlasses(ctx, item, single, separation);
+    ctx.restore();
+    return;
+  }
 
   if (item.style === 'round') {
     roundLens(ctx, -separation, item);
@@ -309,7 +428,7 @@ export function drawGoose(ctx, { dir, neckLerp = 0, skin, pop = 1 }) {
 }
 
 // `fixedDpr` renders an offscreen canvas at exactly its own pixel size.
-function setupCanvas(canvas, fixedDpr = 0) {
+export function setupCanvas(canvas, fixedDpr = 0) {
   const dpr = fixedDpr || Math.min(window.devicePixelRatio || 1, 3);
   const width = canvas.clientWidth || canvas.width;
   const height = canvas.clientHeight || canvas.height;
@@ -341,13 +460,49 @@ export function drawStage(canvas, state, fill = 0.94, fixedDpr = 0) {
 // A single cosmetic on its own, facing forward, for the picker tiles.
 export function drawIcon(canvas, item) {
   const { ctx, width, height } = setupCanvas(canvas);
-  const isHat = STYLE_META[item.style].slot === 'hat';
+  const isHat = (item.slot || STYLE_META[item.style].slot) === 'hat';
   const scale = Math.min(width, height) / (isHat ? 30 : 18) * 0.9;
   ctx.translate(width / 2, height / 2);
   ctx.scale(scale, scale);
   const pose = { forward: { x: 1, y: 0 }, side: { x: 1, y: 0 }, back: 0 };
   if (isHat) drawHat(ctx, item, { ...pose, head: { x: 0, y: 17 } });
   else drawGlasses(ctx, item, { ...pose, head: { x: 0, y: 3 } });
+}
+
+// The "draw your own" tile.
+export function drawPencilIcon(canvas) {
+  const { ctx, width, height } = setupCanvas(canvas);
+  const s = Math.min(width, height) / 40;
+  ctx.translate(width / 2, height / 2);
+  ctx.scale(s, s);
+  ctx.rotate(Math.PI / 4);
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = 1.8;
+  ctx.strokeStyle = INK;
+  ctx.beginPath();
+  ctx.rect(-3.5, -13, 7, 19);
+  ctx.fillStyle = '#ffa300';
+  ctx.fill();
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.rect(-3.5, -13, 7, 4);
+  ctx.fillStyle = '#f4a0a0';
+  ctx.fill();
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(-3.5, 6);
+  ctx.lineTo(0, 13);
+  ctx.lineTo(3.5, 6);
+  ctx.closePath();
+  ctx.fillStyle = '#fffff0';
+  ctx.fill();
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(-1.2, 10.3);
+  ctx.lineTo(0, 13);
+  ctx.lineTo(1.2, 10.3);
+  ctx.fillStyle = INK;
+  ctx.fill();
 }
 
 // The "no item" tile: a crossed-out ring.

@@ -48,6 +48,7 @@
             <span class="nametag" id="nametag">my-goose</span>
             <canvas id="stage" tabindex="0" role="img" aria-label="Your goose wearing the current look. Drag sideways to turn it."></canvas>
             <span class="drag-hint" aria-hidden="true">Drag to turn</span>
+            <canvas id="draw" tabindex="0" hidden role="application" aria-label="Drawing area. Pick a tool, then draw with a pointer. Use the arrow keys to nudge a selected shape."></canvas>
           </div>
           <div class="poses" role="group" aria-label="Jump to a view">
             <button type="button" class="pose" data-dir="90"><canvas aria-hidden="true"></canvas><span class="nametag">Front</span></button>
@@ -56,7 +57,7 @@
             <button type="button" class="pose" data-dir="-90"><canvas aria-hidden="true"></canvas><span class="nametag">Away</span></button>
           </div>
         </div>
-        <div class="bar">
+        <div class="bar" id="bar-preview">
           <label class="turn">
             <span class="nametag">Turn</span>
             <input type="range" id="turn" min="-180" max="180" step="1" value="40">
@@ -72,6 +73,49 @@
             <button type="button" class="btn" id="honk">Honk</button>
             <button type="button" class="btn btn-quiet" id="png">Save picture</button>
           </div>
+        </div>
+        <div class="bar draw-bar" id="bar-draw" hidden>
+          <div class="group" role="group" aria-label="Tool">
+            <span class="nametag">Tool</span>
+            <button type="button" class="chip" data-tool="pen" aria-pressed="true">Pen</button>
+            <button type="button" class="chip" data-tool="oval" aria-pressed="false">Oval</button>
+            <button type="button" class="chip" data-tool="box" aria-pressed="false">Box</button>
+            <button type="button" class="chip" data-tool="poly" aria-pressed="false">Polygon</button>
+            <button type="button" class="chip" data-tool="move" aria-pressed="false">Move</button>
+            <button type="button" class="chip" data-tool="erase" aria-pressed="false">Erase</button>
+          </div>
+          <div class="group" role="group" aria-label="Color">
+            <span class="nametag">Color</span>
+            <button type="button" class="chip chip-color" data-role-pick="primary" aria-pressed="true"><i class="dot"></i>Main</button>
+            <button type="button" class="chip chip-color" data-role-pick="accent" aria-pressed="false"><i class="dot"></i>Trim</button>
+          </div>
+          <div class="group" role="group" aria-label="Paint">
+            <span class="nametag">Paint</span>
+            <button type="button" class="chip" data-paint="fill" aria-pressed="true">Filled</button>
+            <button type="button" class="chip" data-paint="flat" aria-pressed="false">No outline</button>
+            <button type="button" class="chip" data-paint="line" aria-pressed="false">Line</button>
+            <button type="button" class="chip" data-paint="glass" data-only="glasses" aria-pressed="false">Glass</button>
+          </div>
+          <div class="group" role="group" aria-label="Options">
+            <span class="nametag">Options</span>
+            <button type="button" class="chip" data-opt="smooth" aria-pressed="true">Smooth</button>
+            <button type="button" class="chip" data-opt="snap" aria-pressed="true">Snap</button>
+            <button type="button" class="chip" data-opt="mirror" data-only="hat" aria-pressed="true">Mirror</button>
+            <button type="button" class="chip" data-opt="flip" data-only="hat" aria-pressed="false">Follow facing</button>
+            <button type="button" class="chip" data-opt="pair" data-only="glasses" aria-pressed="true">Both eyes</button>
+            <button type="button" class="chip" data-opt="bridge" data-only="glasses" aria-pressed="false">Hide facing away</button>
+          </div>
+          <div class="group">
+            <label class="start">
+              <span class="nametag">Start from</span>
+              <select id="template" class="select" aria-label="Start from a built-in shape"></select>
+            </label>
+            <button type="button" class="chip" id="undo">Undo</button>
+            <button type="button" class="chip" id="redo">Redo</button>
+            <button type="button" class="chip" id="clear">Clear</button>
+            <button type="button" class="btn" id="done">Done</button>
+          </div>
+          <p class="hint draw-help" id="draw-status" role="status"></p>
         </div>
       </section>
 
@@ -91,12 +135,18 @@
         <fieldset class="slot" id="slot-hat">
           <legend class="slot-title">Hat</legend>
           <div class="tiles" data-slot="hat"></div>
+          <div class="edit-row" data-slot="hat" hidden>
+            <button type="button" class="btn btn-quiet" data-edit="hat">Edit my drawing</button>
+          </div>
           <div class="colors" data-slot="hat"></div>
         </fieldset>
 
         <fieldset class="slot" id="slot-glasses">
           <legend class="slot-title">Glasses</legend>
           <div class="tiles" data-slot="glasses"></div>
+          <div class="edit-row" data-slot="glasses" hidden>
+            <button type="button" class="btn btn-quiet" data-edit="glasses">Edit my drawing</button>
+          </div>
           <div class="colors" data-slot="glasses"></div>
         </fieldset>
 

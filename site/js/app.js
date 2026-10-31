@@ -1,4 +1,6 @@
-import { drawStage, drawIcon, drawNoneIcon, STYLE_META } from './render.js';
+import { drawStage, drawIcon, drawNoneIcon, drawPencilIcon, STYLE_META } from './render.js';
+import { createEditor } from './editor.js';
+import { formatShape, sanitizeShapes, TEMPLATES } from './shapes.js';
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -48,8 +50,8 @@ const defaults = () => ({
   name: 'my-goose',
   dir: 40,
   wall: 'lawn',
-  hat: { style: 'party-hat', primary: '#7b3fc4', accent: '#ffa300' },
-  glasses: { style: 'round', primary: '#141417', accent: '#42addb' },
+  hat: { style: 'party-hat', primary: '#7b3fc4', accent: '#ffa300', shapes: [] },
+  glasses: { style: 'round', primary: '#141417', accent: '#42addb', shapes: [] },
 });
 
 let state = defaults();
@@ -57,9 +59,11 @@ let wardrobe = [];
 let exportTab = 'cmd';
 
 const cloneSlot = (slot) => ({ style: slot.style, primary: slot.primary, accent: slot.accent });
+// A drawn item with nothing drawn yet is invisible to the app, so it wears as none.
+const usable = (item) => item.style && (item.style !== 'custom' || item.shapes.length > 0);
 const skinOf = (s) => ({
-  hat: s.hat.style ? { ...s.hat } : null,
-  glasses: s.glasses.style ? { ...s.glasses } : null,
+  hat: usable(s.hat) ? { ...s.hat } : null,
+  glasses: usable(s.glasses) ? { ...s.glasses } : null,
 });
 
 function sanitizeName(raw) {
@@ -69,11 +73,15 @@ function sanitizeName(raw) {
 function validSlot(raw, slot, fallback) {
   if (!raw || typeof raw !== 'object') return fallback;
   const meta = STYLE_META[raw.style];
-  const style = meta && meta.slot === slot ? raw.style : raw.style === null ? null : fallback.style;
+  let style = fallback.style;
+  if (raw.style === 'custom') style = 'custom';
+  else if (meta && meta.slot === slot) style = raw.style;
+  else if (raw.style === null) style = null;
   return {
     style,
     primary: HEX.test(raw.primary) ? raw.primary.toLowerCase() : fallback.primary,
     accent: HEX.test(raw.accent) ? raw.accent.toLowerCase() : fallback.accent,
+    shapes: raw.shapes === undefined ? fallback.shapes : sanitizeShapes(raw.shapes),
   };
 }
 
@@ -92,24 +100,27 @@ function normalizeState(raw) {
 function readHash() {
   const params = new URLSearchParams(location.hash.slice(1));
   if (!params.has('n')) return null;
-  const slot = (value, name, fallback) => {
+  const slot = (value, name, fallback, shapeText) => {
     if (value === null) return fallback;
     if (value === 'none') return { ...fallback, style: null };
     const [style, primary, accent] = value.split(',');
-    return validSlot({ style, primary: `#${primary}`, accent: `#${accent}` }, name, fallback);
+    const shapes = shapeText ? shapeText.split('|') : [];
+    return validSlot({ style, primary: `#${primary}`, accent: `#${accent}`, shapes }, name, fallback);
   };
   const base = defaults();
   return normalizeState({
     name: params.get('n'),
     dir: Number(params.get('d') ?? base.dir),
-    hat: slot(params.get('h'), 'hat', base.hat),
-    glasses: slot(params.get('g'), 'glasses', base.glasses),
+    hat: slot(params.get('h'), 'hat', base.hat, params.get('hs')),
+    glasses: slot(params.get('g'), 'glasses', base.glasses, params.get('gs')),
   });
 }
 
 function hashFor(s) {
   const slot = (v) => (v.style ? `${v.style},${v.primary.slice(1)},${v.accent.slice(1)}` : 'none');
   const params = new URLSearchParams({ n: s.name, h: slot(s.hat), g: slot(s.glasses), d: String(Math.round(s.dir)) });
+  if (s.hat.style === 'custom') params.set('hs', s.hat.shapes.map(formatShape).join('|'));
+  if (s.glasses.style === 'custom') params.set('gs', s.glasses.shapes.map(formatShape).join('|'));
   return `#${params.toString()}`;
 }
 
@@ -255,7 +266,7 @@ function buildControls() {
   for (const slot of SLOTS) {
     const tiles = $(`.tiles[data-slot="${slot}"]`);
     const styles = Object.entries(STYLE_META).filter(([, meta]) => meta.slot === slot);
-    const options = [[null, 'None'], ...styles.map(([style, meta]) => [style, meta.label])];
+    const options = [[null, 'None'], ...styles.map(([style, meta]) => [style, meta.label]), ['custom', 'Draw']];
     tiles.innerHTML = options.map(([style, label]) => `
       <label class="tile">
         <input type="radio" name="style-${slot}" value="${style ?? 'none'}">
@@ -283,12 +294,13 @@ function buildControls() {
 
 function syncControls() {
   $('#name').value = state.name;
-  $('#nametag').textContent = state.name || 'unnamed';
+  $('#nametag').textContent = drawing ? `${state.name || 'unnamed'}: drawing the ${drawing}` : state.name || 'unnamed';
   $('#turn').value = Math.round(state.dir);
   for (const slot of SLOTS) {
     const current = state[slot].style ?? 'none';
     for (const radio of $$(`input[name="style-${slot}"]`)) radio.checked = radio.value === current;
     $(`.colors[data-slot="${slot}"]`).dataset.off = String(!state[slot].style);
+    $(`.edit-row[data-slot="${slot}"]`).hidden = current !== 'custom';
     for (const [role] of ROLES) {
       const row = $(`.colors[data-slot="${slot}"] .colorrow[data-role="${role}"]`);
       const value = state[slot][role];
@@ -315,9 +327,11 @@ function syncDirControls() {
 function drawPickers() {
   for (const slot of SLOTS) {
     for (const canvas of $$(`.tiles[data-slot="${slot}"] canvas`)) {
-      if (canvas.dataset.style === 'none') { drawNoneIcon(canvas); continue; }
       const source = state[slot];
-      drawIcon(canvas, { style: canvas.dataset.style, primary: source.primary, accent: source.accent });
+      const style = canvas.dataset.style;
+      if (style === 'none') drawNoneIcon(canvas);
+      else if (style === 'custom' && !source.shapes.length) drawPencilIcon(canvas);
+      else drawIcon(canvas, { style, slot, primary: source.primary, accent: source.accent, shapes: source.shapes });
     }
   }
 }
@@ -341,18 +355,21 @@ function isPale(hex) {
 }
 
 function updateWarning() {
+  const notes = [];
   const pale = [];
   for (const slot of SLOTS) {
     if (!state[slot].style) continue;
+    if (!usable(state[slot])) notes.push(`Your ${slot} ${slot === 'hat' ? 'has' : 'have'} no drawing yet, so the goose will wear none.`);
     for (const [role, label] of ROLES) {
       if (isPale(state[slot][role])) pale.push(`${slot} ${label.toLowerCase()}`);
     }
   }
+  if (pale.length) {
+    notes.push(`Pale or gray colors (${pale.join(', ')}) can disappear on light wallpapers. The built-in set sticks to saturated colors.`);
+  }
   const soft = $('#soft');
-  soft.hidden = pale.length === 0;
-  soft.textContent = pale.length
-    ? `Pale or gray colors (${pale.join(', ')}) can disappear on light wallpapers. The built-in set sticks to saturated colors.`
-    : '';
+  soft.hidden = notes.length === 0;
+  soft.textContent = notes.join(' ');
 }
 
 // ---- Export -----------------------------------------------------------------
@@ -369,15 +386,19 @@ function iniFor(looks) {
   for (const look of looks) {
     for (const slot of SLOTS) {
       const item = look[slot];
-      if (!item.style) continue;
+      if (!usable(item)) continue;
       const id = `${look.name}_${slot}`;
       lines.push(`item.${id}.label=${look.name} ${slot}`);
       lines.push(`item.${id}.style=${item.style}`);
+      if (item.style === 'custom') lines.push(`item.${id}.slot=${slot}`);
       lines.push(`item.${id}.primary=${item.primary}`);
       lines.push(`item.${id}.accent=${item.accent}`);
+      if (item.style === 'custom') {
+        item.shapes.forEach((shape, index) => lines.push(`item.${id}.shape${index}=${formatShape(shape)}`));
+      }
     }
     for (const slot of SLOTS) {
-      lines.push(`profile.${look.name}.${slot}=${look[slot].style ? `${look.name}_${slot}` : 'none'}`);
+      lines.push(`profile.${look.name}.${slot}=${usable(look[slot]) ? `${look.name}_${slot}` : 'none'}`);
     }
   }
   return lines.join('\n');
@@ -389,11 +410,19 @@ function exportLooks() {
 }
 
 function exportTexts() {
-  const ini = iniFor(exportLooks());
+  const looks = exportLooks();
+  const ini = iniFor(looks);
   const gooseId = $('#gooseid').value.trim();
+  // Loading merges repeated keys, so drop each look's old lines first or a
+  // redrawn item with fewer shapes would keep its stale extras.
+  const prune = looks.flatMap((look) => [
+    `-e '/^item\\.${look.name}_\\(hat\\|glasses\\)\\./d'`,
+    `-e '/^profile\\.${look.name}\\./d'`,
+  ]).join(' ');
   const command = [
     'cfg="${XDG_CONFIG_HOME:-$HOME/.config}/desktop-goose"',
-    'mkdir -p "$cfg"',
+    'mkdir -p "$cfg" && touch "$cfg/skins.ini"',
+    `sed -i ${prune} "$cfg/skins.ini"`,
     `cat >> "$cfg/skins.ini" <<'EOF'`,
     ini,
     'EOF',
@@ -503,7 +532,97 @@ function renderWardrobe() {
 
 // ---- Wiring -----------------------------------------------------------------
 
+// ---- Drawing workshop -------------------------------------------------------
+
+let editor = null;
+let drawing = null; // the slot being drawn, or null in preview mode
+
+function setupWorkshop() {
+  els.draw = $('#draw');
+  editor = createEditor({
+    canvas: els.draw,
+    status: $('#draw-status'),
+    host: {
+      getShapes: (slot) => state[slot].shapes,
+      commit: (slot, shapes) => { state[slot].shapes = shapes; refresh(); },
+      live: (slot, shapes) => { state[slot].shapes = shapes; drawPoses(); requestRender(); },
+      colors: (slot) => ({ primary: state[slot].primary, accent: state[slot].accent }),
+    },
+    onChange: syncDrawBar,
+  });
+
+  $('#bar-draw').addEventListener('click', (event) => {
+    const button = event.target.closest('button');
+    if (!button) return;
+    const { tool, rolePick, paint, opt } = button.dataset;
+    if (tool) editor.setOption('tool', tool);
+    else if (rolePick) editor.setOption('role', rolePick);
+    else if (paint) editor.setOption('paint', paint);
+    else if (opt) editor.setOption(opt, !editor.opts[opt]);
+    else if (button.id === 'undo') editor.undo();
+    else if (button.id === 'redo') editor.redo();
+    else if (button.id === 'clear') editor.clear();
+    else if (button.id === 'done') exitDraw();
+  });
+  $('#template').addEventListener('change', (event) => {
+    if (event.target.value) editor.applyTemplate(event.target.value);
+    event.target.value = '';
+  });
+  for (const button of $$('[data-edit]')) button.addEventListener('click', () => enterDraw(button.dataset.edit));
+  new ResizeObserver(() => editor.render()).observe(els.draw);
+}
+
+function syncDrawBar(info) {
+  const bar = $('#bar-draw');
+  if (info.slot) {
+    for (const el of $$('[data-only]', bar)) el.hidden = el.dataset.only !== info.slot;
+    $('#template').innerHTML = '<option value="">Pick a shape</option>' +
+      TEMPLATES[info.slot].map(([name]) => `<option>${name}</option>`).join('');
+  }
+  if (info.opts) {
+    const { opts } = info;
+    for (const el of $$('[data-tool]', bar)) el.setAttribute('aria-pressed', String(el.dataset.tool === opts.tool));
+    for (const el of $$('[data-role-pick]', bar)) el.setAttribute('aria-pressed', String(el.dataset.rolePick === opts.role));
+    for (const el of $$('[data-paint]', bar)) el.setAttribute('aria-pressed', String(el.dataset.paint === opts.paint));
+    for (const el of $$('[data-opt]', bar)) el.setAttribute('aria-pressed', String(!!opts[el.dataset.opt]));
+  }
+  if ('canUndo' in info) {
+    $('#undo').disabled = !info.canUndo;
+    $('#redo').disabled = !info.canRedo;
+    $('#clear').disabled = !info.hasShapes;
+  }
+  if (drawing) {
+    for (const el of $$('[data-role-pick]', bar)) el.style.setProperty('--dot', state[drawing][el.dataset.rolePick]);
+  }
+}
+
+function enterDraw(slot) {
+  drawing = slot;
+  $('#screen').dataset.mode = 'draw';
+  els.stage.hidden = true;
+  els.draw.hidden = false;
+  $('#bar-preview').hidden = true;
+  $('#bar-draw').hidden = false;
+  syncControls();
+  editor.open(slot);
+  els.draw.focus({ preventScroll: true });
+}
+
+function exitDraw() {
+  if (!drawing) return;
+  editor.close();
+  drawing = null;
+  delete $('#screen').dataset.mode;
+  els.stage.hidden = false;
+  els.draw.hidden = true;
+  $('#bar-preview').hidden = false;
+  $('#bar-draw').hidden = true;
+  syncControls();
+  requestRender();
+}
+
 function refresh({ pickers = true, poses = true, pop = false } = {}) {
+  if (drawing && state[drawing].style !== 'custom') exitDraw();
   syncControls();
   if (pickers) drawPickers();
   if (poses) drawPoses();
@@ -511,6 +630,7 @@ function refresh({ pickers = true, poses = true, pop = false } = {}) {
   updateExport();
   persist();
   history.replaceState(null, '', hashFor(state));
+  if (drawing) { syncDrawBar({}); editor.render(); }
   if (pop) popCosmetics(); else requestRender();
 }
 
@@ -537,7 +657,7 @@ function wire() {
     for (const slot of SLOTS) {
       const item = look[slot] && BUILT_IN_ITEMS[look[slot]];
       state[slot] = item
-        ? { style: item.style, primary: item.primary, accent: item.accent }
+        ? { ...state[slot], style: item.style, primary: item.primary, accent: item.accent }
         : { ...state[slot], style: null };
     }
     refresh({ pop: true });
@@ -547,7 +667,8 @@ function wire() {
     $(`.tiles[data-slot="${slot}"]`).addEventListener('change', (event) => {
       const value = event.target.value;
       state[slot].style = value === 'none' ? null : value;
-      refresh({ pop: true });
+      refresh({ pop: value !== 'custom' });
+      if (value === 'custom') enterDraw(slot);
     });
     const colors = $(`.colors[data-slot="${slot}"]`);
     colors.addEventListener('click', (event) => {
@@ -704,6 +825,7 @@ function start() {
   els.stage = $('#stage');
   load();
   buildControls();
+  setupWorkshop();
   wire();
   renderWardrobe();
   setTab('cmd');
