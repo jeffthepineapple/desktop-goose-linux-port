@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="360" viewBox="0 0 360 360">
+  <defs>
+    <g id="tuft" fill="none" stroke="#3f8a0c" stroke-width="2.6" stroke-linecap="round">
+      <path d="M0 0 Q-3 -9 -9 -14"/>
+      <path d="M0 0 Q0 -11 1 -18"/>
+      <path d="M0 0 Q3 -8 9 -12"/>
+    </g>
+    <g id="flower">
+      <g fill="#fff">
+        <circle cx="0" cy="-6.2" r="4.6"/>
+        <circle cx="5.9" cy="-1.9" r="4.6"/>
+        <circle cx="3.6" cy="5" r="4.6"/>
+        <circle cx="-3.6" cy="5" r="4.6"/>
+        <circle cx="-5.9" cy="-1.9" r="4.6"/>
+      </g>
+      <circle r="3.2" fill="#f4c20d"/>
+      <path d="M0 6 V17" stroke="#3f8a0c" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+    </g>
+  </defs>
+  <use href="#tuft" x="34" y="52"/>
+  <use href="#tuft" x="188" y="30" transform="translate(188 30) scale(.8) translate(-188 -30)"/>
+  <use href="#tuft" x="300" y="112"/>
+  <use href="#tuft" x="96" y="168" transform="translate(96 168) scale(1.15) translate(-96 -168)"/>
+  <use href="#tuft" x="236" y="214"/>
+  <use href="#tuft" x="22" y="290" transform="translate(22 290) scale(.85) translate(-22 -290)"/>
+  <use href="#tuft" x="156" y="322"/>
+  <use href="#tuft" x="330" y="300" transform="translate(330 300) scale(1.1) translate(-330 -300)"/>
+  <use href="#flower" x="118" y="70"/>
+  <use href="#flower" x="268" y="36" transform="translate(268 36) scale(.8) translate(-268 -36)"/>
+  <use href="#flower" x="52" y="214"/>
+  <use href="#flower" x="300" y="228" transform="translate(300 228) scale(.9) translate(-300 -228)"/>
+  <use href="#flower" x="204" y="136" transform="translate(204 136) scale(.75) translate(-204 -136)"/>
+  <use href="#flower" x="116" y="296" transform="translate(116 296) scale(.85) translate(-116 -296)"/>
+</svg>

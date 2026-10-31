@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Goose Skin Creator · Desktop Goose for Linux</title>
+  <meta name="description" content="Design a custom hat and glasses look for your Desktop Goose on Linux, preview it from every side, and copy the one command that puts it on your desktop.">
+  <meta name="theme-color" content="#54a312">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="fonts/Fredoka.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/style.css">
+  <script type="module" src="js/app.js"></script>
+</head>
+<body>
+  <a class="skip" href="#notepad">Skip to the controls</a>
+
+  <header class="top">
+    <a class="brand" href="./">
+      <svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true">
+        <path d="M25 66L27 44" stroke="#d1d1d1" stroke-width="19" stroke-linecap="round"/>
+        <path d="M25 66L27 44" stroke="#fff" stroke-width="15.5" stroke-linecap="round"/>
+        <path d="M38 40H57" stroke="#ffa300" stroke-width="12" stroke-linecap="round"/>
+        <circle cx="29" cy="37" r="17" fill="#d1d1d1"/>
+        <circle cx="29" cy="37" r="15" fill="#fff"/>
+        <circle cx="35.5" cy="33" r="3.6" fill="#141417"/>
+        <path d="M17 22H41V9Q41 6 38 6H20Q17 6 17 9Z" fill="#141417"/>
+        <rect x="17" y="14.5" width="24" height="4.5" fill="#ffa300"/>
+        <rect x="10" y="20" width="38" height="6" rx="3" fill="#141417"/>
+      </svg>
+      <span>Goose Skin Creator</span>
+    </a>
+    <nav aria-label="Project">
+      <a href="https://github.com/jeffthepineapple/desktop-goose-linux-port#configuration">Docs</a>
+      <a href="https://github.com/jeffthepineapple/desktop-goose-linux-port">Source</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="intro">
+      <h1>Dress the goose.</h1>
+      <p>Pick a hat and glasses, recolor them, and turn the goose around to check every side. Then copy one command and your desktop goose wears it.</p>
+    </section>
+
+    <div class="workbench">
+      <section class="stage" aria-label="Preview">
+        <div class="screen" id="screen" data-wall="lawn">
+          <div class="screen-main">
+            <span class="nametag" id="nametag">my-goose</span>
+            <canvas id="stage" tabindex="0" role="img" aria-label="Your goose wearing the current look. Drag sideways to turn it."></canvas>
+            <span class="drag-hint" aria-hidden="true">Drag to turn</span>
+          </div>
+          <div class="poses" role="group" aria-label="Jump to a view">
+            <button type="button" class="pose" data-dir="90"><canvas aria-hidden="true"></canvas><span class="nametag">Front</span></button>
+            <button type="button" class="pose" data-dir="0"><canvas aria-hidden="true"></canvas><span class="nametag">Side</span></button>
+            <button type="button" class="pose" data-dir="-55"><canvas aria-hidden="true"></canvas><span class="nametag">Three-quarter</span></button>
+            <button type="button" class="pose" data-dir="-90"><canvas aria-hidden="true"></canvas><span class="nametag">Away</span></button>
+          </div>
+        </div>
+        <div class="bar">
+          <label class="turn">
+            <span class="nametag">Turn</span>
+            <input type="range" id="turn" min="-180" max="180" step="1" value="40">
+          </label>
+          <div class="group" role="group" aria-label="Wallpaper">
+            <span class="nametag">Wallpaper</span>
+            <button type="button" class="chip" data-wall="lawn" aria-pressed="true">Meadow</button>
+            <button type="button" class="chip" data-wall="night" aria-pressed="false">Dark</button>
+            <button type="button" class="chip" data-wall="paper" aria-pressed="false">Light</button>
+            <button type="button" class="chip" data-wall="clear" aria-pressed="false">Transparent</button>
+          </div>
+          <div class="group">
+            <button type="button" class="btn" id="honk">Honk</button>
+            <button type="button" class="btn btn-quiet" id="png">Save picture</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="notepad controls" id="notepad" aria-label="Design controls">
+        <div class="field">
+          <label for="name" class="label">Look name</label>
+          <input id="name" class="input" type="text" maxlength="24" autocomplete="off" spellcheck="false" value="my-goose" aria-describedby="name-hint">
+          <p class="hint" id="name-hint">Lowercase letters, numbers, <code>-</code> and <code>_</code>. This is what you type to equip it.</p>
+          <p class="problem" id="name-problem" role="alert" hidden></p>
+        </div>
+
+        <fieldset class="field presets">
+          <legend class="label">Start from</legend>
+          <div class="chips" id="presets"></div>
+        </fieldset>
+
+        <fieldset class="slot" id="slot-hat">
+          <legend class="slot-title">Hat</legend>
+          <div class="tiles" data-slot="hat"></div>
+          <div class="colors" data-slot="hat"></div>
+        </fieldset>
+
+        <fieldset class="slot" id="slot-glasses">
+          <legend class="slot-title">Glasses</legend>
+          <div class="tiles" data-slot="glasses"></div>
+          <div class="colors" data-slot="glasses"></div>
+        </fieldset>
+
+        <p class="soft" id="soft" role="status" hidden></p>
+
+        <div class="wardrobe">
+          <div class="wardrobe-head">
+            <h2 class="label">Wardrobe</h2>
+            <button type="button" class="btn btn-quiet" id="save">Save this look</button>
+          </div>
+          <ul class="wardrobe-list" id="wardrobe" aria-label="Saved looks"></ul>
+          <p class="hint" id="wardrobe-empty">Looks you save stay in this browser and ship together in one file.</p>
+        </div>
+      </section>
+    </div>
+
+    <section class="notepad export" aria-labelledby="export-title">
+      <div class="export-copy">
+        <h2 id="export-title">Put it on your goose</h2>
+        <ol class="steps">
+          <li>Copy the command. It adds your look to <code>skins.ini</code>, so looks you already have stay put.</li>
+          <li>Paste it in a terminal while the goose is running.</li>
+          <li>The goose reloads its skins and puts the look on. Run it again after any change.</li>
+        </ol>
+        <div class="field inline">
+          <label for="gooseid" class="label">Goose id</label>
+          <input id="gooseid" class="input narrow" type="text" inputmode="numeric" value="0" maxlength="6" autocomplete="off" aria-describedby="gooseid-hint">
+        </div>
+        <p class="hint" id="gooseid-hint">Run <code>CppGoose status</code> to see ids. The first goose is <code>0</code>.</p>
+        <label class="check">
+          <input type="checkbox" id="all" checked>
+          <span>Include every look in my wardrobe</span>
+        </label>
+        <p class="hint">Needs CppGoose built from the latest <code>main</code>, which adds custom colors and <code>skins reload</code>.</p>
+      </div>
+
+      <div class="export-code">
+        <div class="tabs" role="tablist" aria-label="Export format">
+          <button type="button" role="tab" id="tab-cmd" aria-selected="true" aria-controls="panel-code">Terminal command</button>
+          <button type="button" role="tab" id="tab-ini" aria-selected="false" aria-controls="panel-code" tabindex="-1">skins.ini</button>
+        </div>
+        <div id="panel-code" role="tabpanel" aria-labelledby="tab-cmd">
+          <pre class="code" id="code" tabindex="0"></pre>
+        </div>
+        <p class="hint" id="ini-note" hidden>Saving this file as <code>~/.config/desktop-goose/skins.ini</code> replaces any looks already in it. Use the terminal command to add instead.</p>
+        <div class="actions">
+          <button type="button" class="btn" id="copy">Copy command</button>
+          <button type="button" class="btn btn-quiet" id="download">Download skins.ini</button>
+          <button type="button" class="btn btn-quiet" id="share">Copy link to this look</button>
+        </div>
+        <p class="toast" id="toast" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Goose Skin Creator draws with the same shapes as the <a href="https://github.com/jeffthepineapple/desktop-goose-linux-port">CppGoose</a> renderer. Desktop Goose is Sam's original; this is the Linux port.</p>
+  </footer>
+</body>
+</html>
