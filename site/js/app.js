@@ -262,6 +262,8 @@ function honkSound() {
 
 const els = {};
 
+const colorRole = { hat: 'primary', glasses: 'primary' };
+
 function buildControls() {
   for (const slot of SLOTS) {
     const tiles = $(`.tiles[data-slot="${slot}"]`);
@@ -273,42 +275,36 @@ function buildControls() {
         <span class="tile-face"><canvas width="52" height="52" data-style="${style ?? 'none'}" aria-hidden="true"></canvas><span>${label}</span></span>
       </label>`).join('');
 
-    $(`.colors[data-slot="${slot}"]`).innerHTML = ROLES.map(([role, label]) => `
-      <div class="colorrow" data-role="${role}">
-        <div class="colorhead">
-          <span class="nametag">${label}</span>
-          <span class="custom">
-            <input type="color" class="picker" aria-label="${slot} ${label.toLowerCase()} color, custom">
-            <input type="text" class="hex" maxlength="7" spellcheck="false" autocomplete="off" aria-label="${slot} ${label.toLowerCase()} color as hex">
-          </span>
-        </div>
-        <div class="swatches">
-          ${PALETTE.map(([name, hex]) => `<button type="button" class="swatch" style="background:${hex}" data-hex="${hex}" aria-label="${name}" aria-pressed="false"></button>`).join('')}
-        </div>
-      </div>`).join('');
+    $(`.colors[data-slot="${slot}"]`).innerHTML = `
+      <div class="group" role="group" aria-label="${slot} color to change">
+        ${ROLES.map(([role, label]) => `<button type="button" class="chip chip-color" data-role-edit="${role}" aria-pressed="false"><i class="dot"></i>${label}</button>`).join('')}
+      </div>
+      <div class="swatches">
+        ${PALETTE.map(([name, hex]) => `<button type="button" class="swatch" style="background:${hex}" data-hex="${hex}" aria-label="${name}" aria-pressed="false"></button>`).join('')}
+        <input type="color" class="picker" aria-label="${slot} custom color">
+      </div>`;
   }
 
-  $('#presets').innerHTML = BUILT_IN_LOOKS.map((look) =>
-    `<button type="button" class="chip" data-look="${look.id}">${look.label}</button>`).join('');
+  $('#presets').innerHTML = '<option value="">Start from a look</option>' +
+    BUILT_IN_LOOKS.map((look) => `<option value="${look.id}">${look.label}</option>`).join('');
 }
 
 function syncControls() {
   $('#name').value = state.name;
   $('#nametag').textContent = drawing ? `${state.name || 'unnamed'}: drawing the ${drawing}` : state.name || 'unnamed';
-  $('#turn').value = Math.round(state.dir);
   for (const slot of SLOTS) {
     const current = state[slot].style ?? 'none';
+    const role = colorRole[slot];
+    const colors = $(`.colors[data-slot="${slot}"]`);
     for (const radio of $$(`input[name="style-${slot}"]`)) radio.checked = radio.value === current;
-    $(`.colors[data-slot="${slot}"]`).dataset.off = String(!state[slot].style);
+    colors.dataset.off = String(!state[slot].style);
     $(`.edit-row[data-slot="${slot}"]`).hidden = current !== 'custom';
-    for (const [role] of ROLES) {
-      const row = $(`.colors[data-slot="${slot}"] .colorrow[data-role="${role}"]`);
-      const value = state[slot][role];
-      for (const swatch of $$('.swatch', row)) swatch.setAttribute('aria-pressed', String(swatch.dataset.hex === value));
-      $('.picker', row).value = value;
-      const hex = $('.hex', row);
-      if (document.activeElement !== hex) { hex.value = value; hex.removeAttribute('aria-invalid'); }
+    for (const button of $$('[data-role-edit]', colors)) {
+      button.setAttribute('aria-pressed', String(button.dataset.roleEdit === role));
+      button.style.setProperty('--dot', state[slot][button.dataset.roleEdit]);
     }
+    for (const swatch of $$('.swatch', colors)) swatch.setAttribute('aria-pressed', String(swatch.dataset.hex === state[slot][role]));
+    $('.picker', colors).value = state[slot][role];
   }
   syncDirControls();
   for (const chip of $$('.chip[data-wall]')) chip.setAttribute('aria-pressed', String(chip.dataset.wall === state.wall));
@@ -316,7 +312,6 @@ function syncControls() {
 }
 
 function syncDirControls() {
-  $('#turn').value = Math.round(state.dir);
   for (const pose of $$('.pose')) {
     const target = Number(pose.dataset.dir);
     const diff = Math.abs(normalizeDir(state.dir - target));
@@ -334,13 +329,6 @@ function drawPickers() {
       else drawIcon(canvas, { style, slot, primary: source.primary, accent: source.accent, shapes: source.shapes });
     }
   }
-}
-
-function drawPoses() {
-  const skin = skinOf(state);
-  $$('.pose').forEach((button) => {
-    drawStage($('canvas', button), { dir: Number(button.dataset.dir), neckLerp: 0, pop: 1, skin }, 0.98);
-  });
 }
 
 function isPale(hex) {
@@ -460,7 +448,6 @@ function updateExport() {
     code.innerHTML = highlight(exportTab === 'cmd' ? texts.command : texts.ini);
   }
   $('#ini-note').hidden = exportTab !== 'ini';
-  $('#copy').textContent = exportTab === 'cmd' ? 'Copy command' : 'Copy skins.ini';
 }
 
 function setTab(tab) {
@@ -524,6 +511,7 @@ function renderWardrobe() {
       </button>
     </li>`).join('');
   $('#wardrobe-empty').hidden = wardrobe.length > 0;
+  $('#wardrobe-count').textContent = wardrobe.length ? `(${wardrobe.length})` : '';
   $$('.look', list).forEach((item, index) => {
     const look = wardrobe[index];
     drawStage($('canvas', item), { dir: 30, neckLerp: 0, pop: 1, skin: skinOf(look) }, 0.98);
@@ -545,7 +533,7 @@ function setupWorkshop() {
     host: {
       getShapes: (slot) => state[slot].shapes,
       commit: (slot, shapes) => { state[slot].shapes = shapes; refresh(); },
-      live: (slot, shapes) => { state[slot].shapes = shapes; drawPoses(); requestRender(); },
+      live: (slot, shapes) => { state[slot].shapes = shapes; requestRender(); },
       colors: (slot) => ({ primary: state[slot].primary, accent: state[slot].accent }),
     },
     onChange: syncDrawBar,
@@ -621,11 +609,10 @@ function exitDraw() {
   requestRender();
 }
 
-function refresh({ pickers = true, poses = true, pop = false } = {}) {
+function refresh({ pickers = true, pop = false } = {}) {
   if (drawing && state[drawing].style !== 'custom') exitDraw();
   syncControls();
   if (pickers) drawPickers();
-  if (poses) drawPoses();
   updateWarning();
   updateExport();
   persist();
@@ -650,10 +637,10 @@ function wire() {
     history.replaceState(null, '', hashFor(state));
   });
 
-  $('#presets').addEventListener('click', (event) => {
-    const chip = event.target.closest('[data-look]');
-    if (!chip) return;
-    const look = BUILT_IN_LOOKS.find((entry) => entry.id === chip.dataset.look);
+  $('#presets').addEventListener('change', (event) => {
+    const look = BUILT_IN_LOOKS.find((entry) => entry.id === event.target.value);
+    event.target.value = '';
+    if (!look) return;
     for (const slot of SLOTS) {
       const item = look[slot] && BUILT_IN_ITEMS[look[slot]];
       state[slot] = item
@@ -672,37 +659,21 @@ function wire() {
     });
     const colors = $(`.colors[data-slot="${slot}"]`);
     colors.addEventListener('click', (event) => {
+      const roleButton = event.target.closest('[data-role-edit]');
       const swatch = event.target.closest('.swatch');
-      if (swatch) setColor(slot, swatch.closest('.colorrow').dataset.role, swatch.dataset.hex);
+      if (roleButton) {
+        colorRole[slot] = roleButton.dataset.roleEdit;
+        syncControls();
+      } else if (swatch) {
+        setColor(slot, colorRole[slot], swatch.dataset.hex);
+      }
     });
     colors.addEventListener('input', (event) => {
-      const row = event.target.closest('.colorrow');
-      if (!row) return;
-      const role = row.dataset.role;
-      if (event.target.classList.contains('picker')) {
-        setColor(slot, role, event.target.value);
-      } else if (event.target.classList.contains('hex')) {
-        const text = event.target.value.trim();
-        const hex = text.startsWith('#') ? text : `#${text}`;
-        if (HEX.test(hex)) { event.target.removeAttribute('aria-invalid'); setColor(slot, role, hex); }
-        else event.target.setAttribute('aria-invalid', 'true');
-      }
-    });
-    colors.addEventListener('focusout', (event) => {
-      if (event.target.classList.contains('hex')) {
-        event.target.value = state[slot][event.target.closest('.colorrow').dataset.role];
-        event.target.removeAttribute('aria-invalid');
-      }
+      if (event.target.classList.contains('picker')) setColor(slot, colorRole[slot], event.target.value);
     });
   }
 
-  $('#turn').addEventListener('input', (event) => {
-    anim.tween = null;
-    state.dir = Number(event.target.value);
-    syncDirControls();
-    history.replaceState(null, '', hashFor(state));
-    requestRender();
-  });
+  // Poses are the only turn buttons; dragging and the arrow keys cover the rest.
   for (const pose of $$('.pose')) pose.addEventListener('click', () => turnTo(Number(pose.dataset.dir)));
 
   for (const chip of $$('.chip[data-wall]')) {
@@ -806,8 +777,7 @@ function wire() {
   });
 
   $('#copy').addEventListener('click', () => {
-    const texts = exportTexts();
-    copyText(exportTab === 'cmd' ? texts.command : texts.ini, exportTab === 'cmd' ? 'Command copied. Paste it in a terminal.' : 'skins.ini copied.');
+    copyText(exportTexts().command, 'Copied. Paste it in a terminal while your goose is running.');
   });
   $('#download').addEventListener('click', () => {
     download(new Blob([exportTexts().ini + '\n'], { type: 'text/plain' }), 'skins.ini');
@@ -817,7 +787,7 @@ function wire() {
     copyText(`${location.origin}${location.pathname}${hashFor(state)}`, 'Link copied. It opens this exact look.');
   });
 
-  new ResizeObserver(() => { drawPoses(); requestRender(); }).observe(els.stage);
+  new ResizeObserver(() => requestRender()).observe(els.stage);
   window.addEventListener('resize', () => { drawPickers(); renderWardrobe(); });
 }
 
@@ -830,7 +800,7 @@ function start() {
   renderWardrobe();
   setTab('cmd');
   refresh({ pop: true });
-  document.fonts?.ready.then(() => { drawPickers(); drawPoses(); requestRender(); });
+  document.fonts?.ready.then(() => { drawPickers(); requestRender(); });
 }
 
 start();
