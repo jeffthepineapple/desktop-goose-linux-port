@@ -1,5 +1,7 @@
 #include "cosmetics.h"
 
+#include <cmath>
+#include <fstream>
 #include <filesystem>
 #include <iostream>
 #include <string>
@@ -77,6 +79,66 @@ int main() {
     passed &= Check(Cosmetics_DeleteProfile("test-look", &error), error);
     passed &= Check(Cosmetics_FindProfile("test-look") == nullptr,
                     "deleted look remained in the catalog");
+
+    // Recolored items from the web skin creator.
+    {
+        std::ofstream file(testDirectory / "skins.ini");
+        file << "# generated\n"
+                "item.neon-cap.label=Neon cap\n"
+                "item.neon-cap.style=baseball-cap\n"
+                "item.neon-cap.primary=#FF00AA\n"
+                "item.neon-cap.accent=#00ffcc\n"
+                "item.sunny.style=round\n"
+                "item.sunny.primary=#102030\n"
+                "item.sunny.accent=#ffee00\n"
+                "item.crown.style=top-hat\n"
+                "item.crown.primary=#000000\n"
+                "item.crown.accent=#ffffff\n"
+                "item.half.style=crown\n"
+                "item.half.primary=#123456\n"
+                "item.bad-color.style=crown\n"
+                "item.bad-color.primary=red\n"
+                "item.bad-color.accent=#ffffff\n"
+                "profile.mine.hat=neon-cap\n"
+                "profile.mine.glasses=sunny\n"
+                "profile.swapped.hat=sunny\n"
+                "profile.swapped.glasses=neon-cap\n";
+    }
+    Cosmetics_Reload();
+    passed &= Check(Cosmetics_CustomItems().size() == 2,
+                    "only complete, non-reserved items should load");
+    const CosmeticItem* neon = Cosmetics_FindItem("neon-cap");
+    passed &= Check(neon && neon->slot == CosmeticSlot::Hat &&
+                    neon->style == CosmeticStyle::BaseballCap && neon->label == "Neon cap",
+                    "custom hat did not load with its style and label");
+    passed &= Check(neon && std::abs(neon->primary.r - 1.0) < 1e-9 &&
+                    std::abs(neon->primary.g) < 1e-9 &&
+                    std::abs(neon->primary.b - 170.0 / 255.0) < 1e-9,
+                    "primary color was not parsed from hex");
+    const CosmeticItem* sunny = Cosmetics_FindItem("sunny");
+    passed &= Check(sunny && sunny->slot == CosmeticSlot::Glasses && sunny->label == "sunny",
+                    "custom glasses should default their label to the id");
+    const CosmeticItem* crown = Cosmetics_FindItem("crown");
+    passed &= Check(crown && crown->style == CosmeticStyle::Crown,
+                    "a custom item replaced a built-in item");
+    passed &= Check(Cosmetics_FindProfile("mine") != nullptr,
+                    "look using custom items did not load");
+    const SkinProfile* swapped = Cosmetics_FindProfile("swapped");
+    passed &= Check(!swapped || (swapped->skin.hat == "none" && swapped->skin.glasses == "none"),
+                    "custom items were accepted in the wrong slot");
+
+    GooseSkin mine;
+    passed &= Check(Cosmetics_ApplyProfile(mine, "mine", &error), error);
+    passed &= Check(mine.hat == "neon-cap" && mine.glasses == "sunny",
+                    "custom look did not equip custom items");
+    passed &= Check(Cosmetics_SaveProfile("other", mine, &error), error);
+    Cosmetics_Reload();
+    passed &= Check(Cosmetics_CustomItems().size() == 2 &&
+                    Cosmetics_FindItem("neon-cap") != nullptr,
+                    "saving a look dropped custom items from skins.ini");
+    const CosmeticItem* reloaded = Cosmetics_FindItem("neon-cap");
+    passed &= Check(reloaded && std::abs(reloaded->accent.g - 1.0) < 1e-9,
+                    "custom item colors did not survive a save and reload");
 
     fs::remove_all(testDirectory, ignored);
     if (!passed) return 1;

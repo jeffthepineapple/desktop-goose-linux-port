@@ -15,6 +15,7 @@ namespace {
 
 bool g_initialized = false;
 std::vector<SkinProfile> g_customProfiles;
+std::vector<CosmeticItem> g_customItems;
 
 const std::vector<CosmeticItem> BUILT_IN_ITEMS = {
     {"red-cap", "Red field cap", CosmeticSlot::Hat, CosmeticStyle::BaseballCap,
@@ -60,10 +61,72 @@ bool IsValidProfileId(const std::string& id) {
     });
 }
 
+struct StyleName {
+    const char* name;
+    CosmeticStyle style;
+    CosmeticSlot slot;
+};
+
+const StyleName STYLE_NAMES[] = {
+    {"baseball-cap", CosmeticStyle::BaseballCap, CosmeticSlot::Hat},
+    {"top-hat", CosmeticStyle::TopHat, CosmeticSlot::Hat},
+    {"party-hat", CosmeticStyle::PartyHat, CosmeticSlot::Hat},
+    {"crown", CosmeticStyle::Crown, CosmeticSlot::Hat},
+    {"round", CosmeticStyle::RoundGlasses, CosmeticSlot::Glasses},
+    {"shades", CosmeticStyle::Shades, CosmeticSlot::Glasses},
+    {"aviators", CosmeticStyle::Aviators, CosmeticSlot::Glasses},
+};
+
+const StyleName* FindStyle(const std::string& name) {
+    for (const StyleName& entry : STYLE_NAMES) {
+        if (name == entry.name) return &entry;
+    }
+    return nullptr;
+}
+
+const StyleName* FindStyle(CosmeticStyle style) {
+    for (const StyleName& entry : STYLE_NAMES) {
+        if (style == entry.style) return &entry;
+    }
+    return nullptr;
+}
+
 bool ItemMatchesSlot(const std::string& id, CosmeticSlot slot) {
     if (id == "none") return true;
     const CosmeticItem* item = Cosmetics_FindItem(id);
     return item && item->slot == slot;
+}
+
+// Reads one "#rrggbb" color. The format is exact so the file stays easy to
+// hand-edit and to generate from the web skin creator.
+bool ParseHexColor(const std::string& text, CosmeticColor* colorOut) {
+    if (text.size() != 7 || text[0] != '#') return false;
+    int channels[3];
+    for (int i = 0; i < 3; ++i) {
+        int value = 0;
+        for (int digit = 0; digit < 2; ++digit) {
+            const unsigned char c = static_cast<unsigned char>(text[1 + i * 2 + digit]);
+            if (!std::isxdigit(c)) return false;
+            value = value * 16 + (std::isdigit(c) ? c - '0' : std::tolower(c) - 'a' + 10);
+        }
+        channels[i] = value;
+    }
+    *colorOut = {channels[0] / 255.0, channels[1] / 255.0, channels[2] / 255.0};
+    return true;
+}
+
+std::string FormatHexColor(const CosmeticColor& color) {
+    char buffer[8];
+    std::snprintf(buffer, sizeof(buffer), "#%02x%02x%02x",
+                  static_cast<int>(std::lround(color.r * 255.0)),
+                  static_cast<int>(std::lround(color.g * 255.0)),
+                  static_cast<int>(std::lround(color.b * 255.0)));
+    return buffer;
+}
+
+bool IsBuiltInItemId(const std::string& id) {
+    return id == "none" || std::any_of(BUILT_IN_ITEMS.begin(), BUILT_IN_ITEMS.end(),
+                                       [&](const CosmeticItem& item) { return item.id == id; });
 }
 
 bool WriteProfiles(const std::vector<SkinProfile>& profiles, std::string* errorOut) {
@@ -82,7 +145,13 @@ bool WriteProfiles(const std::vector<SkinProfile>& profiles, std::string* errorO
         return false;
     }
 
-    output << "# Desktop Goose custom skin profiles\n";
+    output << "# Desktop Goose custom skins\n";
+    for (const CosmeticItem& item : g_customItems) {
+        output << "item." << item.id << ".label=" << item.label << '\n';
+        output << "item." << item.id << ".style=" << FindStyle(item.style)->name << '\n';
+        output << "item." << item.id << ".primary=" << FormatHexColor(item.primary) << '\n';
+        output << "item." << item.id << ".accent=" << FormatHexColor(item.accent) << '\n';
+    }
     for (const SkinProfile& profile : profiles) {
         output << "profile." << profile.id << ".hat=" << profile.skin.hat << '\n';
         output << "profile." << profile.id << ".glasses=" << profile.skin.glasses << '\n';
@@ -104,31 +173,78 @@ bool WriteProfiles(const std::vector<SkinProfile>& profiles, std::string* errorO
     return true;
 }
 
-void LoadProfiles() {
-    g_customProfiles.clear();
-    std::ifstream input(Cosmetics_ConfigPath());
-    if (!input) return;
+struct SettingLine {
+    std::string key;
+    std::string value;
+};
 
-    std::map<std::string, GooseSkin> loaded;
+std::vector<SettingLine> ReadSettingLines() {
+    std::vector<SettingLine> lines;
+    std::ifstream input(Cosmetics_ConfigPath());
     std::string line;
     while (std::getline(input, line)) {
         line = Trim(line);
         if (line.empty() || line.front() == '#' || line.front() == ';') continue;
         const size_t equals = line.find('=');
         if (equals == std::string::npos) continue;
-        const std::string key = Trim(line.substr(0, equals));
-        const std::string value = Trim(line.substr(equals + 1));
-        if (key.rfind("profile.", 0) != 0) continue;
+        lines.push_back({Trim(line.substr(0, equals)), Trim(line.substr(equals + 1))});
+    }
+    return lines;
+}
 
-        const size_t propertyDot = key.rfind('.');
-        if (propertyDot <= 8) continue;
-        const std::string id = key.substr(8, propertyDot - 8);
-        if (!IsValidProfileId(id)) continue;
-        const std::string property = key.substr(propertyDot + 1);
-        if (property == "hat" && ItemMatchesSlot(value, CosmeticSlot::Hat)) {
-            loaded[id].hat = value;
-        } else if (property == "glasses" && ItemMatchesSlot(value, CosmeticSlot::Glasses)) {
-            loaded[id].glasses = value;
+// Splits "<prefix><id>.<property>" into its id and property parts.
+bool SplitKey(const std::string& key, const std::string& prefix, std::string* idOut,
+              std::string* propertyOut) {
+    if (key.rfind(prefix, 0) != 0) return false;
+    const size_t propertyDot = key.rfind('.');
+    if (propertyDot == std::string::npos || propertyDot <= prefix.size()) return false;
+    *idOut = key.substr(prefix.size(), propertyDot - prefix.size());
+    *propertyOut = key.substr(propertyDot + 1);
+    return IsValidProfileId(*idOut);
+}
+
+// Recolored copies of the built-in shapes. An item needs its style and both
+// colors; a label is optional.
+void LoadItems(const std::vector<SettingLine>& lines) {
+    g_customItems.clear();
+    struct Draft {
+        std::string label;
+        const StyleName* style = nullptr;
+        CosmeticColor primary{};
+        CosmeticColor accent{};
+        bool hasPrimary = false;
+        bool hasAccent = false;
+    };
+    std::map<std::string, Draft> drafts;
+    for (const SettingLine& line : lines) {
+        std::string id, property;
+        if (!SplitKey(line.key, "item.", &id, &property) || IsBuiltInItemId(id)) continue;
+        Draft& draft = drafts[id];
+        if (property == "label") draft.label = line.value;
+        else if (property == "style") draft.style = FindStyle(line.value);
+        else if (property == "primary") draft.hasPrimary = ParseHexColor(line.value, &draft.primary);
+        else if (property == "accent") draft.hasAccent = ParseHexColor(line.value, &draft.accent);
+    }
+    for (const auto& entry : drafts) {
+        const Draft& draft = entry.second;
+        if (!draft.style || !draft.hasPrimary || !draft.hasAccent) continue;
+        g_customItems.push_back({entry.first,
+                                 draft.label.empty() ? entry.first : draft.label,
+                                 draft.style->slot, draft.style->style, draft.primary,
+                                 draft.accent});
+    }
+}
+
+void LoadProfiles(const std::vector<SettingLine>& lines) {
+    g_customProfiles.clear();
+    std::map<std::string, GooseSkin> loaded;
+    for (const SettingLine& line : lines) {
+        std::string id, property;
+        if (!SplitKey(line.key, "profile.", &id, &property)) continue;
+        if (property == "hat" && ItemMatchesSlot(line.value, CosmeticSlot::Hat)) {
+            loaded[id].hat = line.value;
+        } else if (property == "glasses" && ItemMatchesSlot(line.value, CosmeticSlot::Glasses)) {
+            loaded[id].glasses = line.value;
         }
     }
 
@@ -140,6 +256,12 @@ void LoadProfiles() {
             g_customProfiles.push_back({entry.first, entry.first, entry.second, false});
         }
     }
+}
+
+void LoadCatalog() {
+    const std::vector<SettingLine> lines = ReadSettingLines();
+    LoadItems(lines);
+    LoadProfiles(lines);
 }
 
 void SetColor(cairo_t* cr, CosmeticColor color, double alpha = 1.0) {
@@ -304,11 +426,21 @@ void DrawGlasses(cairo_t* cr, const CosmeticItem& item, const CosmeticPose& pose
 void Cosmetics_Initialize() {
     if (g_initialized) return;
     g_initialized = true;
-    LoadProfiles();
+    LoadCatalog();
+}
+
+void Cosmetics_Reload() {
+    g_initialized = true;
+    LoadCatalog();
 }
 
 const std::vector<CosmeticItem>& Cosmetics_Items() {
     return BUILT_IN_ITEMS;
+}
+
+const std::vector<CosmeticItem>& Cosmetics_CustomItems() {
+    Cosmetics_Initialize();
+    return g_customItems;
 }
 
 const std::vector<SkinProfile>& Cosmetics_BuiltInProfiles() {
@@ -321,11 +453,14 @@ const std::vector<SkinProfile>& Cosmetics_CustomProfiles() {
 }
 
 const CosmeticItem* Cosmetics_FindItem(const std::string& id) {
-    const auto item = std::find_if(BUILT_IN_ITEMS.begin(), BUILT_IN_ITEMS.end(),
-                                   [&](const CosmeticItem& candidate) {
-                                       return candidate.id == id;
-                                   });
-    return item == BUILT_IN_ITEMS.end() ? nullptr : &*item;
+    Cosmetics_Initialize();
+    for (const CosmeticItem& item : BUILT_IN_ITEMS) {
+        if (item.id == id) return &item;
+    }
+    for (const CosmeticItem& item : g_customItems) {
+        if (item.id == id) return &item;
+    }
+    return nullptr;
 }
 
 const SkinProfile* Cosmetics_FindProfile(const std::string& id) {

@@ -24,6 +24,7 @@ const std::vector<CliCommandSpec> kRegistry = {
     {"skins",    "set",    "skins",    "<id> <hat|glasses> <item|none>", "Mix hat and glasses",                    "skins set 0 glasses shades", false, false, {CliComplete::GooseId, CliComplete::Slot, CliComplete::Item}},
     {"skins",    "save",   "skins",    "<id> <look>",                    "Save the current outfit as a look",      nullptr,                      false, false, {CliComplete::GooseId, N, N}},
     {"skins",    "delete", "skins",    "<look>",                         "Delete a saved look",                    nullptr,                      true,  false, {CliComplete::Look, N, N}},
+    {"skins",    "reload", "skins",    "",                               "Re-read skins.ini after editing it",     nullptr,                      true,  false, {N, N, N}},
 
     {"settings", "list",   "settings", "",                               "List every setting",                     nullptr,                      true,  false, {N, N, N}},
     {"settings", "get",    "settings", "<key>",                          "Read one value",                         "settings get walk_speed",    true,  false, {CliComplete::SettingKey, N, N}},

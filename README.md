@@ -146,6 +146,29 @@ CppGoose settings set walk_speed 220
 Physics, audio, footprint, window-interaction, and multi-monitor options are all
 runtime settings. Changes apply immediately and persist to disk.
 
+## Custom skins
+
+Design a hat and glasses in the [Goose Skin Creator][Skin Creator], then paste
+the command it gives you. It appends recolored items and a look to
+`skins.ini`; `CppGoose skins reload` re-reads the file in a running daemon.
+
+```ini
+item.neon_hat.style=party-hat
+item.neon_hat.primary=#7b3fc4
+item.neon_hat.accent=#ffa300
+item.neon_glasses.style=round
+item.neon_glasses.primary=#141417
+item.neon_glasses.accent=#42addb
+profile.neon.hat=neon_hat
+profile.neon.glasses=neon_glasses
+```
+
+Styles are `baseball-cap`, `top-hat`, `party-hat`, `crown` for hats and `round`,
+`shades`, `aviators` for glasses. Items need `style`, `primary`, and `accent`
+(`#rrggbb`); `label` is optional. Item ids cannot reuse a built-in item id,
+and look ids cannot reuse a built-in look. Equip with
+`CppGoose skins equip <goose-id> neon`.
+
 ## Caveats
 
 - niri window interactions require floating windows at a monitor edge. Tiled
@@ -197,6 +220,7 @@ Keep behavior and services in focused source files, put shared runtime state in
 [Contribute]: #contributing
 
 [Repo]: https://github.com/jeffthepineapple/desktop-goose-linux-port
+[Skin Creator]: https://jeffthepineapple.github.io/desktop-goose-linux-port/
 
 [Issues]: https://github.com/jeffthepineapple/desktop-goose-linux-port/issues
 [Pull Requests]: https://github.com/jeffthepineapple/desktop-goose-linux-port/pulls

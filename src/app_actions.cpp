@@ -227,7 +227,10 @@ static std::string GetSkinCatalog() {
     Cosmetics_Initialize();
     std::ostringstream out;
     out << "skins_config=" << Cosmetics_ConfigPath() << "\n";
-    for (const CosmeticItem& item : Cosmetics_Items()) {
+    std::vector<CosmeticItem> items = Cosmetics_Items();
+    const std::vector<CosmeticItem>& customItems = Cosmetics_CustomItems();
+    items.insert(items.end(), customItems.begin(), customItems.end());
+    for (const CosmeticItem& item : items) {
         out << Cosmetics_SlotName(item.slot) << "." << item.id << "=" << item.label << "\n";
     }
     for (const SkinProfile& profile : Cosmetics_BuiltInProfiles()) {
@@ -309,7 +312,16 @@ static std::string HandleSkinsCommand(const std::vector<std::string>& args) {
         return "ok deleted=" + args[2] + "\n";
     }
 
-    return "error usage: skins [list|show|equip|set|save|delete]\n";
+    if (args[1] == "reload") {
+        if (args.size() != 2) return "error usage: skins reload\n";
+        Cosmetics_Reload();
+        QueueOverlayRedraw();
+        UiLogPush("Reloaded skins from " + Cosmetics_ConfigPath());
+        return "ok items=" + std::to_string(Cosmetics_CustomItems().size()) +
+               " looks=" + std::to_string(Cosmetics_CustomProfiles().size()) + "\n";
+    }
+
+    return "error usage: skins [list|show|equip|set|save|delete|reload]\n";
 }
 
 

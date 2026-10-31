@@ -51,7 +51,10 @@ struct CosmeticPose {
 };
 
 void Cosmetics_Initialize();
+// Re-reads skins.ini, replacing every custom item and saved look in memory.
+void Cosmetics_Reload();
 const std::vector<CosmeticItem>& Cosmetics_Items();
+const std::vector<CosmeticItem>& Cosmetics_CustomItems();
 const std::vector<SkinProfile>& Cosmetics_BuiltInProfiles();
 const std::vector<SkinProfile>& Cosmetics_CustomProfiles();
 const CosmeticItem* Cosmetics_FindItem(const std::string& id);
